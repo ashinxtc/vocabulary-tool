@@ -1,0 +1,2785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能英语单词默写 Pro</title>
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        /* Loading Overlay */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            z-index: 10;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            border-radius: 12px;
+        }
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        #loader p {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Headings */
+        h1, h2 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+
+        p {
+            line-height: 1.6;
+            text-align: center;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* Text Area for Word Input */
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        }
+        
+        /* File Upload Styles */
+        .upload-section {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #upload-status {
+            color: #666;
+            margin-top: 10px;
+            min-height: 20px;
+            font-style: italic;
+        }
+        .upload-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #image-upload {
+            display: none;
+        }
+
+        /* Buttons */
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+        }
+
+        /* Quiz Section Styles */
+        .quiz-section { display: none; }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; }
+        .progress { color: #666; font-size: 16px; }
+        .chinese-prompt { font-size: 2.2rem; font-weight: bold; text-align: center; margin: 20px 0; padding: 25px; background-color: #e9f5ff; border-radius: 8px; color: #0056b3; word-wrap: break-word; }
+        #english-input { width: 100%; padding: 15px; font-size: 22px; text-align: center; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px; letter-spacing: 2px; }
+        #english-input:focus { outline: none; border-color: #007bff; }
+        #feedback { text-align: center; font-size: 18px; font-weight: bold; min-height: 25px; margin-bottom: 15px; transition: color 0.3s; }
+        .correct { color: #28a745; }
+        .incorrect { color: #dc3545; }
+        .button-group { display: flex; flex-direction: column; gap: 10px; }
+        .quiz-actions { display: flex; gap: 10px; }
+
+        /* Completion Section Styles */
+        .completion-section { display: none; text-align: center; }
+        .completion-section h2 { color: #28a745; }
+        #score-display { font-size: 22px; margin: 20px 0; }
+        #wrong-words-list { text-align: left; margin-top: 20px; }
+        #wrong-words-list h3 { text-align: center; color: #dc3545; }
+        #wrong-words-list ul { list-style-type: none; padding: 0; }
+        #wrong-words-list li { background-color: #fff8f8; border: 1px solid #f5c6cb; border-radius: 4px; padding: 10px; margin-bottom: 8px; }
+
+        /* Checkbox style */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px; /* Adjusted margin */
+            gap: 10px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #007bff; /* Colors the checkbox itself */
+            cursor: pointer;
+        }
+
+        /* Radio button container */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .radio-group input[type="radio"] {
+            accent-color: #007bff;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Inline Wrong Words Selection Styles */
+        #inline-wrong-words-selection {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+        }
+
+        #inline-wrong-words-selection h3 {
+            text-align: center;
+            color: #0056b3;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        #inline-wrong-words-sessions-list {
+            max-height: 300px; /* Scrollable area for sessions */
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 20px;
+            flex-grow: 1; /* Allow it to grow */
+        }
+
+        .session-item {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .session-item:last-child {
+            border-bottom: none;
+        }
+
+        .session-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .session-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .session-header input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: #007bff;
+        }
+
+        .session-header .session-info {
+            flex-grow: 1;
+            font-size: 16px;
+        }
+
+        .session-header .toggle-icon {
+            font-size: 1.2em;
+            margin-left: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .session-header .toggle-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .session-words-list {
+            list-style-type: none;
+            padding-left: 30px; /* Indent the list */
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-size: 0.9em;
+            color: #666;
+            display: none; /* Hidden by default */
+        }
+
+        .session-words-list.show {
+            display: block;
+        }
+
+        .session-words-list li {
+            margin-bottom: 5px;
+        }
+
+        .inline-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end; /* Align buttons to the right */
+            margin-top: 15px;
+        }
+
+        .inline-buttons button {
+            width: auto; /* Allow buttons to size based on content */
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        /* General Message Dialog */
+        #message-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            z-index: 1001; /* Higher than example sentence display */
+            max-width: 400px;
+            text-align: center;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 20px;
+        }
+        #message-dialog-text {
+            font-size: 1.1em;
+            color: #333;
+            line-height: 1.6;
+        }
+        #message-dialog-close-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            align-self: center;
+        }
+        #message-dialog-close-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Example Sentence Container */
+        #example-sentence-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        #example-sentence-container p {
+            margin: 0;
+            line-height: 1.5;
+        }
+        #english-example-sentence {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 5px;
+        }
+        #chinese-example-sentence {
+            color: #666;
+        }
+
+        /* Word Library Specific Styles */
+        .word-library-section {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 15px;
+        }
+        .word-library-section h3 {
+            text-align: center;
+            color: #0056b3;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .word-library-selection-display {
+            text-align: center;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            min-height: 20px; /* Ensure space even if nothing selected */
+        }
+        .word-library-selection-display span {
+            color: #007bff;
+        }
+        /* REMOVED: This CSS rule was hiding the buttons. */
+        /* .word-library-section.subset-selected > div > button {
+            display: none;
+        } */
+
+
+        /* Modal for Word Library Management */
+        #word-library-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #0056b3;
+        }
+        .modal-close-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            width: auto; /* Override general button width */
+            transition: color 0.2s;
+        }
+        .modal-close-button:hover {
+            color: #333;
+        }
+
+        .modal-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-section h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #0056b3;
+        }
+        .modal-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 5px;
+            background-color: #fff;
+        }
+        .modal-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .modal-list-item:last-child {
+            border-bottom: none;
+        }
+        .modal-list-item:hover {
+            background-color: #f5f5f5;
+        }
+        .modal-list-item.selected {
+            background-color: #e6f2ff;
+            border-color: #007bff;
+            font-weight: bold;
+        }
+        .modal-list-item.disabled {
+            background-color: #f8f8f8;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .modal-list-item button {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .modal-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-input-group input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .modal-input-group button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 16px;
+        }
+
+        /* Modal specific mode styles */
+        #word-library-modal[data-mode="select"] .manage-only {
+            display: none;
+        }
+        #word-library-modal[data-mode="manage"] .select-only {
+            display: none;
+        }
+
+        /* Nested subset list styles */
+        .subsets-nested-list {
+            list-style-type: none;
+            padding-left: 20px; /* Indent subsets */
+            margin-top: 5px;
+            margin-bottom: 0;
+            display: none; /* Hidden by default */
+        }
+        .subsets-nested-list.show {
+            display: block;
+        }
+        .subsets-nested-list .modal-list-item {
+            background-color: #f0f8ff; /* Lighter background for subsets */
+            border-radius: 6px;
+            margin-top: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        .subsets-nested-list .modal-list-item.selected {
+            background-color: #cce0ff; /* Darker blue for selected subset */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Loading Spinner -->
+        <div id="loader">
+            <div class="spinner"></div>
+            <p id="loader-text">正在处理...</p>
+        </div>
+
+        <!-- Section 1: Setup and Word Input -->
+        <div id="setup-section">
+            <h1>智能英语单词默写</h1>
+            <p>选择一种练习模式开始。</p>
+            
+            <!-- New radio group for practice mode -->
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="practice-mode" value="new-words" id="new-words-radio" checked>
+                    新单词练习
+                </label>
+                <label>
+                    <input type="radio" name="practice-mode" value="wrong-words" id="wrong-words-radio" disabled>
+                    错题练习 (<span id="wrong-words-count">0</span> 个单词)
+                </label>
+                <label>
+                    <input type="radio" name="practice-mode" value="word-library" id="word-library-radio">
+                    单词库练习
+                </label>
+            </div>
+
+            <!-- New container for Method 1 and Method 2, shown only for "New Words Practice" -->
+            <div id="new-words-input-area" style="display: flex; flex-direction: column; gap: 15px;">
+                <textarea id="word-input" placeholder="方法一：在此处输入单词..."></textarea>
+
+                <div class="upload-section">
+                    <p style="margin-bottom: 10px;">方法二：上传单词图片</p>
+                    <div class="upload-buttons">
+                        <button id="select-file-button" class="secondary">选择图片档案</button>
+                        <button id="upload-confirm-button" disabled>上传并识别</button>
+                    </div>
+                    <div id="upload-status">未选择任何文件</div>
+                </div>
+                <input type="file" id="image-upload" accept="image/*,.txt,.csv,.doc,.docx,.xls,.xlsx,.pdf">
+            </div>
+
+            <!-- New inline section for wrong words selection -->
+            <div id="inline-wrong-words-selection">
+                <h3>选择错题练习会话</h3>
+                <div id="inline-wrong-words-sessions-list" class="modal-sessions-list">
+                    <!-- Session items will be dynamically inserted here -->
+                </div>
+                <div class="inline-buttons">
+                    <button id="start-inline-wrong-words-practice-button">开始练习</button>
+                    <button id="clear-wrong-words-button" class="secondary">清除所有错题记录</button>
+                    <button id="cancel-inline-wrong-words-practice-button" class="secondary">取消</button>
+                </div>
+            </div>
+
+            <!-- New section for Word Library selection -->
+            <div id="word-library-selection-area" class="word-library-section">
+                <h3>单词库练习</h3> <!-- Optimized: Removed "方法三：" -->
+                <div id="selected-library-display" class="word-library-selection-display">
+                    未选择单词库和子集
+                </div>
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <button id="select-library-for-practice-button">选择单词库进行练习</button>
+                    <button id="open-manage-modal-button" class="secondary">管理单词库 (创建/删除/编辑)</button>
+                </div>
+            </div>
+
+            <!-- Checkbox for auto-speak -->
+            <div class="checkbox-container">
+                <input type="checkbox" id="auto-speak-checkbox" checked>
+                <label for="auto-speak-checkbox">练习时自动读出单词</label>
+            </div>
+            <!-- New checkbox for Google Translate TTS -->
+            <div class="checkbox-container">
+                <input type="checkbox" id="google-tts-checkbox">
+                <label for="google-tts-checkbox">使用更自然的 Google 翻译语音 (实验性)</label>
+            </div>
+
+            <button id="start-button" disabled>开始练习</button>
+        </div>
+
+        <!-- Section 2: Quiz -->
+        <div id="quiz-section" class="quiz-section">
+            <div class="quiz-header">
+                <div id="progress" class="progress"></div>
+                <button id="back-to-menu-button" class="secondary" style="width: auto; padding: 8px 12px; font-size: 14px;">返回主页</button>
+            </div>
+            <div id="chinese-prompt" class="chinese-prompt"></div>
+            <input type="text" id="english-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <div id="feedback"></div>
+
+            <!-- Example Sentence Container - Moved here and styled -->
+            <div id="example-sentence-container" style="display: none;">
+                <p style="font-style: italic; color: #555;">例句:</p>
+                <p id="english-example-sentence"></p>
+                <p id="chinese-example-sentence"></p>
+            </div>
+
+            <div class="button-group">
+                 <div class="quiz-actions">
+                    <button id="check-button">检查答案</button>
+                    <button id="next-button" style="display: none;">下一题</button>
+                </div>
+                <button id="speak-again-button" class="secondary">再读一次</button> 
+            </div>
+        </div>
+
+        <!-- Section 3: Completion -->
+        <div id="completion-section" class="completion-section">
+            <h2>练习结束！</h2>
+            <div id="score-display"></div>
+            <div id="wrong-words-list"></div>
+            <button id="restart-button">返回主页</button>
+        </div>
+    </div>
+
+    <!-- General Message Dialog -->
+    <div id="message-dialog">
+        <p id="message-dialog-text"></p>
+        <button id="message-dialog-close-button">确定</button>
+    </div>
+
+    <!-- Word Library Management Modal -->
+    <div id="word-library-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">管理单词库</h2>
+                <button class="modal-close-button" id="modal-close-button">&times;</button>
+            </div>
+
+            <!-- Library Management Section -->
+            <div class="modal-section">
+                <h4>我的单词库</h4>
+                <div class="modal-input-group manage-only">
+                    <input type="text" id="new-library-name-input" placeholder="新单词库名称">
+                    <button id="create-library-button">创建</button>
+                </div>
+                <div id="libraries-list" class="modal-list">
+                    <!-- Libraries will be loaded here -->
+                    <p style="text-align: center; color: #777;">暂无单词库。</p>
+                </div>
+            </div>
+
+            <!-- Subset Management Section (Hidden in select mode, integrated into libraries-list) -->
+            <div class="modal-section manage-only" id="subset-management-section" style="display: none;">
+                <h4>
+                    <span id="current-library-name"></span> 的子集
+                </h4>
+                <div class="modal-input-group manage-only">
+                    <input type="text" id="new-subset-name-input" placeholder="新子集名称">
+                    <button id="create-subset-button">创建</button>
+                </div>
+                <div id="subsets-list" class="modal-list">
+                    <!-- Subsets will be loaded here -->
+                    <p style="text-align: center; color: #777;">请先选择一个单词库。</p>
+                </div>
+            </div>
+
+            <!-- Words Management Section (Hidden in select mode) -->
+            <div class="modal-section manage-only" id="words-management-section" style="display: none;">
+                <h4>
+                    向 <span id="current-subset-name"></span> 添加单词
+                </h4>
+                <textarea id="subset-words-input" placeholder="每行一个单词，格式：英文 - 中文"></textarea>
+                
+                <!-- New: File/Image Upload for Subset Words -->
+                <div class="upload-section" style="border: 1px dashed #ccc; padding: 10px; margin-top: 10px;">
+                    <p style="margin-bottom: 10px; font-size: 14px;">或从图片/文件导入单词</p>
+                    <div class="upload-buttons" style="flex-direction: column;">
+                        <!-- Restored select-subset-file-button -->
+                        <button id="select-subset-file-button" class="secondary" style="width: 100%; margin-bottom: 5px;">选择图片/文本档案</button>
+                        <button id="upload-subset-confirm-button" disabled style="width: 100%;">上传并识别/导入</button>
+                    </div>
+                    <div id="subset-upload-status" style="color: #666; margin-top: 5px; min-height: 20px; font-style: italic; font-size: 14px;">未选择任何文件</div>
+                </div>
+                <input type="file" id="subset-image-upload" accept="image/*,.txt,.csv,.doc,.docx,.xls,.xlsx,.pdf" style="display: none;">
+                
+                <button id="save-subset-words-button">保存单词到子集</button>
+            </div>
+
+            <button id="confirm-library-selection-button" class="select-only" disabled>确认选择并返回</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables
+        let app;
+        let db;
+        let auth;
+        let userId = 'anonymous'; // Default to anonymous
+        let isAuthReady = false;
+
+        // Firebase config
+        const firebaseConfig = {
+        apiKey: "AIzaSyAOPiAwJCh61dH-rMBWfOM1nKZjiID6G-s",
+        authDomain: "vocabulary-29bb0.firebaseapp.com",
+        projectId: "vocabulary-29bb0",
+        storageBucket: "vocabulary-29bb0.firebasestorage.app",
+        messagingSenderId: "480495077641",
+        appId: "1:480495077641:web:6cd7b1bea6a2a70f342bd8",
+        measurementId: "G-VJ6E7C5S6V"
+        };
+        const appId = 'vocabulary-29bb0'; // 直接使用您的projectId作为appId
+        const initialAuthToken = null; // 无自定义令牌，保持null以使用匿名登录
+
+        // Firestore Collection Paths (CHANGED FOR PUBLIC ACCESS)
+        const PUBLIC_LIBRARIES_COLLECTION = `artifacts/${appId}/public/data/wordLibraries`;
+        const PUBLIC_SUBSETS_COLLECTION = `artifacts/${appId}/public/data/wordSubsets`;
+        const PUBLIC_WORDS_COLLECTION = `artifacts/${appId}/public/data/libraryWords`;
+        const USER_SESSIONS_COLLECTION = `artifacts/${appId}/users/${userId}/wrongWordSessions`; // Still private for user sessions
+
+        // Global variables for word library feature
+        let allLibraries = [];
+        let allSubsets = [];
+        let selectedLibraryId = null;
+        let selectedLibraryName = null;
+        let selectedSubsetId = null;
+        let selectedSubsetName = null;
+        let wordLibraryModalMode = 'select'; // 'select' or 'manage'
+        let allWordsInCurrentLibrary = []; // New: To store all words for the currently selected library in manage mode
+
+        // Global variables for quiz and other features
+        let words = []; // Words for the current quiz session
+        let wrongWordsCurrentSession = []; // Wrong words recorded in the current session
+        let persistentWrongWords = []; // All unique wrong words from all sessions
+        let currentWordIndex = 0;
+        let score = 0;
+        let uploadedImageBase64 = null;
+        let selectedFile = null;
+        let autoSpeakEnabled = true; 
+        let googleTranslateTtsEnabled = false; // New global flag for Google TTS
+        let currentSpeakInterval = null; // Global variable to hold the interval ID for speech repetition
+
+        // New global variables for session tracking
+        let currentPracticeSessionId = null;
+        let currentPracticeSessionStartTime = null;
+        let allStoredWrongWordSessions = []; // Stores the complete session objects
+
+        // Get all necessary HTML elements
+        const setupSection = document.getElementById('setup-section');
+        const quizSection = document.getElementById('quiz-section');
+        const completionSection = document.getElementById('completion-section');
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loader-text');
+
+        // New container for Method 1 and Method 2
+        const newWordsInputArea = document.getElementById('new-words-input-area');
+
+        const wordInput = document.getElementById('word-input');
+        const selectFileButton = document.getElementById('select-file-button');
+        const uploadConfirmButton = document.getElementById('upload-confirm-button');
+        const uploadStatus = document.getElementById('upload-status');
+        const imageUpload = document.getElementById('image-upload');
+        const startButton = document.getElementById('start-button');
+        const autoSpeakCheckbox = document.getElementById('auto-speak-checkbox'); 
+        const googleTtsCheckbox = document.getElementById('google-tts-checkbox'); // New checkbox element
+        const newWordsRadio = document.getElementById('new-words-radio'); 
+        const wrongWordsRadio = document.getElementById('wrong-words-radio'); 
+        const wrongWordsCountSpan = document.getElementById('wrong-words-count'); // FIX: Removed 'document ='
+        const wordLibraryRadio = document.getElementById('word-library-radio'); // New radio button
+
+        const progressText = document.getElementById('progress');
+        const backToMenuButton = document.getElementById('back-to-menu-button');
+        const chinesePrompt = document.getElementById('chinese-prompt');
+        const englishInput = document.getElementById('english-input');
+        const feedback = document.getElementById('feedback');
+        const checkButton = document.getElementById('check-button');
+        const nextButton = document.getElementById('next-button');
+        const speakAgainButton = document.getElementById('speak-again-button'); 
+
+        const scoreDisplay = document.getElementById('score-display');
+        const wrongWordsList = document.getElementById('wrong-words-list');
+        const restartButton = document.getElementById('restart-button');
+
+        // Inline Wrong Words Selection elements
+        const inlineWrongWordsSelection = document.getElementById('inline-wrong-words-selection');
+        const inlineWrongWordsSessionsList = document.getElementById('inline-wrong-words-sessions-list');
+        const startInlineWrongWordsPracticeButton = document.getElementById('start-inline-wrong-words-practice-button');
+        const cancelInlineWrongWordsPracticeButton = document.getElementById('cancel-inline-wrong-words-practice-button');
+
+        // Message Dialog elements
+        const messageDialog = document.getElementById('message-dialog');
+        const messageDialogText = document.getElementById('message-dialog-text');
+        const messageDialogCloseButton = document.getElementById('message-dialog-close-button');
+
+        // Example Sentence Display elements (now integrated directly into quiz-section)
+        const exampleSentenceContainer = document.getElementById('example-sentence-container');
+        const englishExampleSentence = document.getElementById('english-example-sentence');
+        const chineseExampleSentence = document.getElementById('chinese-example-sentence');
+
+        // Word Library UI elements
+        const wordLibrarySelectionArea = document.getElementById('word-library-selection-area');
+        const selectedLibraryDisplay = document.getElementById('selected-library-display');
+        const selectLibraryForPracticeButton = document.getElementById('select-library-for-practice-button'); // New button
+        const openManageModalButton = document.getElementById('open-manage-modal-button'); // Renamed button
+
+        const wordLibraryModal = document.getElementById('word-library-modal');
+        const modalTitle = document.getElementById('modal-title'); // New element
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const newLibraryNameInput = document.getElementById('new-library-name-input');
+        const createLibraryButton = document.getElementById('create-library-button');
+        const librariesList = document.getElementById('libraries-list');
+
+        const subsetManagementSection = document.getElementById('subset-management-section');
+        const currentLibraryNameSpan = document.getElementById('current-library-name');
+        const newSubsetNameInput = document.getElementById('new-subset-name-input');
+        const createSubsetButton = document.getElementById('create-subset-button');
+        const subsetsList = document.getElementById('subsets-list');
+
+        const wordsManagementSection = document.getElementById('words-management-section');
+        const currentSubsetNameSpan = document.getElementById('current-subset-name');
+        const subsetWordsInput = document.getElementById('subset-words-input');
+        const saveSubsetWordsButton = document.getElementById('save-subset-words-button');
+        const confirmLibrarySelectionButton = document.getElementById('confirm-library-selection-button');
+
+        // New elements for subset word upload
+        const selectSubsetFileButton = document.getElementById('select-subset-file-button'); // Restored
+        const uploadSubsetConfirmButton = document.getElementById('upload-subset-confirm-button');
+        const subsetUploadStatus = document.getElementById('subset-upload-status');
+        const subsetImageUpload = document.getElementById('subset-image-upload');
+
+
+        // --- Firebase Initialization ---
+        const initFirebase = async () => {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase authenticated. User ID:", userId);
+                    } else {
+                        console.log("Firebase not authenticated. Signing in anonymously...");
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                            userId = auth.currentUser.uid;
+                            console.log("Signed in anonymously. User ID:", userId);
+                        } catch (error) {
+                            console.error("Firebase anonymous sign-in failed:", error);
+                            showMessage("无法登录到单词库服务。请检查网络或稍后重试。");
+                        }
+                    }
+                    isAuthReady = true;
+                    loadWordLibraries(); // Load libraries once auth is ready
+                    loadWrongWordsFromStorage(); // Also load wrong words after auth is ready
+                    updateStartButtonState(); // Ensure start button state is correct after auth
+                    updatePracticeModeDisplay(); // Call to set initial display based on radio button
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showMessage("Firebase 初始化失败。单词库功能将不可用。");
+                isAuthReady = true; // Mark as ready even on failure to unblock UI
+            }
+        };
+        initFirebase();
+
+
+        // --- Gemini API Configuration ---
+        window.API_KEY = "AIzaSyB-TiVpLppqHtLUzsbip9YvYI82Tdqq-6E"; // Leave this empty
+        window.API_URL_TEXT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${window.API_KEY}`;
+        
+        // --- Custom Message Dialog Function ---
+        const showMessage = (message) => {
+            messageDialogText.innerHTML = message; // Use innerHTML to allow for bold tags
+            messageDialog.style.display = 'flex';
+        };
+
+        messageDialogCloseButton.addEventListener('click', () => {
+            messageDialog.style.display = 'none';
+        });
+
+        // --- localStorage Functions ---
+        const LOCAL_STORAGE_SESSIONS_KEY = 'wrongWordPracticeSessions'; // Key for storing sessions
+
+        const loadWrongWordsFromStorage = () => {
+            if (!isAuthReady) {
+                console.log("Auth not ready, skipping loadWrongWordsFromStorage.");
+                return;
+            }
+            showLoader('正在加载错题...');
+            try {
+                const storedSessionsData = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
+                allStoredWrongWordSessions = storedSessionsData ? JSON.parse(storedSessionsData) : [];
+
+                // Convert timestamp strings back to Date objects within each session and its words
+                allStoredWrongWordSessions.forEach(session => {
+                    if (typeof session.startTime === 'string') {
+                        session.startTime = new Date(session.startTime);
+                    }
+                    if (typeof session.endTime === 'string') {
+                        session.endTime = new Date(session.endTime);
+                    }
+                    session.words.forEach(word => {
+                        if (typeof word.timestamp === 'string') {
+                            word.timestamp = new Date(word.timestamp);
+                        }
+                    });
+
+                    // Calculate uniqueCount for each session upon loading
+                    const uniqueWordsInSession = new Set(session.words.map(w => w.english));
+                    session.uniqueCount = uniqueWordsInSession.size;
+                });
+
+                // Sort sessions by end time descending (newest sessions first)
+                allStoredWrongWordSessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+
+                // Calculate overall unique wrong words for the radio button count
+                const overallUniqueWrongWordsMap = new Map();
+                allStoredWrongWordSessions.forEach(session => {
+                    session.words.forEach(word => {
+                        // Use the timestamp from the word itself for overall uniqueness, not session timestamp
+                        if (!overallUniqueWrongWordsMap.has(word.english) || overallUniqueWrongWordsMap.get(word.english).timestamp < word.timestamp) {
+                            overallUniqueWrongWordsMap.set(word.english, word);
+                        }
+                    });
+                });
+                persistentWrongWords = Array.from(overallUniqueWrongWordsMap.values());
+                wrongWordsCountSpan.textContent = persistentWrongWords.length;
+                wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+                console.log("Loaded all stored wrong word sessions:", allStoredWrongWordSessions);
+                console.log("Overall unique persistent wrong words:", persistentWrongWords);
+
+            } catch (error) {
+                console.error("Error loading wrong words from localStorage:", error);
+                // Using showMessage for user feedback instead of alert
+                showMessage("加载错题失败。您的浏览器可能不支持本地存储，或数据已损坏。");
+            } finally {
+                hideLoader();
+                updateStartButtonState(); // Crucial: update button state after loading
+            }
+        };
+
+        const saveCurrentSessionWrongWords = () => {
+            if (!currentPracticeSessionId || !currentPracticeSessionStartTime) {
+                console.log("Session not started, not saving.");
+                return;
+            }
+            
+            // Only save if there were words in the current session OR if there were wrong words recorded
+            // This check is important to prevent saving empty sessions if user just clicks "Start" then "Back to Menu"
+            if (words.length === 0 && wrongWordsCurrentSession.length === 0) {
+                console.log("No words practiced or no wrong words in current session, not saving.");
+                return;
+            }
+
+            const sessionEndTime = new Date();
+            
+            // Ensure uniqueness of words within this session before saving
+            const uniqueWordsInSessionMap = new Map();
+            wrongWordsCurrentSession.forEach(word => {
+                uniqueWordsInSessionMap.set(word.english, word); // Map ensures unique English words
+            });
+            const wordsToSaveInSession = Array.from(uniqueWordsInSessionMap.values()).map(w => ({
+                english: w.english,
+                chinese: w.chinese,
+                timestamp: w.timestamp.toISOString() // Store timestamp as ISO string
+            }));
+
+            const newSession = {
+                id: currentPracticeSessionId,
+                startTime: currentPracticeSessionStartTime.toISOString(),
+                endTime: sessionEndTime.toISOString(),
+                words: wordsToSaveInSession,
+                uniqueCount: wordsToSaveInSession.length // Store unique count directly
+            };
+
+            // Retrieve existing sessions, add new one, and save back
+            let existingSessions = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
+            existingSessions = existingSessions ? JSON.parse(existingSessions) : [];
+            
+            // Convert existing timestamps to ISO strings if they are Date objects (for consistency before adding new session)
+            existingSessions.forEach(session => {
+                if (session.startTime instanceof Date) session.startTime = session.startTime.toISOString();
+                if (session.endTime instanceof Date) session.endTime = session.toISOString();
+                session.words.forEach(word => {
+                    if (word.timestamp instanceof Date) word.timestamp = word.timestamp.toISOString();
+                });
+            });
+
+            existingSessions.push(newSession);
+            localStorage.setItem(LOCAL_STORAGE_SESSIONS_KEY, JSON.stringify(existingSessions));
+            console.log("Current practice session saved:", newSession);
+
+            // Reset session tracking variables
+            currentPracticeSessionId = null;
+            currentPracticeSessionStartTime = null;
+            wrongWordsCurrentSession = [];
+
+            // Reload all data to update UI
+            loadWrongWordsFromStorage();
+        };
+
+        // --- Utility Functions ---
+        const showLoader = (text) => { loaderText.textContent = text; loader.style.display = 'flex'; };
+        const hideLoader = () => { loader.style.display = 'none'; };
+        const imageToBase64 = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+
+        /**
+         * Parses the raw text input from the textarea into an array of word objects.
+         * Each word object has an 'english' property and an optional 'chinese' property.
+         * Assumes format "english = chinese" or just "english".
+         * @param {string} text The raw text input.
+         * @returns {Array<{english: string, chinese: string|null}>} Parsed words.
+         */
+        const parseWordInput = (text) => {
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+            return lines.map(line => {
+                // Split on "=" only, ensuring compound words and phrases are preserved
+                const parts = line.split('=').map(part => part.trim());
+                if (parts.length >= 2 && parts[1] !== '') {
+                    return { english: parts[0], chinese: parts[1] };
+                } else {
+                    return { english: parts[0], chinese: null };
+                }
+            });
+        };
+
+
+        /**
+         * Speaks the given text.
+         * If `googleTranslateTtsEnabled` is true, uses Google Translate TTS.
+         * Otherwise, uses browser's `SpeechSynthesis` API.
+         * If `repeat` is true, it speaks 3 times with a 3-second interval.
+         * @param {string} text The text to speak.
+         * @param {boolean} [repeat=false] Whether to repeat the speech.
+         */
+        const speak = (text, repeat = false) => {
+            // Clear any ongoing speech or intervals first
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            if (currentSpeakInterval) {
+                clearInterval(currentSpeakInterval);
+                currentSpeakInterval = null;
+            }
+
+            const langCode = 'en'; // Assuming English words for now.
+            const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
+            const intervalTime = 3000; // 3 seconds interval
+
+            if (googleTranslateTtsEnabled) {
+                let count = 0;
+                const playGoogleTts = () => {
+                    if (count < 3) {
+                        const audio = new Audio(googleTranslateTtsUrl);
+                        audio.play().catch(e => console.error("Error playing Google TTS audio:", e));
+                        count++;
+                    } else {
+                        clearInterval(currentSpeakInterval);
+                        currentSpeakInterval = null;
+                    }
+                };
+
+                if (repeat) {
+                    playGoogleTts(); // Play first immediately
+                    currentSpeakInterval = setInterval(playGoogleTts, intervalTime);
+                } else {
+                    playGoogleTts(); // Play once
+                }
+            } else if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB';
+                utterance.rate = 0.9;
+
+                if (repeat) {
+                    let count = 0;
+                    const speakBrowserTts = () => {
+                        if (count < 3) {
+                            window.speechSynthesis.speak(utterance);
+                            count++;
+                        } else {
+                            clearInterval(currentSpeakInterval);
+                            currentSpeakInterval = null;
+                        }
+                    };
+                    speakBrowserTts(); // Speak first immediately
+                    currentSpeakInterval = setInterval(speakBrowserTts, intervalTime);
+                } else {
+                    window.speechSynthesis.speak(utterance); // Speak once
+                }
+            } else {
+                console.log('Text-to-speech not supported in this browser.');
+                showMessage('您的浏览器不支持语音功能。');
+            }
+        };
+
+        // --- Gemini API Calls for Translation and Verification ---
+        const getWordsFromImage = async (base64ImageData) => {
+            const payload = { contents: [{ parts: [{ text: "Extract all English words from this image. List them separated by newlines. Only output the words." }, { inlineData: { mimeType: "image/jpeg", data: base64ImageData } }] }] };
+            const response = await fetch(window.API_URL_TEXT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Could not extract words from the image.");
+            // Return an array of trimmed, non-empty English words
+            return text.trim().split('\n').map(w => w.trim()).filter(w => w);
+        };
+
+        const callGeminiForTranslation = async (englishWordsOnly) => {
+            const prompt = `Translate the following English words to Chinese. Provide the response as a valid JSON array of objects, where each object has 'english' and 'chinese' keys. Words: ${JSON.stringify(englishWordsOnly)}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "OBJECT", properties: { "english": { "type": "STRING" }, "chinese": { "type": "STRING" } }, required: ["english", "chinese"] } } }
+            };
+            const response = await fetch(window.API_URL_TEXT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            const result = await response.json();
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!jsonText) throw new Error("Could not get translations.");
+            return JSON.parse(jsonText);
+        };
+
+        const callGeminiForVerification = async (wordsWithProvidedChinese) => {
+            const formattedWords = wordsWithProvidedChinese.map(w => ({ english: w.english, provided_chinese: w.chinese }));
+            const prompt = `For each English word and its provided Chinese translation, indicate if the translation is accurate. If not, provide the correct translation. Format the response as a valid JSON array of objects, where each object has 'english', 'provided_chinese', 'is_accurate' (boolean), and 'correct_chinese' (string, only if not accurate). Words: ${JSON.stringify(formattedWords)}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { 
+                    responseMimeType: "application/json", 
+                    responseSchema: { 
+                        type: "ARRAY", 
+                        items: { 
+                            type: "OBJECT", 
+                            properties: { 
+                                "english": { "type": "STRING" }, 
+                                "provided_chinese": { "type": "STRING" },
+                                "is_accurate": { "type": "BOOLEAN" },
+                                "correct_chinese": { "type": "STRING" } 
+                            }, 
+                            required: ["english", "provided_chinese", "is_accurate"] 
+                        } 
+                    } 
+                }
+            };
+            const response = await fetch(window.API_URL_TEXT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            const result = await response.json();
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!jsonText) throw new Error("Could not get verification results.");
+            return JSON.parse(jsonText);
+        };
+
+        const callGeminiForExampleSentenceAndTranslation = async (englishWord) => {
+            const prompt = `Please generate a simple and common English example sentence for the word '${englishWord}'. Immediately after the English sentence, provide its Chinese translation. Format the response as a JSON object with 'englishSentence' and 'chineseSentence' keys.`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "englishSentence": { "type": "STRING" },
+                            "chineseSentence": { "type": "STRING" }
+                        },
+                        required: ["englishSentence", "chineseSentence"]
+                    }
+                }
+            };
+            const response = await fetch(window.API_URL_TEXT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            const result = await response.json();
+            const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!jsonText) throw new Error("Could not generate example sentence and translation.");
+            return JSON.parse(jsonText);
+        };
+
+
+        /**
+         * Processes an array of words, translating those without Chinese and verifying those with provided Chinese.
+         * @param {Array<{english: string, chinese: string|null}>} inputWords An array of word objects.
+         * @returns {Promise<Array<{english: string, chinese: string}>>} A promise that resolves to the processed words.
+         */
+        const processWordsForQuiz = async (inputWords) => {
+            const wordsWithoutChinese = inputWords.filter(w => !w.chinese);
+            const wordsWithChinese = inputWords.filter(w => w.chinese);
+
+            let translatedWords = [];
+            let wordsToReturn = [...wordsWithChinese]; // Start with words that had Chinese, they might be corrected
+
+            // 1. Translate words without Chinese
+            if (wordsWithoutChinese.length > 0) {
+                showLoader('正在翻译新单词...');
+                const englishOnlyList = wordsWithoutChinese.map(w => w.english);
+                try {
+                    translatedWords = await callGeminiForTranslation(englishOnlyList);
+                    wordsToReturn = [...wordsToReturn, ...translatedWords]; // Add newly translated words
+                } catch (error) {
+                    console.error("翻译新单词时出错:", error);
+                    showMessage("翻译新单词时发生错误，请检查网络或重试。");
+                    return []; // Return empty to prevent quiz from starting with incomplete data
+                }
+            }
+
+            // 2. Verify words with provided Chinese
+            if (wordsWithChinese.length > 0) {
+                showLoader('正在验证已有翻译...');
+                try {
+                    const verifiedResults = await callGeminiForVerification(wordsWithChinese);
+                    
+                    // Process verification results
+                    verifiedResults.forEach(verifiedWord => {
+                        if (!verifiedWord.is_accurate) {
+                            const message = `翻译不准确：<br>英文: <strong>${verifiedWord.english}</strong><br>您提供的中文: <strong>${verifiedWord.provided_chinese}</strong><br>正确翻译应为: <strong>${verifiedWord.correct_chinese}</strong>。已自动更新。`;
+                            showMessage(message);
+                            console.warn(`翻译不准确：'${verifiedWord.english}' 的提供翻译是 '${verifiedWord.provided_chinese}'，正确翻译应为 '${verifiedWord.correct_chinese}'。已更新。`);
+                            // Find and update the word's Chinese translation in wordsToReturn
+                            const wordInList = wordsToReturn.find(w => w.english === verifiedWord.english);
+                            if (wordInList) {
+                                wordInList.chinese = verifiedWord.correct_chinese;
+                            }
+                        } else {
+                            console.log(`翻译准确：'${verifiedWord.english}' 的提供翻译 '${verifiedWord.provided_chinese}' 是准确的。`);
+                        }
+                    });
+                } catch (error) {
+                    console.error("验证已有翻译时出错:", error);
+                    showMessage("验证已有翻译时发生错误，将使用您提供的翻译。");
+                    // If verification fails, proceed with the user's provided translations (which are already in wordsToReturn)
+                }
+            }
+
+            // Ensure uniqueness in the final list by English word, keeping the latest version
+            const finalWordsMap = new Map();
+            wordsToReturn.forEach(word => {
+                finalWordsMap.set(word.english, word);
+            });
+
+            return Array.from(finalWordsMap.values());
+        };
+
+
+        // --- Main Application Flow ---
+        const startQuiz = () => {
+            if (words.length === 0) {
+                showMessage('没有可供练习的单词。');
+                return;
+            }
+            // Start a new practice session
+            currentPracticeSessionId = Date.now().toString(); // Simple unique ID
+            currentPracticeSessionStartTime = new Date();
+            wrongWordsCurrentSession = []; // Reset for the new session
+
+            shuffleArray(words);
+            currentWordIndex = 0;
+            score = 0;
+            
+            setupSection.style.display = 'none';
+            completionSection.style.display = 'none';
+            quizSection.style.display = 'block';
+
+            // Set the text of the speakAgainButton based on autoSpeakEnabled
+            speakAgainButton.textContent = autoSpeakEnabled ? '再读一次' : '读一次单词';
+
+            showNextWord();
+        };
+
+        // --- Quiz Logic ---
+        const checkAnswer = async () => { // Made async to await example sentence generation
+            const userAnswer = englishInput.value.trim().toLowerCase();
+            const correctAnswer = words[currentWordIndex].english.toLowerCase();
+            if (userAnswer === '') {
+                feedback.textContent = '请输入答案！';
+                feedback.className = '';
+                return;
+            }
+            if (userAnswer === correctAnswer) {
+                score++;
+                feedback.textContent = '✔ 正确!';
+                feedback.className = 'correct';
+            } else {
+                const currentWrongWord = words[currentWordIndex];
+                feedback.innerHTML = `❌ 错误！正确答案是: <strong style="color: #333;">${currentWrongWord.english}</strong>`;
+                feedback.className = 'incorrect';
+                
+                // Add to current session's wrong words, with a timestamp for that specific wrong instance
+                wrongWordsCurrentSession.push({
+                    english: currentWrongWord.english,
+                    chinese: currentWrongWord.chinese,
+                    timestamp: new Date() // Timestamp when this specific word was marked wrong
+                });
+            }
+            englishInput.disabled = true;
+            checkButton.style.display = 'none';
+            nextButton.style.display = 'block';
+            nextButton.focus();
+
+            // --- Generate and display example sentence ---
+            showLoader('正在生成例句...'); // Show loader while generating example
+            try {
+                const exampleData = await callGeminiForExampleSentenceAndTranslation(words[currentWordIndex].english);
+                englishExampleSentence.textContent = exampleData.englishSentence;
+                chineseExampleSentence.textContent = exampleData.chineseSentence;
+                exampleSentenceContainer.style.display = 'block'; // Show the example sentence container
+            } catch (error) {
+                console.error("生成例句时出错:", error);
+                // Optionally show a message to the user if example generation fails
+                // showMessage("生成例句时发生错误。");
+                exampleSentenceContainer.style.display = 'none'; // Hide if failed
+            } finally {
+                hideLoader(); // Hide loader regardless of success or failure
+            }
+        };
+
+        const showNextWord = () => {
+            // Hide example sentence display when moving to next word
+            exampleSentenceContainer.style.display = 'none';
+            englishExampleSentence.textContent = '';
+            chineseExampleSentence.textContent = '';
+
+            if (currentWordIndex < words.length) {
+                const word = words[currentWordIndex];
+                progressText.textContent = `第 ${currentWordIndex + 1} / ${words.length} 题`;
+                chinesePrompt.textContent = word.chinese;
+                englishInput.placeholder = '_ '.repeat(word.english.length).trim();
+                englishInput.value = '';
+                englishInput.disabled = false;
+                feedback.textContent = '';
+                feedback.className = '';
+                checkButton.style.display = 'block';
+                nextButton.style.display = 'none';
+                englishInput.focus();
+                // Only speak automatically if autoSpeakEnabled is true
+                if (autoSpeakEnabled) {
+                    speak(word.english, true); // Speak 3 times if auto-speak is on
+                }
+            } else {
+                showCompletionScreen();
+            }
+        };
+
+        const showCompletionScreen = () => {
+            // Save current session's wrong words before showing completion screen
+            // This also reloads allStoredWrongWordSessions, making the latest session available at index 0
+            saveCurrentSessionWrongWords(); 
+
+            quizSection.style.display = 'none';
+            completionSection.style.display = 'block';
+            
+            // Calculate percentage based on words in the *initial* practice session (words array)
+            const percentage = words.length > 0 ? Math.round((score / words.length) * 100) : 0;
+            scoreDisplay.innerHTML = `你答对了 <strong>${score}</strong> 道题，共 <strong>${words.length}</strong> 道。<br>正确率: <strong>${percentage}%</strong>`;
+            
+            wrongWordsList.innerHTML = ''; // Clear previous list
+
+            // Case 1: No words were loaded for practice at all (e.g., user clicked start with empty textarea)
+            if (words.length === 0) {
+                wrongWordsList.innerHTML = '<p style="color: #6c757d; font-weight: bold;">本次没有练习任何单词。</p>';
+                return;
+            }
+
+            // Case 2: Practice was started. Now check the results based on the saved session.
+            // The latest session is guaranteed to be the one just saved by saveCurrentSessionWrongWords().
+            const latestCompletedSession = allStoredWrongWordSessions[0]; 
+
+            if (latestCompletedSession && latestCompletedSession.words.length > 0) {
+                // If the latest completed session has wrong words, display them
+                let html = '<h3>本次错题：</h3><ul>';
+                // Sort words within the session by timestamp to show them in order they were answered wrong
+                const sortedWrongWords = [...latestCompletedSession.words].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+                sortedWrongWords.forEach(word => {
+                    html += `<li><strong>${word.english}</strong>: ${word.chinese}</li>`;
+                });
+                html += '</ul>';
+                wrongWordsList.innerHTML = html;
+            } else {
+                // This 'else' means: words.length > 0 (practice started) AND latestCompletedSession.words.length === 0.
+                // This implies that either:
+                // a) All words were answered correctly (score === words.length AND currentWordIndex === words.length)
+                // b) User exited prematurely and made no mistakes yet.
+                // We need to distinguish these two sub-cases.
+
+                // If the quiz reached its natural end AND all answers were correct
+                if (currentWordIndex === words.length && score === words.length) {
+                    wrongWordsList.innerHTML = '<p style="color: #28a745; font-weight: bold;">太棒了，全部正确！</p>';
+                } else {
+                    // This covers cases where words.length > 0, but the quiz was not fully completed
+                    // (currentWordIndex < words.length) AND no wrong words were recorded in the session.
+                    // This means the user exited prematurely before making any mistakes.
+                    wrongWordsList.innerHTML = '<p style="color: #6c757d; font-weight: bold;">本次练习已中断，没有记录到错题。</p>';
+                }
+            }
+        };
+
+        checkButton.addEventListener('click', checkAnswer);
+        englishInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter' && !englishInput.disabled) checkAnswer();
+        });
+        nextButton.addEventListener('click', () => {
+            currentWordIndex++;
+            showNextWord();
+        });
+        // Modified speakAgainButton listener
+        speakAgainButton.addEventListener('click', () => {
+            if(currentWordIndex < words.length) {
+                // When clicked, always speak once, regardless of autoSpeakEnabled
+                speak(words[currentWordIndex].english, false); 
+            }
+        });
+        // Modified backToMenuButton listener to show completion screen
+        backToMenuButton.addEventListener('click', () => {
+            showCompletionScreen(); // This will save the session and show results
+        });
+
+        // --- Restart Logic ---
+        restartButton.addEventListener('click', () => {
+            completionSection.style.display = 'none';
+            setupSection.style.display = 'block';
+            // Reset all state
+            words = [];
+            wordInput.value = '';
+            uploadStatus.textContent = '未选择任何文件';
+            imageUpload.value = '';
+            selectedFile = null;
+            uploadedImageBase64 = null;
+            startButton.disabled = true;
+            uploadConfirmButton.disabled = true;
+            autoSpeakCheckbox.checked = true; // Reset checkbox to default checked state
+            autoSpeakEnabled = true; // Reset autoSpeakEnabled to true
+            googleTtsCheckbox.checked = false; // Reset Google TTS checkbox
+            googleTranslateTtsEnabled = false; // Reset Google TTS flag
+            speakAgainButton.textContent = '再读一次'; // Reset button text
+            newWordsRadio.checked = true; // Default to new words practice
+            loadWrongWordsFromStorage(); // Reload wrong words count and state
+            hideInlineWrongWordsSelection(); // Ensure inline selection is hidden on restart
+            // Ensure word library selection area is reset and its buttons are visible
+            wordLibrarySelectionArea.classList.remove('subset-selected'); 
+            // The buttons are now always visible in word-library-section, so no need to explicitly show/hide them.
+            // hideWordLibrarySelectionArea(); // This would hide the entire section, which is not desired on restart if it was the last selected mode.
+            updatePracticeModeDisplay(); // Update display based on radio button
+            updateStartButtonState(); // Update button state after restart
+        });
+
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        };
+
+        // Consolidated function to update the start button's disabled state
+        const updateStartButtonState = () => {
+            // If the inline wrong words selection is visible, the main start button should be disabled.
+            if (inlineWrongWordsSelection.style.display === 'flex') { 
+                startButton.disabled = true;
+                return;
+            }
+
+            let canStart = false;
+            if (newWordsRadio.checked) {
+                // Can start if wordInput has text OR words array is populated (from image upload)
+                if (wordInput.value.trim() !== '') {
+                    canStart = true;
+                } else if (words.length > 0) { 
+                    canStart = true;
+                }
+            } else if (wrongWordsRadio.checked) {
+                canStart = persistentWrongWords.length > 0;
+            } else if (wordLibraryRadio.checked) {
+                // In word library mode, can start if a subset is selected.
+                canStart = selectedSubsetId !== null; 
+            }
+            startButton.disabled = !canStart;
+        };
+
+        // --- New function to handle display based on practice mode ---
+        const updatePracticeModeDisplay = () => {
+            if (newWordsRadio.checked) {
+                newWordsInputArea.style.display = 'flex'; // Show new words input area
+                hideInlineWrongWordsSelection(); // Hide other sections
+                wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection area
+                // wordLibrarySelectionArea.classList.remove('subset-selected'); // Not needed here, handled by restart or when selecting new mode
+            } else if (wrongWordsRadio.checked) {
+                newWordsInputArea.style.display = 'none'; // Hide new words input area
+                if (persistentWrongWords.length > 0) {
+                    showInlineWrongWordsSelection(); // Show inline selection if wrong words is chosen and available
+                } else {
+                    hideInlineWrongWordsSelection(); // Hide if no wrong words
+                }
+                wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection area
+                // wordLibrarySelectionArea.classList.remove('subset-selected'); // Not needed here
+            } else if (wordLibraryRadio.checked) {
+                newWordsInputArea.style.display = 'none'; // Hide new words input area
+                hideInlineWrongWordsSelection(); // Hide other sections
+                wordLibrarySelectionArea.style.display = 'flex'; // Show word library selection
+                // The buttons are always visible in this mode, the class only affects the display text.
+                if (selectedSubsetId) {
+                    selectedLibraryDisplay.innerHTML = `已选择：<span>${selectedLibraryName}</span> - <span>${selectedSubsetName}</span>`;
+                } else {
+                    selectedLibraryDisplay.textContent = '未选择单词库和子集';
+                }
+            }
+            updateStartButtonState(); // Always update start button state after changing display
+        };
+
+
+        // --- Inline Wrong Words Selection Logic ---
+        const showInlineWrongWordsSelection = () => {
+            inlineWrongWordsSessionsList.innerHTML = ''; // Clear previous list
+            if (allStoredWrongWordSessions && allStoredWrongWordSessions.length > 0) {
+                allStoredWrongWordSessions.forEach((session, index) => {
+                    const sessionItem = document.createElement('div');
+                    sessionItem.classList.add('session-item');
+                    sessionItem.dataset.index = index; // Store index for easy access
+
+                    const sessionHeader = document.createElement('div');
+                    sessionHeader.classList.add('session-header');
+                    // Use session.uniqueCount which is calculated during load
+                    sessionHeader.innerHTML = `
+                        <input type="checkbox" value="${index}">
+                        <span class="session-info"><strong>${session.startTime.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</strong> (${session.uniqueCount} 个错词)</span>
+                        <span class="toggle-icon">▶</span>
+                    `;
+                    sessionItem.appendChild(sessionHeader);
+
+                    const wordsList = document.createElement('ul');
+                    wordsList.classList.add('session-words-list');
+                    // Populate words list from session.words
+                    session.words.forEach(word => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = `${word.english}: ${word.chinese}`;
+                        wordsList.appendChild(listItem);
+                    });
+                    sessionItem.appendChild(wordsList);
+
+                    inlineWrongWordsSessionsList.appendChild(sessionItem);
+
+                    // Add toggle functionality
+                    sessionHeader.querySelector('.toggle-icon').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent checkbox from toggling
+                        wordsList.classList.toggle('show');
+                        e.target.classList.toggle('expanded');
+                    });
+                     // Also toggle on click of the info part of the header
+                    sessionHeader.querySelector('.session-info').addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent checkbox from toggling
+                        wordsList.classList.toggle('show');
+                        sessionHeader.querySelector('.toggle-icon').classList.toggle('expanded');
+                    });
+                });
+                startInlineWrongWordsPracticeButton.disabled = false; // Enable start button if sessions exist
+            } else {
+                inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: #777;">暂无错题记录。</p>';
+                startInlineWrongWordsPracticeButton.disabled = true; // Disable start button if no sessions
+            }
+            inlineWrongWordsSelection.style.display = 'flex'; // Show the inline section
+            updateStartButtonState(); // Update main start button state
+        };
+
+        const hideInlineWrongWordsSelection = () => {
+            inlineWrongWordsSelection.style.display = 'none'; // Hide the inline section
+            updateStartButtonState(); // Update main start button state
+        };
+
+        startInlineWrongWordsPracticeButton.addEventListener('click', async () => {
+            const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
+                                                .map(checkbox => parseInt(checkbox.value));
+            
+            if (selectedSessionIndices.length === 0) {
+                showMessage('请选择至少一个错题练习会话。');
+                return;
+            }
+
+            let wordsToPractice = new Map(); // Use a Map to store unique words by English word
+            selectedSessionIndices.forEach(index => {
+                const session = allStoredWrongWordSessions[index];
+                session.words.forEach(word => {
+                    // Add word if not already present, or if it's a newer entry
+                    // This ensures only the latest instance of a unique word is added
+                    if (!wordsToPractice.has(word.english) || wordsToPractice.get(word.english).timestamp < word.timestamp) {
+                        wordsToPractice.set(word.english, word);
+                    }
+                });
+            });
+
+            words = Array.from(wordsToPractice.values());
+            words.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by newest first, or by user preference
+
+            hideInlineWrongWordsSelection();
+            startQuiz();
+        });
+
+        cancelInlineWrongWordsPracticeButton.addEventListener('click', () => {
+            hideInlineWrongWordsSelection();
+            newWordsRadio.checked = true; // Revert to new words practice
+            updatePracticeModeDisplay(); // Update display based on radio button
+            updateStartButtonState(); // Re-evaluate start button state
+        });
+
+        document.getElementById('clear-wrong-words-button').addEventListener('click', () => {
+            showMessage(`请输入确认码以清除所有错题记录。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-clear-wrong-words" class="secondary" style="width: auto; margin-right: 10px;">确认清除</button><button id="cancel-clear-wrong-words" style="width: auto;">取消</button>`);
+
+            document.getElementById('confirm-clear-wrong-words').onclick = () => {
+                const code = document.getElementById('confirm-code-input').value;
+                if (code === '1234') {
+                    messageDialog.style.display = 'none';
+                    localStorage.removeItem(LOCAL_STORAGE_SESSIONS_KEY);
+                    loadWrongWordsFromStorage(); // 重新加载以更新 UI
+                    showMessage('所有错题记录已清除。');
+                    hideInlineWrongWordsSelection();
+                    newWordsRadio.checked = true; // 默认回到新单词练习模式
+                    updatePracticeModeDisplay();
+                } else {
+                    showMessage('确认码不正确，清除操作已取消。');
+                }
+            };
+
+            document.getElementById('cancel-clear-wrong-words').onclick = () => {
+                messageDialog.style.display = 'none';
+            };
+        });
+
+        // --- Setup Section Logic ---
+        wordInput.addEventListener('input', () => {
+            if(wordInput.value.trim() !== '') {
+                uploadStatus.textContent = '已输入文本，将优先使用文本内容。';
+                uploadConfirmButton.disabled = true;
+                selectedFile = null; // Clear selected file if user starts typing
+                imageUpload.value = ''; // Clear file input
+                newWordsRadio.checked = true; // Automatically select new words mode
+                wrongWordsRadio.disabled = true; // Disable wrong words radio if text is typed
+                hideInlineWrongWordsSelection(); // Hide inline selection if user starts typing new words
+                wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection
+            } else if (selectedFile) {
+                 uploadStatus.textContent = `已选择: ${selectedFile.name}`;
+                 uploadConfirmButton.disabled = false;
+                 newWordsRadio.checked = true; // Default to new words when file selected
+                 wrongWordsRadio.disabled = true; // Temporarily disable wrong words radio when file is selected
+                 hideInlineWrongWordsSelection(); // Hide inline selection if user selects a file
+                 wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection
+            } else {
+                 uploadStatus.textContent = '未选择任何文件';
+                 uploadConfirmButton.disabled = true;
+                 // Re-enable wrong words radio if no input and persistent wrong words exist
+                 wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+                 if (persistentWrongWords.length > 0) {
+                    // If no text and no file, but wrong words exist, keep new words radio checked by default
+                    // but allow switching to wrong words.
+                    // If wrong words radio was already checked, it will remain checked and show the inline section.
+                 }
+                 // If no text and no file, and no wrong words, then word library can be selected
+                 wordLibraryRadio.disabled = !isAuthReady; // Disable if Firebase not ready
+            }
+            updateStartButtonState(); // Call after input changes
+        });
+
+        selectFileButton.addEventListener('click', () => imageUpload.click());
+
+        imageUpload.addEventListener('change', (event) => {
+            selectedFile = event.target.files[0];
+            if (!selectedFile) {
+                uploadStatus.textContent = '未选择任何文件';
+                uploadConfirmButton.disabled = true;
+                updateStartButtonState(); // Update state if file selection is cancelled
+                return;
+            }
+            uploadStatus.textContent = `已选择: ${selectedFile.name}`;
+            uploadConfirmButton.disabled = false;
+            wordInput.value = ''; // Clear textarea if image is selected
+            newWordsRadio.checked = true; // Default to new words when file selected
+            wrongWordsRadio.disabled = true; // Temporarily disable wrong words radio when file is selected
+            hideInlineWrongWordsSelection(); // Hide inline selection if user selects a file
+            wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection
+            updateStartButtonState(); // Update state after file selection
+        });
+
+        uploadConfirmButton.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    try {
+        showLoader('正在处理文件...');
+        const base64Data = await imageToBase64(selectedFile);
+        const mimeType = selectedFile.type || getMimeType(selectedFile.name);
+
+        showLoader('正在提取文件内容...');
+        const extractedText = await extractTextFromFile(base64Data, mimeType);
+        if (!extractedText) throw new Error("无法从文件中提取有效内容。");
+
+        showLoader('正在解析单词...');
+        let parsedWords = parseExtractedText(extractedText);
+        if (parsedWords.length === 0) throw new Error("文件中未识别到有效单词。");
+
+        showLoader('正在翻译和验证单词...');
+        words = await processWordsForQuiz(parsedWords);
+
+        uploadStatus.textContent = `处理完成！共 ${words.length} 个单词。可以开始练习了。`;
+        newWordsRadio.checked = true;
+        wrongWordsRadio.disabled = true;
+        hideInlineWrongWordsSelection();
+        wordLibrarySelectionArea.style.display = 'none';
+
+    } catch (error) {
+        console.error("处理文件失败:", error);
+        showMessage(`处理文件失败: ${error.message}`);
+        uploadStatus.textContent = '处理失败，请重试。';
+        words = [];
+    } finally {
+        hideLoader();
+        updateStartButtonState();
+    }
+});
+
+// Helper function to get MIME type from file extension
+const getMimeType = (filename) => {
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'txt': 'text/plain',
+        'csv': 'text/csv',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'pdf': 'application/pdf'
+    };
+    return mimeTypes[extension] || 'application/octet-stream';
+};
+
+// New function to extract text from any file using Gemini API
+const extractTextFromFile = async (base64Data, mimeType) => {
+    const payload = {
+        contents: [{
+            parts: [{
+                text: "Extract all text from the provided file. If the file contains English words with or without Chinese translations, list them in a clean format (e.g., one word or 'English - Chinese' pair per line). If no clear word pairs are found, return the raw text."
+            }, {
+                inlineData: { mimeType: mimeType, data: base64Data }
+            }]
+        }]
+    };
+    const response = await fetch(window.API_URL_TEXT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`Gemini API Error: ${response.statusText}`);
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+};
+
+// New function to parse extracted text into word objects
+const parseExtractedText = (text) => {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    return lines.map(line => {
+        const parts = line.split('=').map(part => part.trim());
+        if (parts.length >= 2 && parts[1] !== '') {
+            return { english: parts[0], chinese: parts[1] };
+        } else {
+            return { english: parts[0], chinese: null };
+        }
+    });
+};
+
+        // Event listener for radio button changes
+        document.querySelectorAll('input[name="practice-mode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                updatePracticeModeDisplay(); // Call the new function
+            });
+        });
+
+        // Event listener for the new Google TTS checkbox
+        googleTtsCheckbox.addEventListener('change', () => {
+            googleTranslateTtsEnabled = googleTtsCheckbox.checked;
+        });
+        
+        startButton.addEventListener('click', async () => {
+            // Update autoSpeakEnabled based on checkbox state
+            autoSpeakEnabled = autoSpeakCheckbox.checked;
+            
+            if (wrongWordsRadio.checked) {
+                // If wrong words is selected, the main start button click will just ensure the inline selection is visible.
+                // The actual quiz start will be handled by startInlineWrongWordsPracticeButton.
+                if (persistentWrongWords.length === 0) {
+                    showMessage('没有可供练习的错题。');
+                    return;
+                }
+                showInlineWrongWordsSelection(); // Ensure it's shown if not already
+                // The startButton will be disabled by updateStartButtonState() when inline section is visible.
+                return; 
+            } else if (wordLibraryRadio.checked) {
+                if (!selectedSubsetId) {
+                    showMessage('请先在单词库中选择一个子集进行练习。');
+                    return;
+                }
+                showLoader('正在加载单词库中的单词...');
+                try {
+                    words = await loadWordsFromSubset(selectedSubsetId);
+                    if (words.length === 0) {
+                        showMessage('选定的子集中没有单词。请添加单词后再试。');
+                        return;
+                    }
+                    // The wordLibrarySelectionArea will remain visible with its buttons
+                    startQuiz();
+                } catch (error) {
+                    console.error("加载单词库单词时出错:", error);
+                    showMessage("加载单词库单词时发生错误。");
+                } finally {
+                    hideLoader();
+                }
+                return;
+            }
+
+            // New words mode logic
+            // If words are already populated from image upload, just start.
+            if (words.length > 0 && newWordsRadio.checked) { 
+                startQuiz();
+                return;
+            }
+            // Otherwise, process the textarea
+            const parsedWords = parseWordInput(wordInput.value);
+            if (parsedWords.length === 0) {
+                showMessage('请输入单词！'); 
+                return;
+            }
+            try {
+                showLoader('正在翻译和验证单词...');
+                words = await processWordsForQuiz(parsedWords);
+                if (words.length > 0) {
+                    startQuiz();
+                } else {
+                    showMessage('未能成功处理单词，请检查输入或网络。');
+                }
+            } catch (error) {
+                 console.error("处理单词时发生错误:", error);
+                 showMessage(`处理单词时发生错误: ${error.message}`);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // --- Word Library Management Logic ---
+        const showWordLibrarySelectionArea = () => {
+            wordLibrarySelectionArea.style.display = 'flex';
+            updateStartButtonState();
+            updateSelectedLibraryDisplay();
+        };
+
+        // This function is no longer explicitly hiding the area, but it's kept for consistency
+        const hideWordLibrarySelectionArea = () => {
+            wordLibrarySelectionArea.style.display = 'none';
+            updateStartButtonState();
+        };
+
+        const updateSelectedLibraryDisplay = () => {
+            if (selectedLibraryName && selectedSubsetName) {
+                selectedLibraryDisplay.innerHTML = `已选择：<span>${selectedLibraryName}</span> - <span>${selectedSubsetName}</span>`;
+            } else if (selectedLibraryName) {
+                selectedLibraryDisplay.innerHTML = `已选择单词库：<span>${selectedLibraryName}</span> (未选择子集)`;
+            } else {
+                selectedLibraryDisplay.textContent = '未选择单词库和子集';
+            }
+        };
+
+        // Separate button for opening management modal
+        openManageModalButton.addEventListener('click', () => {
+            if (!isAuthReady) {
+                showMessage("Firebase 未准备好，无法使用单词库功能。请检查网络。");
+                return;
+            }
+            wordLibraryModalMode = 'manage';
+            wordLibraryModal.setAttribute('data-mode', 'manage');
+            modalTitle.textContent = '管理单词库';
+            wordLibraryModal.style.display = 'flex';
+            loadWordLibraries(); // Reload libraries when modal opens
+            // Reset subset and words display in modal
+            subsetManagementSection.style.display = 'none'; // Keep these separate for manage mode
+            wordsManagementSection.style.display = 'none'; // Keep these separate for manage mode
+            subsetsList.innerHTML = '<p style="text-align: center; color: #777;">请先选择一个单词库。</p>';
+            subsetWordsInput.value = '';
+            confirmLibrarySelectionButton.disabled = true; // Always disable in manage mode
+            // Reset subset word upload status
+            subsetUploadStatus.textContent = '未选择任何文件';
+            uploadSubsetConfirmButton.disabled = true;
+            subsetImageUpload.value = '';
+        });
+
+        // New button for opening selection modal
+        selectLibraryForPracticeButton.addEventListener('click', () => {
+            if (!isAuthReady) {
+                showMessage("Firebase 未准备好，无法使用单词库功能。请检查网络。");
+                return;
+            }
+            wordLibraryModalMode = 'select';
+            wordLibraryModal.setAttribute('data-mode', 'select');
+            modalTitle.textContent = '选择单词库进行练习';
+            wordLibraryModal.style.display = 'flex';
+            loadWordLibraries(); // Reload libraries when modal opens
+            // In select mode, we don't use separate subset/word management sections
+            subsetManagementSection.style.display = 'none';
+            wordsManagementSection.style.display = 'none';
+            // Reset selected subset for new selection session
+            selectedSubsetId = null;
+            selectedSubsetName = null;
+            confirmLibrarySelectionButton.disabled = true; // Disabled until a subset is selected
+        });
+
+
+        modalCloseButton.addEventListener('click', () => {
+            wordLibraryModal.style.display = 'none';
+            updateSelectedLibraryDisplay(); // Update display on main screen
+            updateStartButtonState(); // Update main start button state
+        });
+
+        createLibraryButton.addEventListener('click', async () => {
+            const name = newLibraryNameInput.value.trim();
+            if (!name) {
+                showMessage('请输入单词库名称。');
+                return;
+            }
+            if (!userId) {
+                showMessage('用户未认证，无法创建单词库。');
+                return;
+            }
+            showLoader('正在创建单词库...');
+            try {
+                // Use PUBLIC_LIBRARIES_COLLECTION for public libraries
+                const librariesRef = collection(db, PUBLIC_LIBRARIES_COLLECTION);
+                await addDoc(librariesRef, { name: name, userId: userId }); // Still store userId for attribution
+                newLibraryNameInput.value = '';
+                await loadWordLibraries(); // Reload list
+                showMessage(`单词库 "${name}" 创建成功！`);
+            } catch (error) {
+                console.error("创建单词库失败:", error);
+                showMessage("创建单词库失败，请重试。");
+            } finally {
+                hideLoader();
+            }
+        });
+
+        const loadWordLibraries = async () => {
+            if (!isAuthReady || !userId) {
+                librariesList.innerHTML = '<p style="text-align: center; color: #777;">请登录后查看单词库。</p>';
+                return;
+            }
+            showLoader('正在加载单词库...');
+            try {
+                const librariesRef = collection(db, PUBLIC_LIBRARIES_COLLECTION);
+                const querySnapshot = await getDocs(librariesRef);
+                allLibraries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Fetch all subsets and words once for efficient counting
+                const allSubsetsSnapshot = await getDocs(collection(db, PUBLIC_SUBSETS_COLLECTION));
+                allSubsets = allSubsetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const allWordsSnapshot = await getDocs(collection(db, PUBLIC_WORDS_COLLECTION));
+                const allWordsData = allWordsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                librariesList.innerHTML = '';
+                if (allLibraries.length === 0) {
+                    librariesList.innerHTML = '<p style="text-align: center; color: #777;">暂无单词库。</p>';
+                } else {
+                    for (const library of allLibraries) {
+                        const div = document.createElement('div');
+                        div.classList.add('modal-list-item', 'library-item');
+                        div.dataset.id = library.id;
+                        div.dataset.name = library.name;
+
+                        // Add 'selected' class if this library is currently selected
+                        if (selectedLibraryId === library.id && wordLibraryModalMode === 'select') {
+                            div.classList.add('selected');
+                        }
+
+                        const ownerText = library.userId === userId ? ' (我创建的)' : '';
+                        div.innerHTML = `<span>${library.name}${ownerText}</span>
+                                        <div class="manage-only">
+                                            <button data-id="${library.id}" data-name="${library.name}" class="rename-library-button secondary">重命名</button>
+                                            <button data-id="${library.id}" class="delete-library-button secondary">删除</button>
+                                        </div>`;
+                        
+                        // Create nested UL for subsets
+                        const subsetsUl = document.createElement('ul');
+                        subsetsUl.classList.add('subsets-nested-list');
+                        subsetsUl.dataset.libraryId = library.id; // Mark which library it belongs to
+                        div.appendChild(subsetsUl);
+                        
+                        librariesList.appendChild(div);
+
+                        // Event listener for clicking the library item itself (for selection/expansion)
+                        div.addEventListener('click', async (e) => {
+                            // Prevent event from bubbling up from buttons inside
+                            if (e.target.tagName === 'BUTTON') return;
+
+                            if (wordLibraryModalMode === 'select') {
+                                // Clear previous selections
+                                librariesList.querySelectorAll('.modal-list-item').forEach(item => item.classList.remove('selected'));
+                                selectedLibraryId = null;
+                                selectedLibraryName = null;
+                                selectedSubsetId = null;
+                                selectedSubsetName = null;
+                                confirmLibrarySelectionButton.disabled = true;
+
+                                // Select this library for display (but not for practice yet)
+                                div.classList.add('selected');
+                                selectedLibraryId = library.id;
+                                selectedLibraryName = library.name;
+
+                                // Toggle subset visibility and load if not already loaded/visible
+                                const isCurrentlyShown = subsetsUl.classList.contains('show');
+                                // Hide all other subset lists
+                                librariesList.querySelectorAll('.subsets-nested-list').forEach(ul => {
+                                    if (ul !== subsetsUl) {
+                                        ul.classList.remove('show');
+                                    }
+                                });
+
+                                if (!isCurrentlyShown) {
+                                    showLoader('正在加载子集...');
+                                    try {
+                                        // Filter subsets for this library
+                                        const subsetsForLibrary = allSubsets.filter(s => s.libraryId === library.id);
+                                        
+                                        subsetsUl.innerHTML = ''; // Clear existing subsets
+                                        if (subsetsForLibrary.length === 0) {
+                                            subsetsUl.innerHTML = '<li style="text-align: center; color: #777; padding: 5px;">暂无子集。</li>';
+                                        } else {
+                                            subsetsForLibrary.forEach(subset => {
+                                                const subsetLi = document.createElement('li');
+                                                subsetLi.classList.add('modal-list-item', 'subset-item');
+                                                subsetLi.dataset.id = subset.id;
+                                                subsetLi.dataset.name = subset.name;
+                                                // Calculate word count for this subset
+                                                const wordsInSubset = allWordsData.filter(word => word.subsetId === subset.id);
+                                                const wordCount = wordsInSubset.length;
+
+                                                const subsetOwnerText = subset.userId === userId ? ' (我创建的)' : '';
+                                                subsetLi.innerHTML = `<span>${subset.name} (${wordCount} 词)${subsetOwnerText}</span>`;
+                                                subsetsUl.appendChild(subsetLi);
+
+                                                // If this subset was previously selected, mark it
+                                                if (selectedSubsetId === subset.id) {
+                                                    subsetLi.classList.add('selected');
+                                                    confirmLibrarySelectionButton.disabled = false;
+                                                }
+
+                                                // Add click listener for subset selection ONLY IF NOT EMPTY
+                                                if (wordCount === 0) {
+                                                    subsetLi.classList.add('disabled');
+                                                    subsetLi.style.cursor = 'not-allowed';
+                                                    subsetLi.title = '此子集没有单词';
+                                                } else {
+                                                    subsetLi.addEventListener('click', (subEvent) => {
+                                                        subEvent.stopPropagation();
+                                                        librariesList.querySelectorAll('.modal-list-item').forEach(item => item.classList.remove('selected'));
+                                                        subsetLi.classList.add('selected');
+                                                        div.classList.add('selected');
+                                                        selectedSubsetId = subset.id;
+                                                        selectedSubsetName = subset.name;
+                                                        confirmLibrarySelectionButton.disabled = false;
+                                                    });
+                                                }
+                                            });
+                                        }
+                                        subsetsUl.classList.add('show'); // Show the subsets
+                                    } catch (error) {
+                                        console.error("加载子集失败:", error);
+                                        showMessage("加载子集失败，请检查网络。");
+                                    } finally {
+                                        hideLoader();
+                                    }
+                                } else {
+                                    subsetsUl.classList.remove('show'); // Hide if already shown
+                                }
+                            } else { // Manage mode logic
+                                // Clear previous selections for manage mode
+                                librariesList.querySelectorAll('.modal-list-item').forEach(item => item.classList.remove('selected'));
+                                subsetsList.innerHTML = '<p style="text-align: center; color: #777;">请先选择一个单词库。</p>';
+                                subsetWordsInput.value = '';
+                                selectedSubsetId = null;
+                                selectedSubsetName = null;
+                                wordsManagementSection.style.display = 'none';
+
+                                div.classList.add('selected');
+                                selectedLibraryId = library.id;
+                                selectedLibraryName = library.name;
+                                currentLibraryNameSpan.textContent = selectedLibraryName;
+                                subsetManagementSection.style.display = 'flex';
+                                await loadSubsetsForManageMode(selectedLibraryId); // Load subsets for manage mode
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("加载单词库失败:", error);
+                showMessage("加载单词库失败，请检查网络。");
+            } finally {
+                hideLoader();
+                // Apply mode-specific visibility after loading
+                wordLibraryModal.setAttribute('data-mode', wordLibraryModalMode);
+            }
+        };
+
+        librariesList.addEventListener('click', async (event) => {
+    const target = event.target;
+    if (target.classList.contains('delete-library-button')) {
+        const libraryIdToDelete = target.dataset.id;
+        const libraryToDelete = allLibraries.find(lib => lib.id === libraryIdToDelete);
+
+        // 显示带确认码输入的对话框
+        showMessage(`请输入确认码以删除单词库 "<strong>${libraryToDelete.name}</strong>"。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-delete-library" class="secondary" style="width: auto; margin-right: 10px;">确认删除</button><button id="cancel-delete-library" style="width: auto;">取消</button>`);
+
+        document.getElementById('confirm-delete-library').onclick = async () => {
+            const code = document.getElementById('confirm-code-input').value;
+            if (code === '1234') {
+                messageDialog.style.display = 'none';
+                showLoader('正在删除单词库...');
+                try {
+                    const batch = writeBatch(db);
+
+                    // 删除该单词库的所有子集和单词
+                    const subsetsToDelete = allSubsets.filter(s => s.libraryId === libraryIdToDelete);
+                    for (const subset of subsetsToDelete) {
+                        const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
+                        const qWords = query(wordsRef, where("subsetId", "==", subset.id));
+                        const wordsSnapshot = await getDocs(qWords);
+                        wordsSnapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+                        batch.delete(doc(db, PUBLIC_SUBSETS_COLLECTION, subset.id));
+                    }
+                    // 删除单词库本身
+                    batch.delete(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryIdToDelete));
+                    await batch.commit();
+
+                    // 如果删除的是当前选中的单词库，清空选择
+                    if (selectedLibraryId === libraryIdToDelete) {
+                        selectedLibraryId = null;
+                        selectedLibraryName = null;
+                        selectedSubsetId = null;
+                        selectedSubsetName = null;
+                        subsetManagementSection.style.display = 'none';
+                        wordsManagementSection.style.display = 'none';
+                    }
+                    await loadWordLibraries();
+                    showMessage('单词库已删除。');
+                } catch (error) {
+                    console.error("删除单词库失败:", error);
+                    showMessage("删除单词库失败，请重试。");
+                } finally {
+                    hideLoader();
+                }
+            } else {
+                showMessage('确认码不正确，删除操作已取消。');
+            }
+        };
+
+        document.getElementById('cancel-delete-library').onclick = () => {
+            messageDialog.style.display = 'none';
+        };
+    }
+    // event listeners for rename botton
+    if (target.classList.contains('rename-library-button')) {
+        const libraryId = target.dataset.id;
+        const libraryName = target.dataset.name;
+        const library = allLibraries.find(lib => lib.id === libraryId);
+
+        if (library.userId === userId) {
+            // Creator: Show rename input directly
+            showMessage(`请输入 "${libraryName}" 的新名称：<br><input type="text" id="rename-library-input" value="${libraryName}"><br><br><button id="confirm-rename-library" class="secondary" style="width: auto; margin-right: 10px;">确认</button><button id="cancel-rename" style="width: auto;">取消</button>`);
+
+            document.getElementById('confirm-rename-library').onclick = async () => {
+                const newName = document.getElementById('rename-library-input').value.trim();
+                if (!newName) {
+                    showMessage('请输入有效的单词库名称。');
+                    return;
+                }
+                showLoader('正在重命名单词库...');
+                try {
+                    await setDoc(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryId), { name: newName, userId: library.userId }, { merge: true });
+                    if (selectedLibraryId === libraryId) {
+                        selectedLibraryName = newName;
+                        updateSelectedLibraryDisplay();
+                    }
+                    await loadWordLibraries();
+                    showMessage('单词库名称已更新。');
+                } catch (error) {
+                    console.error("重命名单词库失败:", error);
+                    showMessage("重命名单词库失败，请重试。");
+                } finally {
+                    hideLoader();
+                }
+            };
+            document.getElementById('cancel-rename').onclick = () => {
+                messageDialog.style.display = 'none';
+            };
+        } else {
+            // Non-creator: Require confirmation code
+            showMessage(`请输入确认码以重命名单词库 "<strong>${libraryName}</strong>"：<br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><input type="text" id="rename-library-input" value="${libraryName}" placeholder="新名称"><br><br><button id="confirm-rename-library" class="secondary" style="width: auto; margin-right: 10px;">确认</button><button id="cancel-rename" style="width: auto;">取消</button>`);
+
+            document.getElementById('confirm-rename-library').onclick = async () => {
+                const code = document.getElementById('confirm-code-input').value;
+                const newName = document.getElementById('rename-library-input').value.trim();
+                if (code !== '1234') {
+                    showMessage('确认码不正确。');
+                    return;
+                }
+                if (!newName) {
+                    showMessage('请输入有效的单词库名称。');
+                    return;
+                }
+                showLoader('正在重命名单词库...');
+                try {
+                    await setDoc(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryId), { name: newName, userId: library.userId }, { merge: true });
+                    if (selectedLibraryId === libraryId) {
+                        selectedLibraryName = newName;
+                        updateSelectedLibraryDisplay();
+                    }
+                    await loadWordLibraries();
+                    showMessage('单词库名称已更新。');
+                } catch (error) {
+                    console.error("重命名单词库失败:", error);
+                    showMessage("重命名单词库失败，请重试。");
+                } finally {
+                    hideLoader();
+                }
+            };
+            document.getElementById('cancel-rename').onclick = () => {
+                messageDialog.style.display = 'none';
+            };
+        }
+    } 
+});
+
+        createSubsetButton.addEventListener('click', async () => {
+            const name = newSubsetNameInput.value.trim();
+            if (!name) {
+                showMessage('请输入子集名称。');
+                return;
+            }
+            if (!selectedLibraryId) {
+                showMessage('请先选择一个单词库。');
+                return;
+            }
+            if (!userId) {
+                showMessage('用户未认证，无法创建子集。');
+                return;
+            }
+            showLoader('正在创建子集...');
+            try {
+                // Use PUBLIC_SUBSETS_COLLECTION for public subsets
+                const subsetsRef = collection(db, PUBLIC_SUBSETS_COLLECTION);
+                await addDoc(subsetsRef, { name: name, libraryId: selectedLibraryId, userId: userId }); // Still store userId for attribution
+                newSubsetNameInput.value = '';
+                await loadSubsetsForManageMode(selectedLibraryId); // Reload list
+                showMessage(`子集 "${name}" 创建成功！`);
+            } catch (error) {
+                console.error("创建子集失败:", error);
+                showMessage("创建子集失败，请重试。");
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // Function to load subsets specifically for the manage mode (separate list)
+        const loadSubsetsForManageMode = async (libraryId) => {
+            if (!isAuthReady || !userId || !libraryId) {
+                subsetsList.innerHTML = '<p style="text-align: center; color: #777;">请先选择一个单词库。</p>';
+                return [];
+            }
+            showLoader('正在加载子集...');
+            try {
+                const subsetsRef = collection(db, PUBLIC_SUBSETS_COLLECTION);
+                const q = query(subsetsRef, where("libraryId", "==", libraryId));
+                const querySnapshot = await getDocs(q);
+                const loadedSubsets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allSubsets = loadedSubsets; // Update global allSubsets
+
+                // Also fetch all words for the current library to get counts for subsets
+                const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
+                const qWords = query(wordsRef, where("libraryId", "==", libraryId)); // Assuming words also have libraryId
+                const wordsSnapshot = await getDocs(qWords);
+                allWordsInCurrentLibrary = wordsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                subsetsList.innerHTML = '';
+                if (loadedSubsets.length === 0) {
+                    subsetsList.innerHTML = '<p style="text-align: center; color: #777;">暂无子集。</p>';
+                } else {
+                    loadedSubsets.forEach(subset => {
+                        const div = document.createElement('div');
+                        div.classList.add('modal-list-item');
+                        if (selectedSubsetId === subset.id) {
+                            div.classList.add('selected');
+                        }
+                        // Calculate word count for this subset
+                        const wordCount = allWordsInCurrentLibrary.filter(word => word.subsetId === subset.id).length;
+
+                        const ownerText = subset.userId === userId ? ' (我创建的)' : '';
+                        
+                        div.innerHTML = `<span>${subset.name} (${wordCount} 词)${ownerText}</span>
+                                        <div>
+                                            <button data-id="${subset.id}" data-name="${subset.name}" class="select-subset-button secondary">选择</button>
+                                            <button data-id="${subset.id}" data-name="${subset.name}" class="rename-subset-button secondary manage-only" >重命名</button>
+                                            <button data-id="${subset.id}" class="delete-subset-button secondary manage-only" >删除</button>
+                                        </div>`;
+                        subsetsList.appendChild(div);
+                    });
+                }
+                return loadedSubsets;
+            } catch (error) {
+                console.error("加载子集失败:", error);
+                showMessage("加载子集失败，请检查网络。");
+                return [];
+            } finally {
+                hideLoader();
+                wordLibraryModal.setAttribute('data-mode', wordLibraryModalMode);
+            }
+        };
+
+
+        subsetsList.addEventListener('click', async (event) => {
+            const target = event.target;
+            if (target.classList.contains('select-subset-button')) {
+                selectedSubsetId = target.dataset.id;
+                selectedSubsetName = target.dataset.name;
+                currentSubsetNameSpan.textContent = selectedSubsetName;
+                
+                // Only show words management section if in 'manage' mode
+                if (wordLibraryModalMode === 'manage') {
+                    wordsManagementSection.style.display = 'flex';
+                    confirmLibrarySelectionButton.disabled = true; // Always disabled in manage mode
+                    showLoader('正在加载子集单词...');
+                    try {
+                        const loadedWords = await loadWordsFromSubset(selectedSubsetId);
+                        subsetWordsInput.value = loadedWords.map(w => `${w.english} = ${w.chinese}`).join('\n');
+                    } catch (error) {
+                        console.error("加载子集单词失败:", error);
+                        showMessage("加载子集单词失败。");
+                    } finally {
+                        hideLoader();
+                    }
+                } else { // In 'select' mode (this block should ideally not be reached with the new structure)
+                    wordsManagementSection.style.display = 'none'; // Hide words management
+                    confirmLibrarySelectionButton.disabled = false; // Enable confirm button
+                    subsetWordsInput.value = ''; // Clear words input
+                }
+
+                // Update selected class in UI
+                subsetsList.querySelectorAll('.modal-list-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                target.closest('.modal-list-item').classList.add('selected');
+
+            } else if (target.classList.contains('delete-subset-button')) {
+                const subsetIdToDelete = target.dataset.id;
+                // Only allow deletion by owner
+                const subsetToDelete = allSubsets.find(sub => sub.id === subsetIdToDelete);
+                if (subsetToDelete && subsetToDelete.userId !== userId) {
+                    showMessage('您无权删除此子集。');
+                    return;
+                }
+
+                // Custom confirmation dialog instead of browser's confirm()
+                showMessage(`确定要删除子集 "<strong>${subsetToDelete.name}</strong>" 及其所有单词吗？<br>此操作不可撤销！<br><br><button id="confirm-delete-subset" class="secondary" style="width: auto; margin-right: 10px;">确认删除</button><button id="cancel-delete-subset" style="width: auto;">取消</button>`);
+                
+                document.getElementById('confirm-delete-subset').onclick = async () => {
+                    messageDialog.style.display = 'none'; // Hide dialog
+                    showLoader('正在删除子集...');
+                    try {
+                        const batch = writeBatch(db);
+                        // Delete all words in this subset
+                        const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
+                        const qWords = query(wordsRef, where("subsetId", "==", subsetIdToDelete));
+                        const wordsSnapshot = await getDocs(qWords);
+                        wordsSnapshot.forEach(doc => {
+                            batch.delete(doc.ref);
+                        });
+                        await batch.commit();
+
+                        // Delete subset itself
+                        await deleteDoc(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetIdToDelete));
+
+                        // If the deleted subset was selected, clear selection
+                        if (selectedSubsetId === subsetIdToDelete) {
+                            selectedSubsetId = null;
+                            selectedSubsetName = null;
+                            wordsManagementSection.style.display = 'none';
+                            subsetWordsInput.value = '';
+                            confirmLibrarySelectionButton.disabled = true;
+                        }
+                        await loadSubsetsForManageMode(selectedLibraryId); // Reload subsets list
+                        showMessage('子集已删除。');
+                    } catch (error) {
+                        console.error("删除子集失败:", error);
+                        showMessage("删除子集失败，请重试。");
+                    } finally {
+                        hideLoader();
+                    }
+                };
+
+                document.getElementById('cancel-delete-subset').onclick = () => {
+                    messageDialog.style.display = 'none'; // Hide dialog
+                };
+            }
+            // event listener for rename-subset-button
+            if (target.classList.contains('rename-subset-button')) {
+                const subsetId = target.dataset.id;
+                const subsetName = target.dataset.name;
+                const subset = allSubsets.find(sub => sub.id === subsetId);
+
+                if (subset.userId === userId) {
+                    // Creator: Show rename input directly
+                    showMessage(`请输入 "${subsetName}" 的新名称：<br><input type="text" id="rename-subset-input" value="${subsetName}"><br><br><button id="confirm-rename-subset" class="secondary" style="width: auto; margin-right: 10px;">确认</button><button id="cancel-rename" style="width: auto;">取消</button>`);
+
+                    document.getElementById('confirm-rename-subset').onclick = async () => {
+                    const newName = document.getElementById('rename-subset-input').value.trim();
+                    if (!newName) {
+                    showMessage('请输入有效的子集名称。');
+                    return;
+                    }
+                    showLoader('正在重命名子集...');
+                    try {
+                        await setDoc(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetId), { name: newName, libraryId: subset.libraryId, userId: subset.userId }, { merge: true });
+                        if (selectedSubsetId === subsetId) {
+                        selectedSubsetName = newName;
+                        currentSubsetNameSpan.textContent = newName;
+                        updateSelectedLibraryDisplay();
+                        }
+                        await loadSubsetsForManageMode(selectedLibraryId);
+                        showMessage('子集名称已更新。');
+                    } catch (error) {
+                        console.error("重命名子集失败:", error);
+                        showMessage("重命名子集失败，请重试。");
+                    } finally {
+                        hideLoader();
+                    }
+                };
+                document.getElementById('cancel-rename').onclick = () => {
+                    messageDialog.style.display = 'none';
+                };
+            } else {
+                // Non-creator: Require confirmation code
+                showMessage(`请输入确认码以重命名子集 "<strong>${subsetName}</strong>"：<br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><input type="text" id="rename-subset-input" value="${subsetName}" placeholder="新名称"><br><br><button id="confirm-rename-subset" class="secondary" style="width: auto; margin-right: 10px;">确认</button><button id="cancel-rename" style="width: auto;">取消</button>`);
+
+                document.getElementById('confirm-rename-subset').onclick = async () => {
+                    const code = document.getElementById('confirm-code-input').value;
+                    const newName = document.getElementById('rename-subset-input').value.trim();
+                    if (code !== '1234') {
+                        showMessage('确认码不正确。');
+                        return;
+                    }
+                    if (!newName) {
+                        showMessage('请输入有效的子集名称。');
+                        return;
+                    }
+                    showLoader('正在重命名子集...');
+                    try {
+                        await setDoc(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetId), { name: newName, libraryId: subset.libraryId, userId: subset.userId }, { merge: true });
+                        if (selectedSubsetId === subsetId) {
+                            selectedSubsetName = newName;
+                            currentSubsetNameSpan.textContent = newName;
+                            updateSelectedLibraryDisplay();
+                        }
+                        await loadSubsetsForManageMode(selectedLibraryId);
+                        showMessage('子集名称已更新。');
+                    } catch (error) {
+                        console.error("重命名子集失败:", error);
+                        showMessage("重命名子集失败，请重试。");
+                    } finally {
+                        hideLoader();
+                    }
+                };
+                document.getElementById('cancel-rename').onclick = () => {
+                    messageDialog.style.display = 'none';
+                };
+            }
+        }
+        });
+
+        // New: Subset file/image upload logic
+        let selectedSubsetFile = null;
+        subsetImageUpload.addEventListener('change', (event) => {
+            selectedSubsetFile = event.target.files[0];
+            if (!selectedSubsetFile) {
+                subsetUploadStatus.textContent = '未选择任何文件';
+                uploadSubsetConfirmButton.disabled = true;
+                return;
+            }
+            subsetUploadStatus.textContent = `已选择: ${selectedSubsetFile.name}`;
+            uploadSubsetConfirmButton.disabled = false; // Enable the upload button once a file is selected
+        });
+
+        // Event listener for the restored "选择图片/文本档案" button
+        selectSubsetFileButton.addEventListener('click', () => {
+            subsetImageUpload.click(); // Trigger the hidden file input
+        });
+
+        // Modified uploadSubsetConfirmButton to only process if a file is already selected
+uploadSubsetConfirmButton.addEventListener('click', async () => {
+    if (!selectedSubsetId) {
+        showMessage('请先选择一个子集来导入单词。');
+        return;
+    }
+
+    if (!selectedSubsetFile) {
+        showMessage('请先选择一个文件或图片。');
+        return;
+    }
+
+    showLoader('正在处理文件...');
+    subsetUploadStatus.textContent = '正在读取文件...';
+    try {
+        const base64Data = await imageToBase64(selectedSubsetFile);
+        const mimeType = selectedSubsetFile.type || getMimeType(selectedSubsetFile.name);
+
+        subsetUploadStatus.textContent = '正在提取文件内容...';
+        const extractedText = await extractTextFromFile(base64Data, mimeType);
+        if (!extractedText) throw new Error("无法从文件中提取有效内容。");
+
+        subsetUploadStatus.textContent = '正在解析单词...';
+        let importedWords = parseExtractedText(extractedText);
+        if (importedWords.length === 0) throw new Error("文件中未识别到有效单词。");
+
+        subsetUploadStatus.textContent = '正在翻译单词...';
+        importedWords = await processWordsForQuiz(importedWords);
+
+        const uniqueWordsMap = new Map();
+        importedWords.forEach(word => {
+            uniqueWordsMap.set(word.english.toLowerCase(), word);
+        });
+        const wordsToAppend = Array.from(uniqueWordsMap.values());
+
+        const currentContent = subsetWordsInput.value.trim();
+        const newContentLines = wordsToAppend.map(w => `${w.english} = ${w.chinese || ''}`);
+        subsetWordsInput.value = currentContent ? `${currentContent}\n${newContentLines.join('\n')}` : newContentLines.join('\n');
+
+        subsetUploadStatus.textContent = `成功导入 ${wordsToAppend.length} 个单词。请点击“保存单词到子集”。`;
+    } catch (error) {
+        console.error("导入文件失败:", error);
+        showMessage(`导入文件失败: ${error.message}`);
+        subsetUploadStatus.textContent = '导入失败，请重试。';
+    } finally {
+        hideLoader();
+        selectedSubsetFile = null;
+        subsetImageUpload.value = '';
+        uploadSubsetConfirmButton.disabled = true;
+    }
+});
+
+
+        saveSubsetWordsButton.addEventListener('click', async () => {
+    if (!selectedSubsetId) {
+        showMessage('请先选择一个子集。');
+        return;
+    }
+    const rawWordsInput = subsetWordsInput.value.trim();
+    saveSubsetWordsButton.disabled = true;
+    saveSubsetWordsButton.textContent = '正在保存...';
+
+    if (!rawWordsInput) {
+        try {
+            const batch = writeBatch(db);
+            const existingWordsInSubset = await loadWordsFromSubset(selectedSubsetId);
+            existingWordsInSubset.forEach(word => {
+                batch.delete(doc(db, PUBLIC_WORDS_COLLECTION, word.id));
+            });
+            await batch.commit();
+            showMessage('子集中的单词已清空。');
+            await loadSubsetsForManageMode(selectedLibraryId);
+        } catch (error) {
+            console.error("清空单词失败:", error);
+            showMessage("清空单词失败，请重试。");
+        } finally {
+            hideLoader();
+            saveSubsetWordsButton.disabled = false;
+            saveSubsetWordsButton.textContent = '保存单词到子集';
+        }
+        return;
+    }
+
+    const parsedWordsFromInput = parseWordInput(rawWordsInput);
+    if (parsedWordsFromInput.length === 0) {
+        showMessage('单词格式不正确，请确保每行一个单词，并包含英文和中文（例如：apple - 苹果）。');
+        saveSubsetWordsButton.disabled = false;
+        saveSubsetWordsButton.textContent = '保存单词到子集';
+        return;
+    }
+    if (!userId) {
+        showMessage('用户未认证，无法保存单词。');
+        saveSubsetWordsButton.disabled = false;
+        saveSubsetWordsButton.textContent = '保存单词到子集';
+        return;
+    }
+
+    showLoader('正在处理单词...');
+    try {
+        const processedWordsFromInput = await processWordsForQuiz(parsedWordsFromInput);
+        const existingWordsInSubset = await loadWordsFromSubset(selectedSubsetId);
+
+        const existingWordsMap = new Map();
+        existingWordsInSubset.forEach(word => {
+            existingWordsMap.set(word.english.toLowerCase(), word);
+        });
+
+        const wordsToUpdate = [];
+        const wordsToAdd = [];
+        const wordsInInputMap = new Map();
+
+        processedWordsFromInput.forEach(word => {
+            const lowerCaseEnglish = word.english.toLowerCase();
+            if (existingWordsMap.has(lowerCaseEnglish)) {
+                const existingWord = existingWordsMap.get(lowerCaseEnglish);
+                if (existingWord.chinese !== word.chinese) {
+                    wordsToUpdate.push({ id: existingWord.id, english: word.english, chinese: word.chinese });
+                }
+                existingWordsMap.delete(lowerCaseEnglish);
+            } else {
+                wordsToAdd.push(word);
+            }
+            wordsInInputMap.set(lowerCaseEnglish, word);
+        });
+
+        const wordsToDelete = Array.from(existingWordsMap.values());
+
+        if (wordsToAdd.length === 0 && wordsToUpdate.length === 0 && wordsToDelete.length === 0) {
+            showMessage('没有新的或需要更新的单词。');
+            saveSubsetWordsButton.disabled = false;
+            saveSubsetWordsButton.textContent = '保存单词到子集';
+            hideLoader();
+            return;
+        }
+
+        saveSubsetWordsButton.textContent = '正在保存变更...';
+        const batch = writeBatch(db);
+        let changesMade = 0;
+
+        wordsToDelete.forEach(word => {
+            batch.delete(doc(db, PUBLIC_WORDS_COLLECTION, word.id));
+            changesMade++;
+        });
+
+        wordsToAdd.forEach(word => {
+            batch.set(doc(collection(db, PUBLIC_WORDS_COLLECTION)), {
+                english: word.english,
+                chinese: word.chinese,
+                subsetId: selectedSubsetId,
+                libraryId: selectedLibraryId,
+                userId: userId
+            });
+            changesMade++;
+        });
+
+        wordsToUpdate.forEach(word => {
+            batch.update(doc(db, PUBLIC_WORDS_COLLECTION, word.id), { chinese: word.chinese });
+            changesMade++;
+        });
+
+        await batch.commit();
+        showMessage(`单词已保存！共 ${changesMade} 处变更。`);
+        await loadSubsetsForManageMode(selectedLibraryId);
+        const updatedWordsInSubset = await loadWordsFromSubset(selectedSubsetId);
+        subsetWordsInput.value = updatedWordsInSubset.map(w => `${w.english} = ${w.chinese}`).join('\n');
+    } catch (error) {
+        console.error("保存单词失败:", error);
+        showMessage("保存单词失败，请重试。");
+    } finally {
+        hideLoader();
+        saveSubsetWordsButton.disabled = false;
+        saveSubsetWordsButton.textContent = '保存单词到子集';
+    }
+});
+
+        const loadWordsFromSubset = async (subsetId) => {
+            if (!isAuthReady || !userId || !subsetId) {
+                return [];
+            }
+            try {
+                // Load from PUBLIC_WORDS_COLLECTION for public words
+                const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
+                const q = query(wordsRef, where("subsetId", "==", subsetId)); // Filter by subsetId
+                const querySnapshot = await getDocs(q);
+                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("从子集加载单词失败:", error);
+                showMessage("从子集加载单词失败，请检查网络。");
+                return [];
+            }
+        };
+
+        confirmLibrarySelectionButton.addEventListener('click', () => {
+            if (selectedSubsetId) {
+                wordLibraryModal.style.display = 'none';
+                // No longer explicitly hide the area, just update the display text.
+                // The buttons will remain visible.
+                updateSelectedLibraryDisplay();
+                updateStartButtonState(); // Enable main start button
+            } else {
+                showMessage('请选择一个子集进行练习。');
+            }
+        });
+
+        // Initial update of button states and display
+        updatePracticeModeDisplay(); // Call this once on load to set initial visibility
+        updateStartButtonState();
+        updateSelectedLibraryDisplay();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968487f94eeb2ae4',t:'MTc1NDA0Mjg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9685db52ba65c798',t:'MTc1NDA1Njc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968add9509065349',t:'MTc1NDEwOTI5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968bc65ccfdd2abb',t:'MTc1NDExODgyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
