@@ -893,35 +893,48 @@
         const subsetImageUpload = document.getElementById('subset-image-upload');
 
 
-        // --- [NEW] Audio Unlock Logic ---
+        // --- [MODIFIED] Audio Unlock Logic ---
         let audioUnlocked = false;
-        const unlockAudio = () => {
-            if (audioUnlocked) return;
-            // Create a silent buffer and play it.
-            // This satisfies the browser's user-interaction requirement for audio playback.
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            const buffer = audioContext.createBuffer(1, 1, 22050);
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-            
-            // For HTML5 <audio> elements, also play and pause a dummy element.
-            googleTtsAudioElement.play().catch(() => {});
-            googleTtsAudioElement.pause();
+        let audioContext = null; // [NEW] Create a single, reusable AudioContext
+        const googleTtsAudioElement = new Audio(); // Reusable audio element
 
-            audioUnlocked = true;
-            console.log("Audio context unlocked for autoplay.");
+        // [MODIFIED] A more robust unlock function using the Web Audio API
+        const unlockAudio = () => {
+            // Only run if the user wants Google TTS and it hasn't been unlocked yet
+            if (audioUnlocked || !googleTtsCheckbox.checked) {
+                return;
+            }
+
+            // Create the AudioContext on the first user gesture
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error("Web Audio API is not supported in this browser.", e);
+                    return; // Can't unlock if the API is not supported
+                }
+            }
+
+            // If the context is suspended, it requires a user gesture to resume.
+            // This is the core of the fix for mobile browsers.
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    audioUnlocked = true;
+                    console.log("AudioContext resumed and unlocked successfully.");
+                }).catch(e => {
+                    console.error("Failed to resume AudioContext:", e);
+                    // This might happen if called without a user gesture, but we've guarded against that.
+                });
+            } else {
+                // If the context is already running, we're good to go.
+                audioUnlocked = true;
+                console.log("AudioContext is already active.");
+            }
         };
 
-        // --- [NEW] Reusable Audio Element for Google TTS ---
-        const googleTtsAudioElement = new Audio();
         googleTtsAudioElement.onerror = (e) => {
             console.error("Error with the reusable audio element:", e);
-            showMessage("语音播放时发生错误。");
+            showMessage("语音播放时发生错误。请尝试关闭“使用更自然的 Google 翻译语音”选项，或检查您的网络连接。");
         };
 
 
@@ -1134,7 +1147,7 @@
 
         /**
          * [MODIFIED] Speaks the given text using the appropriate method.
-         * This function is now updated to handle the unlocked audio context and reuse audio elements.
+         * This function now uses a safer playback method with event listeners.
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
@@ -1156,20 +1169,39 @@
                 let count = 0;
                 const playGoogleTts = () => {
                     if (count < 3) {
-                        // [MODIFIED] Reuse the single audio element
-                        if (!googleTtsAudioElement.paused) {
-                            googleTtsAudioElement.pause();
-                            googleTtsAudioElement.currentTime = 0;
-                        }
-                        googleTtsAudioElement.src = googleTranslateTtsUrl;
-                        googleTtsAudioElement.play().catch(e => {
-                            console.error("Error playing Google TTS audio. Was the audio context unlocked?", e);
-                            // If it fails here, it's likely the unlock didn't work.
-                            // We can show a message, but it's hard to recover from.
-                            if (!audioUnlocked) {
-                                showMessage("音频播放失败。请刷新页面并首先点击一个按钮以启用声音。");
+                        // [MODIFIED] Safer playback logic
+                        try {
+                            // Stop any current playback
+                            if (!googleTtsAudioElement.paused) {
+                                googleTtsAudioElement.pause();
                             }
-                        });
+                            
+                            // Set the new source
+                            googleTtsAudioElement.src = googleTranslateTtsUrl;
+
+                            // Create a one-time listener for when the audio is ready to play
+                            const onCanPlay = () => {
+                                const playPromise = googleTtsAudioElement.play();
+                                if (playPromise !== undefined) {
+                                    playPromise.catch(e => {
+                                        console.error("Playback failed inside 'canplaythrough' listener:", e);
+                                        // This error is more serious as it failed even after the browser said it was ready.
+                                        showMessage("语音播放时发生错误。请尝试关闭“使用更自然的 Google 翻译语音”选项。");
+                                    });
+                                }
+                                // Remove the listener so it doesn't fire again for this element
+                                googleTtsAudioElement.removeEventListener('canplaythrough', onCanPlay);
+                            };
+                            
+                            googleTtsAudioElement.addEventListener('canplaythrough', onCanPlay);
+                            
+                            // Also load the audio, which is necessary to trigger 'canplaythrough'
+                            googleTtsAudioElement.load();
+
+                        } catch (e) {
+                             console.error("Error setting up Google TTS audio:", e);
+                             showMessage("设置语音播放时发生错误。");
+                        }
                         count++;
                     } else {
                         clearInterval(currentSpeakInterval);
@@ -1681,7 +1713,7 @@
         };
 
         startInlineWrongWordsPracticeButton.addEventListener('click', async () => {
-            unlockAudio(); // [NEW] Unlock audio on this interaction as well
+            unlockAudio(); // [MODIFIED] Unlock audio on this interaction as well
             const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
                                                 .map(checkbox => parseInt(checkbox.value));
             
@@ -2010,7 +2042,7 @@ const parseExtractedText = (text) => {
 
         // New button for opening selection modal
         selectLibraryForPracticeButton.addEventListener('click', () => {
-            unlockAudio(); // [NEW] Unlock audio on this interaction as well
+            unlockAudio(); // [MODIFIED] Unlock audio on this interaction as well
             if (!isAuthReady) {
                 showMessage("Firebase 未准备好，无法使用单词库功能。请检查网络。");
                 return;
