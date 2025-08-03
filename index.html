@@ -893,64 +893,6 @@
         const subsetImageUpload = document.getElementById('subset-image-upload');
 
 
-        // --- [MODIFIED] Audio Unlock Logic ---
-        let audioUnlocked = false;
-        let audioContext = null; // [NEW] Create a single, reusable AudioContext
-        const googleTtsAudioElement = new Audio(); // Reusable audio element
-
-        // [MODIFIED] A more robust unlock function using the Web Audio API
-        const unlockAudio = () => {
-            // Only run if the user wants Google TTS and it hasn't been unlocked yet
-            if (audioUnlocked || !googleTtsCheckbox.checked) {
-                return;
-            }
-
-            // Create the AudioContext on the first user gesture
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    console.error("Web Audio API is not supported in this browser.", e);
-                    return; // Can't unlock if the API is not supported
-                }
-            }
-
-            // If the context is suspended, it requires a user gesture to resume.
-            // This is the core of the fix for modern mobile browsers.
-            if (audioContext.state === 'suspended') {
-                audioContext.resume().then(() => {
-                    console.log("AudioContext resumed successfully.");
-                    // After resuming, play a silent buffer to ensure the audio hardware is engaged.
-                    playSilentSound();
-                }).catch(e => {
-                    console.error("Failed to resume AudioContext:", e);
-                });
-            } else {
-                // If the context is already running, just play the silent sound to be safe.
-                playSilentSound();
-            }
-        };
-
-        // [NEW] Helper function to play a silent sound within the unlocked context
-        const playSilentSound = () => {
-            if (!audioContext) return;
-            const source = audioContext.createBufferSource();
-            source.buffer = audioContext.createBuffer(1, 1, 22050); // 1 sample of silence
-            source.connect(audioContext.destination);
-            source.start(0);
-            source.onended = () => {
-                audioUnlocked = true;
-                console.log("Audio unlocked and silent sound played.");
-            };
-        };
-
-
-        googleTtsAudioElement.onerror = (e) => {
-            console.error("Error with the reusable audio element:", e);
-            showMessage("语音播放时发生错误。请尝试关闭“使用更自然的 Google 翻译语音”选项，或检查您的网络连接。");
-        };
-
-
         // --- Firebase Initialization ---
         const initFirebase = async () => {
             try {
@@ -1009,7 +951,6 @@
         // --- localStorage Functions ---
         const LOCAL_STORAGE_SESSIONS_KEY = 'wrongWordPracticeSessions'; // Key for storing sessions
 
-        // [MODIFIED] Made the loading function more robust to handle corrupted data.
         const loadWrongWordsFromStorage = () => {
             if (!isAuthReady) {
                 console.log("Auth not ready, skipping loadWrongWordsFromStorage.");
@@ -1018,41 +959,35 @@
             showLoader('正在加载错题...');
             try {
                 const storedSessionsData = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
-                let parsedSessions = [];
-                if (storedSessionsData) {
-                    parsedSessions = JSON.parse(storedSessionsData);
-                }
+                allStoredWrongWordSessions = storedSessionsData ? JSON.parse(storedSessionsData) : [];
 
-                allStoredWrongWordSessions = parsedSessions
-                    .filter(session => session && session.startTime && session.endTime && Array.isArray(session.words))
-                    .map(session => {
-                        const startTime = new Date(session.startTime);
-                        const endTime = new Date(session.endTime);
-
-                        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-                            return null; // Invalid session date, filter it out
+                // Convert timestamp strings back to Date objects within each session and its words
+                allStoredWrongWordSessions.forEach(session => {
+                    if (typeof session.startTime === 'string') {
+                        session.startTime = new Date(session.startTime);
+                    }
+                    if (typeof session.endTime === 'string') {
+                        session.endTime = new Date(session.endTime);
+                    }
+                    session.words.forEach(word => {
+                        if (typeof word.timestamp === 'string') {
+                            word.timestamp = new Date(word.timestamp);
                         }
-                        
-                        session.startTime = startTime;
-                        session.endTime = endTime;
+                    });
 
-                        session.words.forEach(word => {
-                            if (typeof word.timestamp === 'string') {
-                                word.timestamp = new Date(word.timestamp);
-                            }
-                        });
+                    // Calculate uniqueCount for each session upon loading
+                    const uniqueWordsInSession = new Set(session.words.map(w => w.english));
+                    session.uniqueCount = uniqueWordsInSession.size;
+                });
 
-                        const uniqueWordsInSession = new Set(session.words.map(w => w.english));
-                        session.uniqueCount = uniqueWordsInSession.size;
-                        return session;
-                    })
-                    .filter(Boolean); // Remove any null (invalid) sessions
-
+                // Sort sessions by end time descending (newest sessions first)
                 allStoredWrongWordSessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
 
+                // Calculate overall unique wrong words for the radio button count
                 const overallUniqueWrongWordsMap = new Map();
                 allStoredWrongWordSessions.forEach(session => {
                     session.words.forEach(word => {
+                        // Use the timestamp from the word itself for overall uniqueness, not session timestamp
                         if (!overallUniqueWrongWordsMap.has(word.english) || overallUniqueWrongWordsMap.get(word.english).timestamp < word.timestamp) {
                             overallUniqueWrongWordsMap.set(word.english, word);
                         }
@@ -1061,41 +996,43 @@
                 persistentWrongWords = Array.from(overallUniqueWrongWordsMap.values());
                 wrongWordsCountSpan.textContent = persistentWrongWords.length;
                 wrongWordsRadio.disabled = persistentWrongWords.length === 0;
-                
+                console.log("Loaded all stored wrong word sessions:", allStoredWrongWordSessions);
+                console.log("Overall unique persistent wrong words:", persistentWrongWords);
+
             } catch (error) {
-                console.error("Error loading or parsing wrong words from localStorage:", error);
-                showMessage("加载错题记录失败，数据可能已损坏。将清除损坏的数据。");
-                localStorage.removeItem(LOCAL_STORAGE_SESSIONS_KEY); // Clear corrupted data
-                allStoredWrongWordSessions = [];
-                persistentWrongWords = [];
-                wrongWordsCountSpan.textContent = 0;
-                wrongWordsRadio.disabled = true;
+                console.error("Error loading wrong words from localStorage:", error);
+                // Using showMessage for user feedback instead of alert
+                showMessage("加载错题失败。您的浏览器可能不支持本地存储，或数据已损坏。");
             } finally {
                 hideLoader();
-                updateStartButtonState();
+                updateStartButtonState(); // Crucial: update button state after loading
             }
         };
 
-        // [MODIFIED] Simplified and fixed the saving function.
         const saveCurrentSessionWrongWords = () => {
             if (!currentPracticeSessionId || !currentPracticeSessionStartTime) {
+                console.log("Session not started, not saving.");
                 return;
             }
             
+            // Only save if there were words in the current session OR if there were wrong words recorded
+            // This check is important to prevent saving empty sessions if user just clicks "Start" then "Back to Menu"
             if (words.length === 0 && wrongWordsCurrentSession.length === 0) {
+                console.log("No words practiced or no wrong words in current session, not saving.");
                 return;
             }
 
             const sessionEndTime = new Date();
             
+            // Ensure uniqueness of words within this session before saving
             const uniqueWordsInSessionMap = new Map();
             wrongWordsCurrentSession.forEach(word => {
-                uniqueWordsInSessionMap.set(word.english, word);
+                uniqueWordsInSessionMap.set(word.english, word); // Map ensures unique English words
             });
             const wordsToSaveInSession = Array.from(uniqueWordsInSessionMap.values()).map(w => ({
                 english: w.english,
                 chinese: w.chinese,
-                timestamp: w.timestamp.toISOString()
+                timestamp: w.timestamp.toISOString() // Store timestamp as ISO string
             }));
 
             const newSession = {
@@ -1103,25 +1040,32 @@
                 startTime: currentPracticeSessionStartTime.toISOString(),
                 endTime: sessionEndTime.toISOString(),
                 words: wordsToSaveInSession,
+                uniqueCount: wordsToSaveInSession.length // Store unique count directly
             };
 
-            let existingSessions = [];
-            try {
-                const storedData = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
-                if (storedData) {
-                    existingSessions = JSON.parse(storedData);
-                }
-            } catch (e) {
-                console.error("Could not parse existing sessions, starting fresh.", e);
-            }
+            // Retrieve existing sessions, add new one, and save back
+            let existingSessions = localStorage.getItem(LOCAL_STORAGE_SESSIONS_KEY);
+            existingSessions = existingSessions ? JSON.parse(existingSessions) : [];
             
+            // Convert existing timestamps to ISO strings if they are Date objects (for consistency before adding new session)
+            existingSessions.forEach(session => {
+                if (session.startTime instanceof Date) session.startTime = session.startTime.toISOString();
+                if (session.endTime instanceof Date) session.endTime = session.toISOString();
+                session.words.forEach(word => {
+                    if (word.timestamp instanceof Date) word.timestamp = word.timestamp.toISOString();
+                });
+            });
+
             existingSessions.push(newSession);
             localStorage.setItem(LOCAL_STORAGE_SESSIONS_KEY, JSON.stringify(existingSessions));
+            console.log("Current practice session saved:", newSession);
 
+            // Reset session tracking variables
             currentPracticeSessionId = null;
             currentPracticeSessionStartTime = null;
             wrongWordsCurrentSession = [];
 
+            // Reload all data to update UI
             loadWrongWordsFromStorage();
         };
 
@@ -1157,8 +1101,10 @@
 
 
         /**
-         * [MODIFIED] Speaks the given text using the appropriate method.
-         * This function now uses a safer playback method with event listeners.
+         * Speaks the given text.
+         * If `googleTranslateTtsEnabled` is true, uses Google Translate TTS.
+         * Otherwise, uses browser's `SpeechSynthesis` API.
+         * If `repeat` is true, it speaks 3 times with a 3-second interval.
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
@@ -1172,7 +1118,7 @@
                 currentSpeakInterval = null;
             }
 
-            const langCode = 'en';
+            const langCode = 'en'; // Assuming English words for now.
             const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
             const intervalTime = 3000; // 3 seconds interval
 
@@ -1180,39 +1126,8 @@
                 let count = 0;
                 const playGoogleTts = () => {
                     if (count < 3) {
-                        // [MODIFIED] Safer playback logic
-                        try {
-                            // Stop any current playback
-                            if (!googleTtsAudioElement.paused) {
-                                googleTtsAudioElement.pause();
-                            }
-                            
-                            // Set the new source
-                            googleTtsAudioElement.src = googleTranslateTtsUrl;
-
-                            // Create a one-time listener for when the audio is ready to play
-                            const onCanPlay = () => {
-                                const playPromise = googleTtsAudioElement.play();
-                                if (playPromise !== undefined) {
-                                    playPromise.catch(e => {
-                                        console.error("Playback failed inside 'canplaythrough' listener:", e);
-                                        // This error is more serious as it failed even after the browser said it was ready.
-                                        showMessage("语音播放时发生错误。请尝试关闭“使用更自然的 Google 翻译语音”选项。");
-                                    });
-                                }
-                                // Remove the listener so it doesn't fire again for this element
-                                googleTtsAudioElement.removeEventListener('canplaythrough', onCanPlay);
-                            };
-                            
-                            googleTtsAudioElement.addEventListener('canplaythrough', onCanPlay);
-                            
-                            // Also load the audio, which is necessary to trigger 'canplaythrough'
-                            googleTtsAudioElement.load();
-
-                        } catch (e) {
-                             console.error("Error setting up Google TTS audio:", e);
-                             showMessage("设置语音播放时发生错误。");
-                        }
+                        const audio = new Audio(googleTranslateTtsUrl);
+                        audio.play().catch(e => console.error("Error playing Google TTS audio:", e));
                         count++;
                     } else {
                         clearInterval(currentSpeakInterval);
@@ -1696,6 +1611,8 @@
                     });
                     sessionItem.appendChild(wordsList);
 
+                    inlineWrongWordsSessionsList.appendChild(sessionItem);
+
                     // Add toggle functionality
                     sessionHeader.querySelector('.toggle-icon').addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent checkbox from toggling
@@ -1724,7 +1641,6 @@
         };
 
         startInlineWrongWordsPracticeButton.addEventListener('click', async () => {
-            unlockAudio(); // [MODIFIED] Unlock audio on this interaction as well
             const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
                                                 .map(checkbox => parseInt(checkbox.value));
             
@@ -1937,10 +1853,6 @@ const parseExtractedText = (text) => {
         });
         
         startButton.addEventListener('click', async () => {
-            // --- [MODIFIED] ---
-            // First thing to do on user click: unlock audio playback
-            unlockAudio();
-
             // Update autoSpeakEnabled based on checkbox state
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             
@@ -2053,7 +1965,6 @@ const parseExtractedText = (text) => {
 
         // New button for opening selection modal
         selectLibraryForPracticeButton.addEventListener('click', () => {
-            unlockAudio(); // [MODIFIED] Unlock audio on this interaction as well
             if (!isAuthReady) {
                 showMessage("Firebase 未准备好，无法使用单词库功能。请检查网络。");
                 return;
@@ -2870,5 +2781,5 @@ uploadSubsetConfirmButton.addEventListener('click', async () => {
         updateStartButtonState();
         updateSelectedLibraryDisplay();
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968487f94eeb2ae4',t:'MTc1NDA0Mjg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9685db52ba65c798',t:'MTc1NDA1Njc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968add9509065349',t:'MTc1NDEwOTI5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968bc65ccfdd2abb',t:'MTc1NDExODgyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
