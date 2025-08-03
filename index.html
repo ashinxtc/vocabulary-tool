@@ -893,6 +893,38 @@
         const subsetImageUpload = document.getElementById('subset-image-upload');
 
 
+        // --- [NEW] Audio Unlock Logic ---
+        let audioUnlocked = false;
+        const unlockAudio = () => {
+            if (audioUnlocked) return;
+            // Create a silent buffer and play it.
+            // This satisfies the browser's user-interaction requirement for audio playback.
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            const buffer = audioContext.createBuffer(1, 1, 22050);
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+            
+            // For HTML5 <audio> elements, also play and pause a dummy element.
+            googleTtsAudioElement.play().catch(() => {});
+            googleTtsAudioElement.pause();
+
+            audioUnlocked = true;
+            console.log("Audio context unlocked for autoplay.");
+        };
+
+        // --- [NEW] Reusable Audio Element for Google TTS ---
+        const googleTtsAudioElement = new Audio();
+        googleTtsAudioElement.onerror = (e) => {
+            console.error("Error with the reusable audio element:", e);
+            showMessage("语音播放时发生错误。");
+        };
+
+
         // --- Firebase Initialization ---
         const initFirebase = async () => {
             try {
@@ -1101,10 +1133,8 @@
 
 
         /**
-         * Speaks the given text.
-         * If `googleTranslateTtsEnabled` is true, uses Google Translate TTS.
-         * Otherwise, uses browser's `SpeechSynthesis` API.
-         * If `repeat` is true, it speaks 3 times with a 3-second interval.
+         * [MODIFIED] Speaks the given text using the appropriate method.
+         * This function is now updated to handle the unlocked audio context and reuse audio elements.
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
@@ -1118,7 +1148,7 @@
                 currentSpeakInterval = null;
             }
 
-            const langCode = 'en'; // Assuming English words for now.
+            const langCode = 'en';
             const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
             const intervalTime = 3000; // 3 seconds interval
 
@@ -1126,8 +1156,20 @@
                 let count = 0;
                 const playGoogleTts = () => {
                     if (count < 3) {
-                        const audio = new Audio(googleTranslateTtsUrl);
-                        audio.play().catch(e => console.error("Error playing Google TTS audio:", e));
+                        // [MODIFIED] Reuse the single audio element
+                        if (!googleTtsAudioElement.paused) {
+                            googleTtsAudioElement.pause();
+                            googleTtsAudioElement.currentTime = 0;
+                        }
+                        googleTtsAudioElement.src = googleTranslateTtsUrl;
+                        googleTtsAudioElement.play().catch(e => {
+                            console.error("Error playing Google TTS audio. Was the audio context unlocked?", e);
+                            // If it fails here, it's likely the unlock didn't work.
+                            // We can show a message, but it's hard to recover from.
+                            if (!audioUnlocked) {
+                                showMessage("音频播放失败。请刷新页面并首先点击一个按钮以启用声音。");
+                            }
+                        });
                         count++;
                     } else {
                         clearInterval(currentSpeakInterval);
@@ -1611,8 +1653,6 @@
                     });
                     sessionItem.appendChild(wordsList);
 
-                    inlineWrongWordsSessionsList.appendChild(sessionItem);
-
                     // Add toggle functionality
                     sessionHeader.querySelector('.toggle-icon').addEventListener('click', (e) => {
                         e.stopPropagation(); // Prevent checkbox from toggling
@@ -1641,6 +1681,7 @@
         };
 
         startInlineWrongWordsPracticeButton.addEventListener('click', async () => {
+            unlockAudio(); // [NEW] Unlock audio on this interaction as well
             const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
                                                 .map(checkbox => parseInt(checkbox.value));
             
@@ -1853,6 +1894,10 @@ const parseExtractedText = (text) => {
         });
         
         startButton.addEventListener('click', async () => {
+            // --- [MODIFIED] ---
+            // First thing to do on user click: unlock audio playback
+            unlockAudio();
+
             // Update autoSpeakEnabled based on checkbox state
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             
@@ -1965,6 +2010,7 @@ const parseExtractedText = (text) => {
 
         // New button for opening selection modal
         selectLibraryForPracticeButton.addEventListener('click', () => {
+            unlockAudio(); // [NEW] Unlock audio on this interaction as well
             if (!isAuthReady) {
                 showMessage("Firebase 未准备好，无法使用单词库功能。请检查网络。");
                 return;
@@ -2781,5 +2827,5 @@ uploadSubsetConfirmButton.addEventListener('click', async () => {
         updateStartButtonState();
         updateSelectedLibraryDisplay();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968487f94eeb2ae4',t:'MTc1NDA0Mjg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9685db52ba65c798',t:'MTc1NDA1Njc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968add9509065349',t:'MTc1NDEwOTI5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968bc65ccfdd2abb',t:'MTc1NDExODgyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
