@@ -792,8 +792,6 @@
         let wordLibraryModalMode = 'select'; // 'select' or 'manage'
         let allWordsInCurrentLibrary = []; // New: To store all words for the currently selected library in manage mode
 
-        let audioCache = new Map();
-        
         // Global variables for quiz and other features
         let words = []; // Words for the current quiz session
         let wrongWordsCurrentSession = []; // Wrong words recorded in the current session
@@ -1101,26 +1099,6 @@
             });
         };
 
-        const preloadAudio = async (words) => {
-        showLoader('正在预加载语音...');
-        try {
-            for (const word of words) {
-                const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word.english)}&tl=en&client=tw-ob`;
-                const response = await fetch(url);
-                if (response.ok) {
-                    const blob = await response.blob();
-                    audioCache.set(word.english, URL.createObjectURL(blob));
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to preload audio:", e);
-                showMessage('无法预加载语音，将使用浏览器语音。');
-                googleTranslateTtsEnabled = false;
-                googleTtsCheckbox.checked = false;
-            } finally {
-                hideLoader();
-            }
-        };
 
         /**
          * Speaks the given text.
@@ -1130,76 +1108,65 @@
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
-const speak = (text, repeat = false) => {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-    }
-    if (currentSpeakInterval) {
-        clearInterval(currentSpeakInterval);
-        currentSpeakInterval = null;
-    }
-
-    if (googleTranslateTtsEnabled && audioCache.has(text)) {
-        let count = 0;
-        const playGoogleTts = () => {
-            if (count < 3) {
-                const audio = new Audio(audioCache.get(text));
-                audio.play().catch(e => {
-                    console.error("Error playing cached Google TTS audio:", e);
-                    showMessage('请点击“允许语音”以启用自动播放。');
-                    const unlockButton = document.createElement('button');
-                    unlockButton.textContent = '允许语音';
-                    unlockButton.style.margin = '10px auto';
-                    unlockButton.style.padding = '10px';
-                    unlockButton.style.display = 'block';
-                    messageDialog.appendChild(unlockButton);
-                    unlockButton.addEventListener('click', () => {
-                        const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-                        silentAudio.play().then(() => {
-                            audio.play();
-                            unlockButton.remove();
-                            messageDialog.style.display = 'none';
-                        });
-                    });
-                });
-                count++;
-            } else {
+        const speak = (text, repeat = false) => {
+            // Clear any ongoing speech or intervals first
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            if (currentSpeakInterval) {
                 clearInterval(currentSpeakInterval);
                 currentSpeakInterval = null;
             }
-        };
 
-        if (repeat) {
-            playGoogleTts();
-            currentSpeakInterval = setInterval(playGoogleTts, 3000);
-        } else {
-            playGoogleTts();
-        }
-    } else if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-GB';
-        utterance.rate = 0.9;
+            const langCode = 'en'; // Assuming English words for now.
+            const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
+            const intervalTime = 3000; // 3 seconds interval
 
-        if (repeat) {
-            let count = 0;
-            const speakBrowserTts = () => {
-                if (count < 3) {
-                    window.speechSynthesis.speak(utterance);
-                    count++;
+            if (googleTranslateTtsEnabled) {
+                let count = 0;
+                const playGoogleTts = () => {
+                    if (count < 3) {
+                        const audio = new Audio(googleTranslateTtsUrl);
+                        audio.play().catch(e => console.error("Error playing Google TTS audio:", e));
+                        count++;
+                    } else {
+                        clearInterval(currentSpeakInterval);
+                        currentSpeakInterval = null;
+                    }
+                };
+
+                if (repeat) {
+                    playGoogleTts(); // Play first immediately
+                    currentSpeakInterval = setInterval(playGoogleTts, intervalTime);
                 } else {
-                    clearInterval(currentSpeakInterval);
-                    currentSpeakInterval = null;
+                    playGoogleTts(); // Play once
                 }
-            };
-            speakBrowserTts();
-            currentSpeakInterval = setInterval(speakBrowserTts, 3000);
-        } else {
-            window.speechSynthesis.speak(utterance);
-        }
-    } else {
-        showMessage('您的浏览器不支持语音功能。');
-    }
-};
+            } else if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-GB';
+                utterance.rate = 0.9;
+
+                if (repeat) {
+                    let count = 0;
+                    const speakBrowserTts = () => {
+                        if (count < 3) {
+                            window.speechSynthesis.speak(utterance);
+                            count++;
+                        } else {
+                            clearInterval(currentSpeakInterval);
+                            currentSpeakInterval = null;
+                        }
+                    };
+                    speakBrowserTts(); // Speak first immediately
+                    currentSpeakInterval = setInterval(speakBrowserTts, intervalTime);
+                } else {
+                    window.speechSynthesis.speak(utterance); // Speak once
+                }
+            } else {
+                console.log('Text-to-speech not supported in this browser.');
+                showMessage('您的浏览器不支持语音功能。');
+            }
+        };
 
         // --- Gemini API Calls for Translation and Verification ---
         const getWordsFromImage = async (base64ImageData) => {
@@ -1353,23 +1320,22 @@ const speak = (text, repeat = false) => {
 
         // --- Main Application Flow ---
         const startQuiz = () => {
-            if (googleTranslateTtsEnabled) {
-        await preloadAudio(words);
-    }
-    // Unlock audio context
-    const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-    silentAudio.play().catch(e => console.error("Failed to unlock audio context:", e));
+            if (words.length === 0) {
+                showMessage('没有可供练习的单词。');
+                return;
+            }
+            // Start a new practice session
+            currentPracticeSessionId = Date.now().toString(); // Simple unique ID
+            currentPracticeSessionStartTime = new Date();
+            wrongWordsCurrentSession = []; // Reset for the new session
 
-    setupSection.style.display = 'none';
-    quizSection.style.display = 'block';
-    completionSection.style.display = 'none';
-    currentWordIndex = 0;
-    score = 0;
-    wrongWordsCurrentSession = [];
-    currentPracticeSessionId = Date.now().toString();
-    currentPracticeSessionStartTime = new Date();
-    shuffleArray(words);
-    showCurrentWord();
+            shuffleArray(words);
+            currentWordIndex = 0;
+            score = 0;
+            
+            setupSection.style.display = 'none';
+            completionSection.style.display = 'none';
+            quizSection.style.display = 'block';
 
             // Set the text of the speakAgainButton based on autoSpeakEnabled
             speakAgainButton.textContent = autoSpeakEnabled ? '再读一次' : '读一次单词';
@@ -2817,5 +2783,3 @@ uploadSubsetConfirmButton.addEventListener('click', async () => {
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968487f94eeb2ae4',t:'MTc1NDA0Mjg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9685db52ba65c798',t:'MTc1NDA1Njc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968add9509065349',t:'MTc1NDEwOTI5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968bc65ccfdd2abb',t:'MTc1NDExODgyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
-
