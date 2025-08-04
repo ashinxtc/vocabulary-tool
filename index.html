@@ -614,10 +614,9 @@
                 <div id="inline-wrong-words-sessions-list" class="modal-sessions-list">
                     <!-- Session items will be dynamically inserted here -->
                 </div>
+                <!-- UPDATED: Simplified buttons -->
                 <div class="inline-buttons">
-                    <button id="start-inline-wrong-words-practice-button">开始练习</button>
                     <button id="clear-wrong-words-button" class="secondary">清除所有错题记录</button>
-                    <button id="cancel-inline-wrong-words-practice-button" class="secondary">取消</button>
                 </div>
             </div>
 
@@ -829,7 +828,7 @@
         const googleTtsCheckbox = document.getElementById('google-tts-checkbox'); // New checkbox element
         const newWordsRadio = document.getElementById('new-words-radio'); 
         const wrongWordsRadio = document.getElementById('wrong-words-radio'); 
-        const wrongWordsCountSpan = document.getElementById('wrong-words-count'); // FIX: Removed 'document ='
+        const wrongWordsCountSpan = document.getElementById('wrong-words-count');
         const wordLibraryRadio = document.getElementById('word-library-radio'); // New radio button
 
         const progressText = document.getElementById('progress');
@@ -848,8 +847,9 @@
         // Inline Wrong Words Selection elements
         const inlineWrongWordsSelection = document.getElementById('inline-wrong-words-selection');
         const inlineWrongWordsSessionsList = document.getElementById('inline-wrong-words-sessions-list');
-        const startInlineWrongWordsPracticeButton = document.getElementById('start-inline-wrong-words-practice-button');
-        const cancelInlineWrongWordsPracticeButton = document.getElementById('cancel-inline-wrong-words-practice-button');
+        // REMOVED unused buttons
+        // const startInlineWrongWordsPracticeButton = document.getElementById('start-inline-wrong-words-practice-button');
+        // const cancelInlineWrongWordsPracticeButton = document.getElementById('cancel-inline-wrong-words-practice-button');
 
         // Message Dialog elements
         const messageDialog = document.getElementById('message-dialog');
@@ -947,6 +947,24 @@
         messageDialogCloseButton.addEventListener('click', () => {
             messageDialog.style.display = 'none';
         });
+
+        // --- NEW: Audio Unlock Logic ---
+        // Flag and function to unlock audio context on mobile browsers
+        let isAudioUnlocked = false;
+        const unlockAudio = () => {
+            if (isAudioUnlocked) return;
+            // Create a tiny, silent audio file as a data URI.
+            // This will be played on the first user interaction to unlock the audio context.
+            const silentAudio = new Audio("data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhIAAAAAA=");
+            silentAudio.play().then(() => {
+                isAudioUnlocked = true;
+                console.log("Audio context unlocked successfully.");
+            }).catch(error => {
+                // This might fail in very strict environments, but it's our best shot.
+                console.warn("Audio context could not be unlocked automatically:", error);
+            });
+        };
+
 
         // --- localStorage Functions ---
         const LOCAL_STORAGE_SESSIONS_KEY = 'wrongWordPracticeSessions'; // Key for storing sessions
@@ -1101,10 +1119,11 @@
 
 
         /**
+         * --- UPDATED: speak function ---
          * Speaks the given text.
          * If `googleTranslateTtsEnabled` is true, uses Google Translate TTS.
          * Otherwise, uses browser's `SpeechSynthesis` API.
-         * If `repeat` is true, it speaks 3 times with a 3-second interval.
+         * This version is updated to better handle mobile browser autoplay restrictions.
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
@@ -1118,28 +1137,39 @@
                 currentSpeakInterval = null;
             }
 
-            const langCode = 'en'; // Assuming English words for now.
-            const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
-            const intervalTime = 3000; // 3 seconds interval
+            const langCode = 'en';
+            const intervalTime = 3000;
 
             if (googleTranslateTtsEnabled) {
-                let count = 0;
-                const playGoogleTts = () => {
-                    if (count < 3) {
-                        const audio = new Audio(googleTranslateTtsUrl);
-                        audio.play().catch(e => console.error("Error playing Google TTS audio:", e));
-                        count++;
-                    } else {
-                        clearInterval(currentSpeakInterval);
-                        currentSpeakInterval = null;
-                    }
+                const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
+                
+                const playOnce = () => {
+                    const audio = new Audio(googleTranslateTtsUrl);
+                    // The play() method returns a Promise. We must handle its rejection.
+                    audio.play().catch(error => {
+                        console.error("Error playing Google TTS audio:", error);
+                        // This error is common on mobile before a user interaction unlocks audio.
+                        if (error.name === 'NotAllowedError') {
+                            showMessage("浏览器阻止了自动播放。<br>请点击“再读一次”按钮来收听发音。");
+                        }
+                    });
                 };
 
                 if (repeat) {
-                    playGoogleTts(); // Play first immediately
-                    currentSpeakInterval = setInterval(playGoogleTts, intervalTime);
+                    let count = 0;
+                    const playRepeatedly = () => {
+                        if (count < 3) {
+                            playOnce();
+                            count++;
+                        } else {
+                            clearInterval(currentSpeakInterval);
+                            currentSpeakInterval = null;
+                        }
+                    };
+                    playRepeatedly(); // Play first immediately
+                    currentSpeakInterval = setInterval(playRepeatedly, intervalTime);
                 } else {
-                    playGoogleTts(); // Play once
+                    playOnce(); // Play once
                 }
             } else if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
@@ -1528,22 +1558,14 @@
 
         // Consolidated function to update the start button's disabled state
         const updateStartButtonState = () => {
-            // If the inline wrong words selection is visible, the main start button should be disabled.
-            if (inlineWrongWordsSelection.style.display === 'flex') { 
-                startButton.disabled = true;
-                return;
-            }
-
             let canStart = false;
             if (newWordsRadio.checked) {
                 // Can start if wordInput has text OR words array is populated (from image upload)
-                if (wordInput.value.trim() !== '') {
-                    canStart = true;
-                } else if (words.length > 0) { 
-                    canStart = true;
-                }
+                canStart = wordInput.value.trim() !== '' || words.length > 0;
             } else if (wrongWordsRadio.checked) {
-                canStart = persistentWrongWords.length > 0;
+                // In wrong words mode, can start if at least one session is checked
+                const checkedSessions = inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked');
+                canStart = checkedSessions.length > 0;
             } else if (wordLibraryRadio.checked) {
                 // In word library mode, can start if a subset is selected.
                 canStart = selectedSubsetId !== null; 
@@ -1557,7 +1579,6 @@
                 newWordsInputArea.style.display = 'flex'; // Show new words input area
                 hideInlineWrongWordsSelection(); // Hide other sections
                 wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection area
-                // wordLibrarySelectionArea.classList.remove('subset-selected'); // Not needed here, handled by restart or when selecting new mode
             } else if (wrongWordsRadio.checked) {
                 newWordsInputArea.style.display = 'none'; // Hide new words input area
                 if (persistentWrongWords.length > 0) {
@@ -1566,12 +1587,10 @@
                     hideInlineWrongWordsSelection(); // Hide if no wrong words
                 }
                 wordLibrarySelectionArea.style.display = 'none'; // Hide word library selection area
-                // wordLibrarySelectionArea.classList.remove('subset-selected'); // Not needed here
             } else if (wordLibraryRadio.checked) {
                 newWordsInputArea.style.display = 'none'; // Hide new words input area
                 hideInlineWrongWordsSelection(); // Hide other sections
                 wordLibrarySelectionArea.style.display = 'flex'; // Show word library selection
-                // The buttons are always visible in this mode, the class only affects the display text.
                 if (selectedSubsetId) {
                     selectedLibraryDisplay.innerHTML = `已选择：<span>${selectedLibraryName}</span> - <span>${selectedSubsetName}</span>`;
                 } else {
@@ -1626,10 +1645,8 @@
                         sessionHeader.querySelector('.toggle-icon').classList.toggle('expanded');
                     });
                 });
-                startInlineWrongWordsPracticeButton.disabled = false; // Enable start button if sessions exist
             } else {
                 inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: #777;">暂无错题记录。</p>';
-                startInlineWrongWordsPracticeButton.disabled = true; // Disable start button if no sessions
             }
             inlineWrongWordsSelection.style.display = 'flex'; // Show the inline section
             updateStartButtonState(); // Update main start button state
@@ -1640,40 +1657,13 @@
             updateStartButtonState(); // Update main start button state
         };
 
-        startInlineWrongWordsPracticeButton.addEventListener('click', async () => {
-            const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
-                                                .map(checkbox => parseInt(checkbox.value));
-            
-            if (selectedSessionIndices.length === 0) {
-                showMessage('请选择至少一个错题练习会话。');
-                return;
+        // NEW: Add event listener to the list container to handle checkbox changes
+        inlineWrongWordsSessionsList.addEventListener('change', (event) => {
+            if (event.target.type === 'checkbox') {
+                updateStartButtonState();
             }
-
-            let wordsToPractice = new Map(); // Use a Map to store unique words by English word
-            selectedSessionIndices.forEach(index => {
-                const session = allStoredWrongWordSessions[index];
-                session.words.forEach(word => {
-                    // Add word if not already present, or if it's a newer entry
-                    // This ensures only the latest instance of a unique word is added
-                    if (!wordsToPractice.has(word.english) || wordsToPractice.get(word.english).timestamp < word.timestamp) {
-                        wordsToPractice.set(word.english, word);
-                    }
-                });
-            });
-
-            words = Array.from(wordsToPractice.values());
-            words.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by newest first, or by user preference
-
-            hideInlineWrongWordsSelection();
-            startQuiz();
         });
 
-        cancelInlineWrongWordsPracticeButton.addEventListener('click', () => {
-            hideInlineWrongWordsSelection();
-            newWordsRadio.checked = true; // Revert to new words practice
-            updatePracticeModeDisplay(); // Update display based on radio button
-            updateStartButtonState(); // Re-evaluate start button state
-        });
 
         document.getElementById('clear-wrong-words-button').addEventListener('click', () => {
             showMessage(`请输入确认码以清除所有错题记录。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-clear-wrong-words" class="secondary" style="width: auto; margin-right: 10px;">确认清除</button><button id="cancel-clear-wrong-words" style="width: auto;">取消</button>`);
@@ -1852,21 +1842,44 @@ const parseExtractedText = (text) => {
             googleTranslateTtsEnabled = googleTtsCheckbox.checked;
         });
         
+        // --- UPDATED: startButton Event Listener ---
         startButton.addEventListener('click', async () => {
-            // Update autoSpeakEnabled based on checkbox state
+            // Unlock audio context on the first user gesture to start a quiz
+            unlockAudio();
+
+            // Update autoSpeakEnabled based on checkbox state at the moment the quiz starts
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             
+            // --- Logic for Wrong Words Mode ---
             if (wrongWordsRadio.checked) {
-                // If wrong words is selected, the main start button click will just ensure the inline selection is visible.
-                // The actual quiz start will be handled by startInlineWrongWordsPracticeButton.
-                if (persistentWrongWords.length === 0) {
-                    showMessage('没有可供练习的错题。');
+                const selectedSessionIndices = Array.from(inlineWrongWordsSessionsList.querySelectorAll('input[type="checkbox"]:checked'))
+                                                    .map(checkbox => parseInt(checkbox.value));
+                
+                if (selectedSessionIndices.length === 0) {
+                    showMessage('请选择至少一个错题练习会话。');
                     return;
                 }
-                showInlineWrongWordsSelection(); // Ensure it's shown if not already
-                // The startButton will be disabled by updateStartButtonState() when inline section is visible.
-                return; 
-            } else if (wordLibraryRadio.checked) {
+
+                let wordsToPractice = new Map(); // Use a Map to store unique words by English word
+                selectedSessionIndices.forEach(index => {
+                    const session = allStoredWrongWordSessions[index];
+                    session.words.forEach(word => {
+                        // Add word if not already present, or if it's a newer entry
+                        if (!wordsToPractice.has(word.english) || wordsToPractice.get(word.english).timestamp < word.timestamp) {
+                            wordsToPractice.set(word.english, word);
+                        }
+                    });
+                });
+
+                words = Array.from(wordsToPractice.values());
+                words.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()); // Sort by newest first
+
+                startQuiz();
+                return;
+            } 
+            
+            // --- Logic for Word Library Mode ---
+            else if (wordLibraryRadio.checked) {
                 if (!selectedSubsetId) {
                     showMessage('请先在单词库中选择一个子集进行练习。');
                     return;
@@ -1878,7 +1891,6 @@ const parseExtractedText = (text) => {
                         showMessage('选定的子集中没有单词。请添加单词后再试。');
                         return;
                     }
-                    // The wordLibrarySelectionArea will remain visible with its buttons
                     startQuiz();
                 } catch (error) {
                     console.error("加载单词库单词时出错:", error);
@@ -1889,8 +1901,8 @@ const parseExtractedText = (text) => {
                 return;
             }
 
-            // New words mode logic
-            // If words are already populated from image upload, just start.
+            // --- Logic for New Words Mode ---
+            // If words are already populated from file upload, just start.
             if (words.length > 0 && newWordsRadio.checked) { 
                 startQuiz();
                 return;
@@ -2781,5 +2793,5 @@ uploadSubsetConfirmButton.addEventListener('click', async () => {
         updateStartButtonState();
         updateSelectedLibraryDisplay();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968487f94eeb2ae4',t:'MTc1NDA0Mjg3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9685db52ba65c798',t:'MTc1NDA1Njc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968add9509065349',t:'MTc1NDEwOTI5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'968bc65ccfdd2abb',t:'MTc1NDExODgyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
