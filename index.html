@@ -847,9 +847,6 @@
         // Inline Wrong Words Selection elements
         const inlineWrongWordsSelection = document.getElementById('inline-wrong-words-selection');
         const inlineWrongWordsSessionsList = document.getElementById('inline-wrong-words-sessions-list');
-        // REMOVED unused buttons
-        // const startInlineWrongWordsPracticeButton = document.getElementById('start-inline-wrong-words-practice-button');
-        // const cancelInlineWrongWordsPracticeButton = document.getElementById('cancel-inline-wrong-words-practice-button');
 
         // Message Dialog elements
         const messageDialog = document.getElementById('message-dialog');
@@ -947,42 +944,6 @@
         messageDialogCloseButton.addEventListener('click', () => {
             messageDialog.style.display = 'none';
         });
-
-        // --- Audio Unlock Logic ---
-        let isAudioUnlocked = false;
-        const unlockAudio = () => {
-            if (isAudioUnlocked) return;
-            const silentAudio = new Audio("data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhIAAAAAA=");
-            silentAudio.play().then(() => {
-                isAudioUnlocked = true;
-                console.log("Audio context unlocked successfully.");
-            }).catch(error => {
-                console.warn("Audio context could not be unlocked automatically:", error);
-            });
-        };
-
-        // --- NEW: Google TTS Audio Priming Function ---
-        const primeGoogleTtsAudio = () => {
-            // This function is called directly by a user click to "prime" the audio system
-            // for Google's cross-origin audio source. It plays and immediately pauses a short,
-            // silent clip from Google's TTS service. This satisfies the browser's requirement
-            // for a user-initiated audio start from that specific domain.
-            console.log("Priming Google TTS audio...");
-            const primeAudio = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&q=a&tl=en&client=tw-ob");
-            const playPromise = primeAudio.play();
-            if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    // Playback started successfully. We don't need to hear it.
-                    primeAudio.pause();
-                    primeAudio.currentTime = 0;
-                    console.log("Google TTS audio primed successfully.");
-                }).catch(error => {
-                    // This might still fail in some very restrictive environments.
-                    console.error("Could not prime Google TTS audio:", error);
-                });
-            }
-        };
-
 
         // --- localStorage Functions ---
         const LOCAL_STORAGE_SESSIONS_KEY = 'wrongWordPracticeSessions'; // Key for storing sessions
@@ -1526,13 +1487,30 @@
             currentWordIndex++;
             showNextWord();
         });
-        // Modified speakAgainButton listener
+        
+        // --- UPDATED: speakAgainButton Event Listener ---
         speakAgainButton.addEventListener('click', () => {
             if(currentWordIndex < words.length) {
-                // When clicked, always speak once, regardless of autoSpeakEnabled
-                speak(words[currentWordIndex].english, false); 
+                const textToSpeak = words[currentWordIndex].english;
+                // Directly handle the audio playback here to ensure it's tied to the user gesture.
+                // This is the most reliable way to play audio on restrictive browsers like iOS Safari.
+                if (googleTranslateTtsEnabled) {
+                    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(textToSpeak)}&tl=en&client=tw-ob`;
+                    const audio = new Audio(url);
+                    audio.play().catch(e => {
+                        console.error("Manual playback failed:", e);
+                        showMessage("音频播放失败，请检查您的网络连接或浏览器设置。");
+                    });
+                } else if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel(); // Stop any previous utterance
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                    utterance.lang = 'en-GB';
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                }
             }
         });
+
         // Modified backToMenuButton listener to show completion screen
         backToMenuButton.addEventListener('click', () => {
             showCompletionScreen(); // This will save the session and show results
@@ -1862,14 +1840,6 @@ const parseExtractedText = (text) => {
         
         // --- UPDATED: startButton Event Listener ---
         startButton.addEventListener('click', async () => {
-            // Unlock audio context on the first user gesture to start a quiz
-            unlockAudio();
-
-            // --- ADDED: If Google TTS is enabled, prime it with a user gesture ---
-            if (googleTtsCheckbox.checked) {
-                primeGoogleTtsAudio();
-            }
-
             // Update autoSpeakEnabled based on checkbox state at the moment the quiz starts
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             
