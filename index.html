@@ -749,9 +749,6 @@
         </div>
     </div>
 
-    <!-- NEW: Persistent Audio Element for TTS -->
-    <audio id="tts-audio-player" style="display:none;"></audio>
-
     <script type="module">
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -850,6 +847,9 @@
         // Inline Wrong Words Selection elements
         const inlineWrongWordsSelection = document.getElementById('inline-wrong-words-selection');
         const inlineWrongWordsSessionsList = document.getElementById('inline-wrong-words-sessions-list');
+        // REMOVED unused buttons
+        // const startInlineWrongWordsPracticeButton = document.getElementById('start-inline-wrong-words-practice-button');
+        // const cancelInlineWrongWordsPracticeButton = document.getElementById('cancel-inline-wrong-words-practice-button');
 
         // Message Dialog elements
         const messageDialog = document.getElementById('message-dialog');
@@ -891,9 +891,6 @@
         const uploadSubsetConfirmButton = document.getElementById('upload-subset-confirm-button');
         const subsetUploadStatus = document.getElementById('subset-upload-status');
         const subsetImageUpload = document.getElementById('subset-image-upload');
-
-        // NEW: Get reference to the persistent audio player
-        const ttsAudioPlayer = document.getElementById('tts-audio-player');
 
 
         // --- Firebase Initialization ---
@@ -950,6 +947,24 @@
         messageDialogCloseButton.addEventListener('click', () => {
             messageDialog.style.display = 'none';
         });
+
+        // --- NEW: Audio Unlock Logic ---
+        // Flag and function to unlock audio context on mobile browsers
+        let isAudioUnlocked = false;
+        const unlockAudio = () => {
+            if (isAudioUnlocked) return;
+            // Create a tiny, silent audio file as a data URI.
+            // This will be played on the first user interaction to unlock the audio context.
+            const silentAudio = new Audio("data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhIAAAAAA=");
+            silentAudio.play().then(() => {
+                isAudioUnlocked = true;
+                console.log("Audio context unlocked successfully.");
+            }).catch(error => {
+                // This might fail in very strict environments, but it's our best shot.
+                console.warn("Audio context could not be unlocked automatically:", error);
+            });
+        };
+
 
         // --- localStorage Functions ---
         const LOCAL_STORAGE_SESSIONS_KEY = 'wrongWordPracticeSessions'; // Key for storing sessions
@@ -1105,11 +1120,15 @@
 
         /**
          * --- UPDATED: speak function ---
-         * Speaks the given text using the appropriate TTS engine.
+         * Speaks the given text.
+         * If `googleTranslateTtsEnabled` is true, uses Google Translate TTS.
+         * Otherwise, uses browser's `SpeechSynthesis` API.
+         * This version is updated to better handle mobile browser autoplay restrictions.
          * @param {string} text The text to speak.
          * @param {boolean} [repeat=false] Whether to repeat the speech.
          */
         const speak = (text, repeat = false) => {
+            // Clear any ongoing speech or intervals first
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
             }
@@ -1122,20 +1141,20 @@
             const intervalTime = 3000;
 
             if (googleTranslateTtsEnabled) {
-                const playOnce = () => {
-                    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
-                    ttsAudioPlayer.src = url;
-                    const playPromise = ttsAudioPlayer.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(error => {
-                            console.error("Error playing Google TTS audio:", error);
-                            if (error.name === 'NotAllowedError') {
-                                showMessage("浏览器阻止了自动播放。<br>请点击“再读一次”按钮来收听发音。");
-                            }
-                        });
-                    }
-                };
+                const googleTranslateTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${langCode}&client=tw-ob`;
                 
+                const playOnce = () => {
+                    const audio = new Audio(googleTranslateTtsUrl);
+                    // The play() method returns a Promise. We must handle its rejection.
+                    audio.play().catch(error => {
+                        console.error("Error playing Google TTS audio:", error);
+                        // This error is common on mobile before a user interaction unlocks audio.
+                        if (error.name === 'NotAllowedError') {
+                            showMessage("浏览器阻止了自动播放。<br>请点击“再读一次”按钮来收听发音。");
+                        }
+                    });
+                };
+
                 if (repeat) {
                     let count = 0;
                     const playRepeatedly = () => {
@@ -1147,12 +1166,11 @@
                             currentSpeakInterval = null;
                         }
                     };
-                    playRepeatedly();
+                    playRepeatedly(); // Play first immediately
                     currentSpeakInterval = setInterval(playRepeatedly, intervalTime);
                 } else {
-                    playOnce();
+                    playOnce(); // Play once
                 }
-
             } else if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'en-GB';
@@ -1169,12 +1187,13 @@
                             currentSpeakInterval = null;
                         }
                     };
-                    speakBrowserTts();
+                    speakBrowserTts(); // Speak first immediately
                     currentSpeakInterval = setInterval(speakBrowserTts, intervalTime);
                 } else {
-                    window.speechSynthesis.speak(utterance);
+                    window.speechSynthesis.speak(utterance); // Speak once
                 }
             } else {
+                console.log('Text-to-speech not supported in this browser.');
                 showMessage('您的浏览器不支持语音功能。');
             }
         };
@@ -1489,34 +1508,13 @@
             currentWordIndex++;
             showNextWord();
         });
-        
-        // --- UPDATED: speakAgainButton Event Listener ---
+        // Modified speakAgainButton listener
         speakAgainButton.addEventListener('click', () => {
             if(currentWordIndex < words.length) {
-                const textToSpeak = words[currentWordIndex].english;
-                // Directly handle the audio playback here to ensure it's tied to the user gesture.
-                // This is the most reliable way to play audio on restrictive browsers like iOS Safari.
-                if (googleTranslateTtsEnabled) {
-                    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(textToSpeak)}&tl=en&client=tw-ob`;
-                    ttsAudioPlayer.src = url;
-                    ttsAudioPlayer.load(); // Important for iOS
-                    const playPromise = ttsAudioPlayer.play();
-                    if(playPromise !== undefined) {
-                        playPromise.catch(e => {
-                            console.error("Manual playback failed:", e);
-                            showMessage("音频播放失败，请检查您的网络连接或浏览器设置。");
-                        });
-                    }
-                } else if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel(); // Stop any previous utterance
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.lang = 'en-GB';
-                    utterance.rate = 0.9;
-                    window.speechSynthesis.speak(utterance);
-                }
+                // When clicked, always speak once, regardless of autoSpeakEnabled
+                speak(words[currentWordIndex].english, false); 
             }
         });
-
         // Modified backToMenuButton listener to show completion screen
         backToMenuButton.addEventListener('click', () => {
             showCompletionScreen(); // This will save the session and show results
@@ -1846,6 +1844,9 @@ const parseExtractedText = (text) => {
         
         // --- UPDATED: startButton Event Listener ---
         startButton.addEventListener('click', async () => {
+            // Unlock audio context on the first user gesture to start a quiz
+            unlockAudio();
+
             // Update autoSpeakEnabled based on checkbox state at the moment the quiz starts
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             
