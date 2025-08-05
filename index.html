@@ -948,21 +948,39 @@
             messageDialog.style.display = 'none';
         });
 
-        // --- NEW: Audio Unlock Logic ---
-        // Flag and function to unlock audio context on mobile browsers
+        // --- Audio Unlock Logic ---
         let isAudioUnlocked = false;
         const unlockAudio = () => {
             if (isAudioUnlocked) return;
-            // Create a tiny, silent audio file as a data URI.
-            // This will be played on the first user interaction to unlock the audio context.
             const silentAudio = new Audio("data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhIAAAAAA=");
             silentAudio.play().then(() => {
                 isAudioUnlocked = true;
                 console.log("Audio context unlocked successfully.");
             }).catch(error => {
-                // This might fail in very strict environments, but it's our best shot.
                 console.warn("Audio context could not be unlocked automatically:", error);
             });
+        };
+
+        // --- NEW: Google TTS Audio Priming Function ---
+        const primeGoogleTtsAudio = () => {
+            // This function is called directly by a user click to "prime" the audio system
+            // for Google's cross-origin audio source. It plays and immediately pauses a short,
+            // silent clip from Google's TTS service. This satisfies the browser's requirement
+            // for a user-initiated audio start from that specific domain.
+            console.log("Priming Google TTS audio...");
+            const primeAudio = new Audio("https://translate.google.com/translate_tts?ie=UTF-8&q=a&tl=en&client=tw-ob");
+            const playPromise = primeAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // Playback started successfully. We don't need to hear it.
+                    primeAudio.pause();
+                    primeAudio.currentTime = 0;
+                    console.log("Google TTS audio primed successfully.");
+                }).catch(error => {
+                    // This might still fail in some very restrictive environments.
+                    console.error("Could not prime Google TTS audio:", error);
+                });
+            }
         };
 
 
@@ -1846,6 +1864,11 @@ const parseExtractedText = (text) => {
         startButton.addEventListener('click', async () => {
             // Unlock audio context on the first user gesture to start a quiz
             unlockAudio();
+
+            // --- ADDED: If Google TTS is enabled, prime it with a user gesture ---
+            if (googleTtsCheckbox.checked) {
+                primeGoogleTtsAudio();
+            }
 
             // Update autoSpeakEnabled based on checkbox state at the moment the quiz starts
             autoSpeakEnabled = autoSpeakCheckbox.checked;
