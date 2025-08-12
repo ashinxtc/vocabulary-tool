@@ -465,7 +465,7 @@
 
 
         // --- Gemini API Configuration ---
-        const API_KEY = ""; 
+        const API_KEY = "AIzaSyB-TiVpLppqHtLUzsbip9YvYI82Tdqq-6E"; 
         const API_URL_TEXT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
         
         // --- Custom Message Dialog Function ---
@@ -645,7 +645,7 @@
             const payload = {
                 contents: [{
                     parts: [
-                        { text: "Extract all text from the provided file. If the file contains English words, with or without Chinese translations, list them in a clean format (e.g., one word or 'English - Chinese' pair per line). If no clear word pairs are found, return the raw text content." },
+                        { text: "Extract all text from the provided file. If the file contains English words, with or without Chinese translations, list them in a clean format (e.g., one word or 'English = Chinese' pair per line). If no clear word pairs are found, return the raw text content." },
                         { inlineData: { mimeType: mimeType, data: base64Data } }
                     ]
                 }]
