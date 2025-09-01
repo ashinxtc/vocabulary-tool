@@ -32,6 +32,14 @@
             overflow: hidden; /* Prevents box shadow from being cut off */
         }
 
+        /* --- MODIFIED: Fix for setup section layout --- */
+        #setup-section {
+            /* This ensures that when display is toggled to 'flex' by the showPage() function, 
+               it behaves as a column, preserving the vertical layout of its children. 
+               This fixes the layout issue when returning to the main menu. */
+            flex-direction: column;
+        }
+
         /* Loading Overlay */
         #loader {
             position: absolute;
@@ -715,9 +723,8 @@
             gap: 20px;
             position: relative;
         }
-        /* ADDED: Rule to push title down */
         #typing-practice-section h2 {
-            margin-top: 140px; 
+            margin-top: 120px; /* Increased margin to prevent keyboard from overlapping leaderboard */
         }
         #keyboard-container {
             position: relative;
@@ -770,13 +777,14 @@
         #leaderboard {
             position: absolute;
             top: 10px;
-            right: 10px;
+            left: 10px; /* MODIFIED: Moved to left to avoid conflict */
             background-color: rgba(255, 255, 255, 0.9);
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 10px 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             width: 200px;
+            z-index: 5;
         }
         #leaderboard h4 {
             margin: 0 0 10px 0;
@@ -800,6 +808,64 @@
             margin-top: 10px;
         }
 
+        /* --- MODIFIED: User Profile Section --- */
+        #profile-section {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px; /* Spacing from radio group */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #profile-display {
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+        }
+        #current-profile-name {
+            color: #007bff;
+            font-weight: bold;
+        }
+        #profile-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        #profile-controls select, #profile-controls input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #profile-controls input {
+            flex-grow: 1;
+            max-width: 200px;
+        }
+        #profile-controls button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: normal; /* Override bold */
+        }
+
+        /* --- NEW: Persistent User Display --- */
+        #persistent-profile-display {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 14px;
+            color: #333;
+            background-color: rgba(240, 242, 245, 0.9); /* Semi-transparent background */
+            padding: 5px 12px;
+            border-radius: 6px;
+            z-index: 5;
+            pointer-events: none; /* So it doesn't block buttons underneath */
+        }
+
+
     </style>
 </head>
 <body>
@@ -810,10 +876,27 @@
             <p id="loader-text">正在处理...</p>
         </div>
 
+        <!-- NEW: Persistent Profile Display (for non-setup pages) -->
+        <div id="persistent-profile-display" style="display: none;"></div>
+
         <div id="setup-section">
             <h1>智能英语单词默写</h1>
             <p>选择一种练习模式开始。</p>
             
+            <!-- MODIFIED: Profile Section is now here -->
+            <div id="profile-section">
+                <div id="profile-display">
+                    当前练习用户: <span id="current-profile-name">未选择</span>
+                </div>
+                <div id="profile-controls">
+                    <select id="profile-select">
+                        <option value="">-- 选择已有用户 --</option>
+                    </select>
+                    <input type="text" id="new-profile-name-input" placeholder="或创建新用户">
+                    <button id="set-profile-button">设置用户</button>
+                </div>
+            </div>
+
             <div class="radio-group">
                 <label>
                     <input type="radio" name="practice-mode" value="new-words" id="new-words-radio" checked>
@@ -823,7 +906,6 @@
                     <input type="radio" name="practice-mode" value="mc-quiz" id="mc-quiz-radio">
                     单词选择题
                 </label>
-                <!-- NEW: Typing Practice Radio Button -->
                 <label>
                     <input type="radio" name="practice-mode" value="typing-practice" id="typing-practice-radio">
                     打字练习 (a-z)
@@ -912,8 +994,26 @@
             <p>已成功加载 <strong id="mode-selection-word-count">0</strong> 个单词。</p>
             <div class="button-group">
                 <button id="mode-select-flashcard" class="tertiary">单词卡复习</button>
+                <button id="mode-select-typing-with-words">看词打字练习</button>
                 <button id="mode-select-practice">直接开始练习</button>
                 <button id="mode-select-back" class="secondary">返回</button>
+            </div>
+            <!-- NEW: Repetition setup for typing with words -->
+            <div id="typing-repetition-setup" style="display: none; margin-top: 20px;">
+                <h3>设置“看词打字”重复次数</h3>
+                <div class="radio-group" style="background-color: transparent; border: none; padding: 0; align-items: center;">
+                     <div style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 15px;">
+                        <label><input type="radio" name="repetition-count" value="1" checked> 1次</label>
+                        <label><input type="radio" name="repetition-count" value="3"> 3次</label>
+                        <label><input type="radio" name="repetition-count" value="5"> 5次</label>
+                        <label><input type="radio" name="repetition-count" value="custom"> 自定义:</label>
+                        <input type="number" id="custom-repetition-input" style="width: 70px; padding: 5px;" min="1" value="1">
+                    </div>
+                </div>
+                <div class="button-group">
+                     <button id="start-typing-with-words-practice">开始练习</button>
+                     <button id="cancel-typing-with-words-setup" class="secondary">返回</button>
+                </div>
             </div>
         </div>
 
@@ -998,7 +1098,6 @@
             <button id="restart-button">返回主页</button>
         </div>
         
-        <!-- NEW: Typing Practice Section -->
         <div id="typing-practice-section">
             <div id="leaderboard">
                 <h4>🏆 英雄榜 🏆</h4>
@@ -1028,7 +1127,6 @@
                 <button class="modal-close-button" id="modal-close-button">&times;</button>
             </div>
 
-            <!-- This container will be used for both 'manage' and 'select' modes, with visibility controlled by JS -->
             <div id="manage-view">
                 <div class="modal-section">
                     <h4>我的单词库</h4>
@@ -1066,7 +1164,6 @@
                 </div>
             </div>
 
-            <!-- NEW: View for selecting words for practice -->
             <div id="select-view" style="display: none;">
                  <div class="modal-section">
                     <h4>选择要练习的单词 (<span id="selected-word-count">0</span>)</h4>
@@ -1112,59 +1209,32 @@
         const PUBLIC_WORDS_COLLECTION = `artifacts/${appId}/public/data/libraryWords`;
         const USER_SESSIONS_COLLECTION_BASE = `artifacts/${appId}/users/`; 
         const TYPING_SCORES_DOC = `artifacts/${appId}/public/data/typingScores/top5`;
+        const USER_PROFILES_COLLECTION_BASE = `artifacts/${appId}/users/`;
 
 
-        // Global variables for word library feature
-        let allLibraries = [];
-        let allSubsets = [];
-        let allWordsFromLibrary = []; // Holds all words from all libraries for random selection
-        let selectedLibraryId = null;
-        let selectedLibraryName = null;
-        let selectedSubsetId = null;
-        let selectedSubsetName = null;
+        // Global variables
+        let allLibraries = [], allSubsets = [], allWordsFromLibrary = [];
+        let selectedLibraryId = null, selectedLibraryName = null, selectedSubsetId = null, selectedSubsetName = null;
         let allWordsInCurrentLibrary = []; 
-
-        // Global variables for quiz and other features
-        let words = []; 
-        let wrongWordsCurrentSession = []; 
-        let persistentWrongWords = []; 
-        let currentWordIndex = 0;
-        let score = 0;
+        let words = [], originalWords = [], wrongWordsCurrentSession = [], persistentWrongWords = []; 
+        let currentWordIndex = 0, score = 0;
         let selectedFile = null;
-        let autoSpeakEnabled = true; 
-        let googleTranslateTtsEnabled = false; 
-        
-        // --- Audio Caching and Player ---
+        let autoSpeakEnabled = true, googleTranslateTtsEnabled = false; 
         let audioCache = new Map();
         const audioPlayer = new Audio();
         let isAudioContextUnlocked = false;
-        let errorSoundBuffer = null;
         let audioContext;
-
-
-        // --- Timer variables ---
-        let wordStartTime = 0;
-        let quizStartTime = null;
-
-        // Session tracking variables
-        let allPracticeSessions = [];
-        let currentQuizDetails = {};
-        
-        // Flashcard variables
-        let currentFlashcardIndex = 0;
-        
-        // MC Quiz variables
-        let currentMcQuizIndex = 0;
-
-        // --- NEW: Typing Practice variables ---
+        let wordStartTime = 0, quizStartTime = null;
+        let allPracticeSessions = [], currentQuizDetails = {};
+        let currentFlashcardIndex = 0, currentMcQuizIndex = 0;
+        let currentUserProfile = null, allUserProfiles = [];
         const alphabet = 'abcdefghijklmnopqrstuvwxyz';
-        let currentTargetCharIndex = 0;
-        let typingStartTime = 0;
-        let isTypingPracticeActive = false;
-        let waitingForRestart = true;
+        let currentTargetCharIndex = 0, typingStartTime = 0;
+        let isTypingPracticeActive = false, waitingForRestart = true;
         let bestTypingScores = [];
+        let isTypingWithWordsMode = false;
+        let exampleSentenceCache = new Map(); // NEW: Cache for example sentences
         
-        // UPDATED: Recalibrated key coordinates
         const keyCoordinates = {
             'q': { top: 18.0, left: 9.5 }, 'w': { top: 18.0, left: 16.5 }, 'e': { top: 18.0, left: 22.5 }, 'r': { top: 18.0, left: 29.0 }, 't': { top: 18.0, left: 36.0 }, 'y': { top: 18.0, left: 42.5 }, 'u': { top: 18.0, left: 49.5 }, 'i': { top: 18.0, left: 56.5 }, 'o': { top: 18.0, left: 62.5 }, 'p': { top: 18.0, left: 69.5 },
             'a': { top: 37.0, left: 11.0 }, 's': { top: 37.0, left: 17.5 }, 'd': { top: 37.0, left: 24.0 }, 'f': { top: 37.0, left: 31.0 }, 'g': { top: 37.0, left: 37.0 }, 'h': { top: 37.0, left: 44.0 }, 'j': { top: 37.0, left: 51.0 }, 'k': { top: 37.0, left: 57.5 }, 'l': { top: 37.0, left: 64.0 },
@@ -1177,14 +1247,15 @@
         const completionSection = document.getElementById('completion-section');
         const loader = document.getElementById('loader');
         const loaderText = document.getElementById('loader-text');
-        
         const modeSelectionSection = document.getElementById('mode-selection-section');
+        const flashcardSection = document.getElementById('flashcard-section');
+        const mcQuizSection = document.getElementById('mc-quiz-section');
+        const typingPracticeSection = document.getElementById('typing-practice-section');
+        
         const modeSelectionWordCount = document.getElementById('mode-selection-word-count');
         const modeSelectFlashcard = document.getElementById('mode-select-flashcard');
         const modeSelectPractice = document.getElementById('mode-select-practice');
         const modeSelectBack = document.getElementById('mode-select-back');
-        
-        const flashcardSection = document.getElementById('flashcard-section');
         const flashcardProgress = document.getElementById('flashcard-progress');
         const flashcardBackToMenuButton = document.getElementById('flashcard-back-to-menu-button');
         const flashcardSpinner = document.querySelector('.flashcard .spinner-container');
@@ -1201,7 +1272,6 @@
         const flashcardCompletionOptions = document.getElementById('flashcard-completion-options');
         const flashcardFinishPracticeButton = document.getElementById('flashcard-finish-practice-button');
         const flashcardFinishMenuButton = document.getElementById('flashcard-finish-menu-button');
-
         const newWordsInputArea = document.getElementById('new-words-input-area');
         const wordInput = document.getElementById('word-input');
         const selectFileButton = document.getElementById('select-file-button');
@@ -1219,8 +1289,6 @@
         const typingPracticeRadio = document.getElementById('typing-practice-radio');
         const simpleModeArea = document.getElementById('simple-mode-area');
         const commonSettings = document.getElementById('common-settings');
-
-
         const progressText = document.getElementById('progress');
         const backToMenuButton = document.getElementById('back-to-menu-button');
         const chinesePrompt = document.getElementById('chinese-prompt');
@@ -1229,37 +1297,29 @@
         const checkButton = document.getElementById('check-button');
         const nextButton = document.getElementById('next-button');
         const speakAgainButton = document.getElementById('speak-again-button'); 
-
         const scoreDisplay = document.getElementById('score-display');
         const wrongWordsList = document.getElementById('wrong-words-list');
         const restartButton = document.getElementById('restart-button');
-
         const inlineWrongWordsSelection = document.getElementById('inline-wrong-words-selection');
         const inlineWrongWordsSessionsList = document.getElementById('inline-wrong-words-sessions-list');
-
         const messageDialog = document.getElementById('message-dialog');
         const messageDialogText = document.getElementById('message-dialog-text');
         const messageDialogCloseButton = document.getElementById('message-dialog-close-button');
-
         const exampleSentenceContainer = document.getElementById('example-sentence-container');
         const englishExampleSentence = document.getElementById('english-example-sentence');
         const chineseExampleSentence = document.getElementById('chinese-example-sentence');
-
         const wordLibrarySelectionArea = document.getElementById('word-library-selection-area');
         const selectedLibraryDisplay = document.getElementById('selected-library-display');
         const selectLibraryForPracticeButton = document.getElementById('select-library-for-practice-button'); 
         const openManageModalButton = document.getElementById('open-manage-modal-button'); 
-
         const wordLibraryModal = document.getElementById('word-library-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalCloseButton = document.getElementById('modal-close-button');
-        
         const manageView = document.getElementById('manage-view');
         const selectView = document.getElementById('select-view');
         const librarySelectionTree = document.getElementById('library-selection-tree');
         const selectedWordCountSpan = document.getElementById('selected-word-count');
         const confirmLibrarySelectionButton = document.getElementById('confirm-library-selection-button');
-
         const newLibraryNameInput = document.getElementById('new-library-name-input');
         const createLibraryButton = document.getElementById('create-library-button');
         const librariesList = document.getElementById('libraries-list');
@@ -1276,8 +1336,6 @@
         const uploadSubsetConfirmButton = document.getElementById('upload-subset-confirm-button');
         const subsetUploadStatus = document.getElementById('subset-upload-status');
         const subsetFileUpload = document.getElementById('subset-file-upload');
-        
-        // MC Quiz Elements
         const multipleChoiceSetupArea = document.getElementById('multiple-choice-setup-area');
         const mcSourceRadios = document.querySelectorAll('input[name="mc-source"]');
         const mcRandomOptions = document.getElementById('mc-random-options');
@@ -1286,22 +1344,29 @@
         const totalWordCountSpan = document.getElementById('total-word-count');
         const selectMcWordsButton = document.getElementById('select-mc-words-button');
         const mcSelectedDisplay = document.getElementById('mc-selected-display');
-        
-        const mcQuizSection = document.getElementById('mc-quiz-section');
         const mcProgress = document.getElementById('mc-progress');
         const mcBackToMenuButton = document.getElementById('mc-back-to-menu-button');
         const mcSpeakButton = document.getElementById('mc-speak-button');
         const mcOptionsContainer = document.getElementById('mc-options-container');
         const mcFeedback = document.getElementById('mc-feedback');
         const mcNextButton = document.getElementById('mc-next-button');
-
-        // NEW: Typing Practice Elements
-        const typingPracticeSection = document.getElementById('typing-practice-section');
         const nextCharIndicator = document.getElementById('next-char-indicator');
         const typingInfo = document.getElementById('typing-info');
         const leaderboardList = document.getElementById('leaderboard-list');
         const typingBackButton = document.getElementById('typing-back-button');
-
+        const profileSection = document.getElementById('profile-section');
+        const currentProfileNameSpan = document.getElementById('current-profile-name');
+        const profileSelect = document.getElementById('profile-select');
+        const newProfileNameInput = document.getElementById('new-profile-name-input');
+        const setProfileButton = document.getElementById('set-profile-button');
+        const persistentProfileDisplay = document.getElementById('persistent-profile-display');
+        // NEW: Elements for typing with words feature
+        const modeSelectTypingWithWords = document.getElementById('mode-select-typing-with-words');
+        const typingRepetitionSetup = document.getElementById('typing-repetition-setup');
+        const startTypingWithWordsPractice = document.getElementById('start-typing-with-words-practice');
+        const cancelTypingWithWordsSetup = document.getElementById('cancel-typing-with-words-setup');
+        const customRepetitionInput = document.getElementById('custom-repetition-input');
+        const repetitionRadios = document.querySelectorAll('input[name="repetition-count"]');
 
         // --- Firebase Initialization & Data Loading ---
         const initFirebase = async () => {
@@ -1319,9 +1384,12 @@
                     }
                     isAuthReady = true;
                     console.log("Firebase Ready. User ID:", userId);
+
+                    await initUserProfile(); 
+
                     loadPracticeSessionsFromFirestore();
-                    loadAllWordsFromLibrary(); // Load all words for MC quiz random mode
-                    loadTypingScoresFromFirestore(); // Load typing scores
+                    loadAllWordsFromLibrary(); 
+                    loadTypingScoresFromFirestore(); 
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
@@ -1369,7 +1437,6 @@
                 silentAudio.play().then(() => {
                     isAudioContextUnlocked = true;
                     console.log("Audio context unlocked successfully.");
-                    preloadErrorSound(); // Preload sound after context is unlocked
                 }).catch(error => {
                     console.warn("Could not unlock audio context on first try:", error);
                 });
@@ -1378,25 +1445,6 @@
             }
         };
         
-        const preloadErrorSound = () => {
-            if (errorSoundBuffer || !audioContext) return;
-            let oscillator = audioContext.createOscillator();
-            let gainNode = audioContext.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
-            oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // A low pitch
-            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
-            
-            // This doesn't create a reusable buffer, but it's a simple way to define the sound
-            // For a true buffer, we'd use createBuffer and fill it with data.
-            // This is a simplified approach for this use case.
-            // The actual playing will be done in playErrorSound.
-            console.log("Error sound pre-configured.");
-        };
-
         const playErrorSound = () => {
             if (!audioContext || !isAudioContextUnlocked) {
                 console.warn("Audio context not ready, cannot play error sound.");
@@ -1406,16 +1454,105 @@
             let gainNode = audioContext.createGain();
             oscillator.connect(gainNode);
             gainNode.connect(audioContext.destination);
-
             gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01); // Lower volume
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01); 
             oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
-            oscillator.type = 'triangle'; // Softer tone
-
+            oscillator.type = 'triangle'; 
             oscillator.start(audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
             oscillator.stop(audioContext.currentTime + 0.2);
         };
+
+
+        // --- User Profile Management ---
+        const initUserProfile = async () => {
+            if (!isAuthReady || !userId) return;
+
+            const profilesCollectionPath = `${USER_PROFILES_COLLECTION_BASE}${userId}/profiles`;
+            try {
+                const querySnapshot = await getDocs(collection(db, profilesCollectionPath));
+                allUserProfiles = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("Error fetching user profiles:", error);
+                showMessage("无法加载用户列表。");
+            }
+            
+            updateProfileUI();
+
+            const lastProfile = localStorage.getItem('currentUserProfile');
+            if (lastProfile && allUserProfiles.some(p => p.name === lastProfile)) {
+                currentUserProfile = lastProfile;
+                profileSelect.value = lastProfile;
+            } else if (allUserProfiles.length > 0) {
+                currentUserProfile = allUserProfiles[0].name;
+                profileSelect.value = currentUserProfile;
+            } else {
+                currentUserProfile = null;
+            }
+
+            updateAllProfileDisplays();
+            if (!currentUserProfile) {
+                showMessage("欢迎使用！请先选择或创建一个练习用户名，以便记录您的练习进度。");
+            }
+        };
+
+        const updateProfileUI = () => {
+            profileSelect.innerHTML = '<option value="">-- 选择已有用户 --</option>';
+            allUserProfiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.name;
+                option.textContent = profile.name;
+                profileSelect.appendChild(option);
+            });
+        };
+
+        const updateAllProfileDisplays = () => {
+            const profileText = currentUserProfile || '未选择';
+            currentProfileNameSpan.textContent = profileText;
+            persistentProfileDisplay.innerHTML = `练习用户: <strong>${profileText}</strong>`;
+        };
+
+        const handleSetProfile = async () => {
+            const selectedProfile = profileSelect.value;
+            const newProfile = newProfileNameInput.value.trim();
+
+            if (newProfile) {
+                if (allUserProfiles.some(p => p.name.toLowerCase() === newProfile.toLowerCase())) {
+                    showMessage(`用户名 "${newProfile}" 已存在。`);
+                    return;
+                }
+                showLoader('正在创建用户...');
+                try {
+                    const profilesCollectionPath = `${USER_PROFILES_COLLECTION_BASE}${userId}/profiles`;
+                    await addDoc(collection(db, profilesCollectionPath), { name: newProfile, createdAt: serverTimestamp() });
+                    currentUserProfile = newProfile;
+                    localStorage.setItem('currentUserProfile', newProfile);
+                    newProfileNameInput.value = '';
+                    await initUserProfile(); 
+                    profileSelect.value = newProfile; 
+                } catch (error) {
+                    console.error("Error creating profile:", error);
+                    showMessage("创建用户失败。");
+                } finally {
+                    hideLoader();
+                }
+            } else if (selectedProfile) {
+                currentUserProfile = selectedProfile;
+                localStorage.setItem('currentUserProfile', selectedProfile);
+            } else {
+                showMessage("请选择一个已有用户或输入一个新用户名。");
+                return;
+            }
+            updateAllProfileDisplays();
+            showMessage(`用户已切换为: <strong>${currentUserProfile}</strong>`);
+        };
+
+        setProfileButton.addEventListener('click', handleSetProfile);
+        profileSelect.addEventListener('change', () => {
+            if (profileSelect.value) {
+                newProfileNameInput.value = '';
+            }
+        });
 
 
         // --- Firestore-based Session Management Functions ---
@@ -1468,13 +1605,15 @@
             const sessionData = {
                 ...currentQuizDetails,
                 userId: userId,
+                profileName: currentUserProfile || 'Anonymous', 
                 startTime: quizStartTime,
                 endTime: quizEndTime,
                 totalDurationSeconds: totalDurationSeconds,
                 score: score,
                 totalWords: words.length,
                 accuracy: accuracy,
-                sessionWords: words.map(w => ({
+                // For "Typing with Words" mode, save an empty array so wrong words are not recorded.
+                sessionWords: isTypingWithWordsMode ? [] : words.map(w => ({
                     english: w.english,
                     chinese: w.chinese,
                     wasCorrect: w.wasCorrect || false,
@@ -1508,7 +1647,7 @@
         const parseWordInput = (text) => {
             const lines = text.split('\n').map(line => line.trim()).filter(line => line);
             return lines.map(line => {
-                const parts = line.split(/[-=＝－]/).map(part => part.trim()); // Split by various delimiters
+                const parts = line.split(/[-=＝－]/).map(part => part.trim());
                 if (parts.length >= 2 && parts[0] && parts[1]) {
                     return { english: parts[0], chinese: parts[1] };
                 } else if (parts.length === 1 && parts[0]) {
@@ -1516,23 +1655,6 @@
                 }
                 return null;
             }).filter(Boolean);
-        };
-
-        // --- Audio Pre-fetch Function ---
-        const prefetchAudio = async (word) => {
-            if (audioCache.has(word) || !googleTranslateTtsEnabled) return;
-            try {
-                const targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word)}&tl=en&client=tw-ob`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-                
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('获取音频文件失败: ' + response.statusText);
-                const audioBlob = await response.blob();
-                audioCache.set(word, audioBlob);
-                console.log(`音频 "${word}" 已被预加载和缓存。`);
-            } catch (error) {
-                console.error(`无法预加载音频 "${word}":`, error);
-            }
         };
 
         const speak = async (text) => {
@@ -1699,27 +1821,33 @@ Format the response as a single, valid JSON object with these exact keys: "sylla
             return JSON.parse(jsonText);
         };
         
-        const callGeminiForMcqOptions = async (correctWord, allQuizWords) => {
-            const prompt = `For a multiple-choice question, the correct answer is "${correctWord}". 
-Please generate three incorrect options (distractors).
-1.  One distractor should be a real English word that looks or sounds similar to "${correctWord}".
-2.  The other two distractors should be common, real English words.
-3.  None of the distractors should be any of these words: ${JSON.stringify(allQuizWords)}.
+        const callGeminiForBatchMcqOptions = async (wordList, allQuizWords) => {
+            const prompt = `For each word in the following list, generate three incorrect multiple-choice options (distractors).
+1. One distractor should be a real English word that looks or sounds similar to the original word.
+2. The other two distractors should be common, real English words.
+3. IMPORTANT: None of the generated distractors should be any of these words: ${JSON.stringify(allQuizWords)}.
 
-Provide the response as a single, valid JSON object with these exact keys: "similar", "random1", "random2".`;
+Word list: ${JSON.stringify(wordList)}
+
+Provide the response as a single, valid JSON array of objects. Each object must have these exact keys: "original_word" and "distractors" (which is an array of three strings).`;
 
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
                     responseMimeType: "application/json",
                     responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            "similar": { "type": "STRING" },
-                            "random1": { "type": "STRING" },
-                            "random2": { "type": "STRING" }
-                        },
-                        required: ["similar", "random1", "random2"]
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "original_word": { "type": "STRING" },
+                                "distractors": {
+                                    type: "ARRAY",
+                                    items: { "type": "STRING" }
+                                }
+                            },
+                            required: ["original_word", "distractors"]
+                        }
                     }
                 }
             };
@@ -1731,7 +1859,7 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
             const result = await response.json();
             const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!jsonText) throw new Error("Could not generate MCQ options.");
+            if (!jsonText) throw new Error("Could not generate batch MCQ options.");
             return JSON.parse(jsonText);
         };
 
@@ -1786,39 +1914,40 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
         };
 
 
-        // --- Main Application Flow ---
-        const startQuiz = () => {
-            if (words.length === 0) {
-                showMessage('没有可供练习的单词。');
-                return;
+        // --- Main Application Flow & Page Switching ---
+        const showPage = (pageId) => {
+            [setupSection, quizSection, completionSection, modeSelectionSection, flashcardSection, mcQuizSection, typingPracticeSection].forEach(sec => sec.style.display = 'none');
+            
+            const targetSection = document.getElementById(pageId);
+            if (targetSection) {
+                const flexSections = ['flashcard-section', 'typing-practice-section', 'setup-section'];
+                targetSection.style.display = flexSections.includes(pageId) ? 'flex' : 'block';
             }
 
+            persistentProfileDisplay.style.display = (pageId === 'setup-section') ? 'none' : 'block';
+        };
+
+        const startQuiz = () => {
+            if (words.length === 0) { showMessage('没有可供练习的单词。'); return; }
+            exampleSentenceCache.clear();
             quizStartTime = new Date();
             currentWordIndex = 0;
             score = 0;
             
-            currentQuizDetails = { practiceMode: '单词拼写' };
-            if (wrongWordsRadio.checked) {
-                currentQuizDetails.practiceMode = '错题练习';
-            } else if (wordLibraryRadio.checked) {
-                currentQuizDetails.practiceMode = '单词库拼写';
+            if (isTypingWithWordsMode) {
+                 currentQuizDetails = { practiceMode: '看词打字练习' };
+            } else {
+                currentQuizDetails = { practiceMode: '单词拼写' };
+                if (wrongWordsRadio.checked) currentQuizDetails.practiceMode = '错题练习';
+                else if (wordLibraryRadio.checked) currentQuizDetails.practiceMode = '单词库拼写';
             }
-            
-            words.forEach(word => {
-                word.wasCorrect = false;
-                word.timeTakenSeconds = 0;
-            });
-            
-            shuffleArray(words);
-            
-            setupSection.style.display = 'none';
-            completionSection.style.display = 'none';
-            flashcardSection.style.display = 'none';
-            modeSelectionSection.style.display = 'none';
-            mcQuizSection.style.display = 'none';
-            typingPracticeSection.style.display = 'none';
-            quizSection.style.display = 'block';
 
+            words.forEach(word => { word.wasCorrect = false; word.timeTakenSeconds = 0; });
+            // For typing mode, we don't shuffle because the words are already ordered by repetition
+            if (!isTypingWithWordsMode) {
+                shuffleArray(words);
+            }
+            showPage('quiz-section');
             showNextWord();
         };
 
@@ -1830,11 +1959,7 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             const userAnswer = englishInput.value.trim().toLowerCase();
             const correctAnswer = words[currentWordIndex].english.toLowerCase();
             
-            if (userAnswer === '') {
-                feedback.textContent = '请输入答案！';
-                feedback.className = '';
-                return;
-            }
+            if (userAnswer === '') { feedback.textContent = '请输入答案！'; feedback.className = ''; return; }
 
             if (userAnswer === correctAnswer) {
                 score++;
@@ -1853,160 +1978,129 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             nextButton.style.display = 'block';
             nextButton.focus();
 
-            showLoader('正在生成例句...');
+            if (!isTypingWithWordsMode) {
+                 await showExampleSentenceForWord(words[currentWordIndex]);
+            }
+        };
+
+        const showExampleSentenceForWord = async (word) => {
+            if (exampleSentenceCache.has(word.english)) {
+                const data = exampleSentenceCache.get(word.english);
+                englishExampleSentence.textContent = data.englishSentence;
+                chineseExampleSentence.textContent = data.chineseSentence;
+                exampleSentenceContainer.style.display = 'block';
+                return;
+            }
+        
+            const loaderTimeout = setTimeout(() => showLoader('正在生成例句...'), 300);
             try {
-                const exampleData = await callGeminiForExampleSentenceAndTranslation(words[currentWordIndex].english);
-                englishExampleSentence.textContent = exampleData.englishSentence;
-                chineseExampleSentence.textContent = exampleData.chineseSentence;
+                const data = await callGeminiForExampleSentenceAndTranslation(word.english);
+                exampleSentenceCache.set(word.english, data);
+                englishExampleSentence.textContent = data.englishSentence;
+                chineseExampleSentence.textContent = data.chineseSentence;
                 exampleSentenceContainer.style.display = 'block';
             } catch (error) {
                 console.error("生成例句时出错:", error);
                 exampleSentenceContainer.style.display = 'none';
             } finally {
+                clearTimeout(loaderTimeout);
                 hideLoader();
             }
         };
 
-        const showNextWord = () => {
-            exampleSentenceContainer.style.display = 'none';
-            englishExampleSentence.textContent = '';
-            chineseExampleSentence.textContent = '';
-
+        const showNextWord = async () => {
             if (currentWordIndex < words.length) {
                 const word = words[currentWordIndex];
                 progressText.textContent = `第 ${currentWordIndex + 1} / ${words.length} 题`;
-                chinesePrompt.textContent = word.chinese;
+                
+                if (isTypingWithWordsMode) {
+                    chinesePrompt.innerHTML = `<span style="display: block; font-size: 1.5rem; color: #6c757d; margin-bottom: 10px; font-weight: normal; letter-spacing: 1px;">${word.english}</span><span>${word.chinese}</span>`;
+                    await showExampleSentenceForWord(word);
+                } else {
+                    chinesePrompt.textContent = word.chinese;
+                    exampleSentenceContainer.style.display = 'none';
+                }
+                
                 englishInput.placeholder = '_ '.repeat(word.english.length).trim();
                 englishInput.value = '';
                 englishInput.disabled = false;
                 feedback.textContent = '';
-                feedback.className = '';
                 checkButton.style.display = 'block';
                 nextButton.style.display = 'none';
                 englishInput.focus();
-                
                 wordStartTime = performance.now();
-                
-                if (autoSpeakEnabled) {
-                    speak(word.english);
-                }
-                
-                if (currentWordIndex + 1 < words.length) {
-                    prefetchAudio(words[currentWordIndex + 1].english);
-                }
-
+                if (autoSpeakEnabled) speak(word.english);
             } else {
                 showCompletionScreen();
             }
         };
 
         const showCompletionScreen = async () => {
-            // Only save session if it was a word-based quiz
-            if (currentQuizDetails.practiceMode) {
-                await savePracticeSessionToFirestore();
-            }
-
-            quizSection.style.display = 'none';
-            mcQuizSection.style.display = 'none';
-            completionSection.style.display = 'block';
-            
+            if (currentQuizDetails.practiceMode) await savePracticeSessionToFirestore();
+            showPage('completion-section');
             const totalDurationSeconds = words.length > 0 ? (new Date() - quizStartTime) / 1000 : 0;
             const averageTimePerWord = words.length > 0 ? words.reduce((acc, word) => acc + (word.timeTakenSeconds || 0), 0) / words.length : 0;
             const percentage = words.length > 0 ? Math.round((score / words.length) * 100) : 0;
-            
             scoreDisplay.innerHTML = `你答对了 <strong>${score}</strong> 道题，共 <strong>${words.length}</strong> 道。<br>正确率: <strong>${percentage}%</strong><br>总用时: <strong>${totalDurationSeconds.toFixed(2)}</strong> 秒<br>平均用时: <strong>${averageTimePerWord.toFixed(2)}</strong> 秒/词`;
-            
             wrongWordsList.innerHTML = '';
             const sessionWrongWords = words.filter(word => !word.wasCorrect);
-
             if (sessionWrongWords.length > 0) {
                 let html = '<h3>本次错题：</h3><ul>';
                 sessionWrongWords.forEach(word => {
                     html += `<li><strong>${word.english}</strong>: ${word.chinese} (${(word.timeTakenSeconds || 0).toFixed(2)}s)</li>`;
                 });
-                html += '</ul>';
-                wrongWordsList.innerHTML = html;
-            } else {
-                if (words.length > 0 && score === words.length) {
-                     wrongWordsList.innerHTML = '<p style="color: #28a745; font-weight: bold;">太棒了，全部正确！</p>';
-                } else {
-                     wrongWordsList.innerHTML = '<p style="color: #6c757d; font-weight: bold;">本次练习没有错题。</p>';
-                }
+                wrongWordsList.innerHTML = html + '</ul>';
+            } else if (words.length > 0) {
+                wrongWordsList.innerHTML = '<p style="color: #28a745; font-weight: bold;">太棒了，全部正确！</p>';
             }
         };
 
-
         checkButton.addEventListener('click', checkAnswer);
-        englishInput.addEventListener('keyup', (event) => {
-            if (event.key === 'Enter' && !englishInput.disabled) checkAnswer();
-        });
-        nextButton.addEventListener('click', () => {
-            currentWordIndex++;
-            showNextWord();
-        });
-        speakAgainButton.addEventListener('click', () => {
-            if(currentWordIndex < words.length) {
-                speak(words[currentWordIndex].english);
-            }
-        });
-        backToMenuButton.addEventListener('click', () => {
-            showCompletionScreen();
-        });
+        englishInput.addEventListener('keyup', (event) => { if (event.key === 'Enter' && !englishInput.disabled) checkAnswer(); });
+        nextButton.addEventListener('click', () => { currentWordIndex++; showNextWord(); });
+        speakAgainButton.addEventListener('click', () => { if(currentWordIndex < words.length) speak(words[currentWordIndex].english); });
+        backToMenuButton.addEventListener('click', showCompletionScreen);
 
         // --- Flashcard Logic ---
         const startFlashcards = () => {
             unlockAudioContext();
             autoSpeakEnabled = autoSpeakCheckbox.checked;
             currentFlashcardIndex = 0;
-            
-            modeSelectionSection.style.display = 'none';
-            flashcardSection.style.display = 'flex';
             flashcardCompletionOptions.style.display = 'none';
             flashcardNav.style.display = 'flex';
-            
+            showPage('flashcard-section');
             showFlashcard(currentFlashcardIndex);
         };
 
         const showFlashcard = async (index) => {
             if (index >= words.length) {
-                // Review is complete
                 flashcardNav.style.display = 'none';
                 flashcardCompletionOptions.style.display = 'flex';
                 flashcardContent.style.display = 'none';
                 flashcardProgress.textContent = `复习完毕 (${words.length} / ${words.length})`;
                 return;
             }
-
             flashcardProgress.textContent = `单词卡 ${index + 1} / ${words.length}`;
             flashcardPrevButton.disabled = (index === 0);
             flashcardNextButton.textContent = (index === words.length - 1) ? '完成复习' : '下一个';
-
             const currentWord = words[index];
-            
             if (currentWord.flashcardData) {
                 populateFlashcard(currentWord.flashcardData);
                 if (autoSpeakEnabled) speak(currentWord.english);
                 return;
             }
-
             flashcardSpinner.style.display = 'flex';
             flashcardContent.style.display = 'none';
             try {
                 const data = await callGeminiForFlashcardData(currentWord.english);
                 data.chinese = currentWord.chinese || data.chinese;
-                currentWord.flashcardData = data; // Cache the data
+                currentWord.flashcardData = data; 
                 populateFlashcard(data);
                 if (autoSpeakEnabled) speak(currentWord.english);
             } catch (error) {
                 console.error("Error fetching flashcard data:", error);
                 showMessage(`无法加载单词 "${currentWord.english}" 的详细信息。`);
-                populateFlashcard({
-                    syllables: currentWord.english,
-                    partOfSpeech: 'N/A',
-                    chinese: currentWord.chinese,
-                    englishSentence: 'Could not load example.',
-                    chineseSentence: '无法加载例句。'
-                });
+                populateFlashcard({ syllables: currentWord.english, partOfSpeech: 'N/A', chinese: currentWord.chinese, englishSentence: 'Could not load example.', chineseSentence: '无法加载例句。' });
             } finally {
                 flashcardSpinner.style.display = 'none';
                 flashcardContent.style.display = 'block';
@@ -2021,66 +2115,60 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             flashcardExampleChn.textContent = data.chineseSentence;
         };
 
-        flashcardPrevButton.addEventListener('click', () => {
-            if (currentFlashcardIndex > 0) {
-                currentFlashcardIndex--;
-                showFlashcard(currentFlashcardIndex);
-            }
-        });
-
-        flashcardNextButton.addEventListener('click', () => {
-            currentFlashcardIndex++;
-            showFlashcard(currentFlashcardIndex);
-        });
-
-        flashcardSpeakButton.addEventListener('click', () => {
-            if (currentFlashcardIndex < words.length) {
-                speak(words[currentFlashcardIndex].english);
-            }
-        });
-
+        flashcardPrevButton.addEventListener('click', () => { if (currentFlashcardIndex > 0) { currentFlashcardIndex--; showFlashcard(currentFlashcardIndex); } });
+        flashcardNextButton.addEventListener('click', () => { currentFlashcardIndex++; showFlashcard(currentFlashcardIndex); });
+        flashcardSpeakButton.addEventListener('click', () => { if (currentFlashcardIndex < words.length) speak(words[currentFlashcardIndex].english); });
         flashcardFinishPracticeButton.addEventListener('click', startQuiz);
         flashcardBackToMenuButton.addEventListener('click', () => { restartButton.click(); });
         flashcardFinishMenuButton.addEventListener('click', () => { restartButton.click(); });
 
-        // --- Multiple Choice Quiz Logic ---
+        // --- Multiple Choice Quiz Logic (MODIFIED for Performance) ---
         const startMcQuiz = async () => {
-            if (words.length === 0) {
-                showMessage('没有可供练习的单词。');
-                return;
-            }
+            if (words.length === 0) { showMessage('没有可供练习的单词。'); return; }
+            showLoader('正在为选择题生成选项...');
 
-            showLoader('正在为选择题生成选项和翻译...');
-            const allQuizWords = words.map(w => w.english);
             try {
-                for (let i = 0; i < words.length; i++) {
-                    const word = words[i];
-                    if (!word.mcOptions) { // Only fetch if not already fetched
-                        // 1. Get English distractors
-                        const distractorsResult = await callGeminiForMcqOptions(word.english, allQuizWords);
-                        const distractorWords = [distractorsResult.similar, distractorsResult.random1, distractorsResult.random2];
+                // Step 1: Identify words that need options generated.
+                const wordsToProcess = words.filter(word => !word.mcOptions);
 
-                        // 2. Get translations for distractors
-                        const translatedDistractors = await callGeminiForTranslation(distractorWords);
-                        
-                        // Create a map for easy lookup
-                        const translationMap = new Map();
-                        translatedDistractors.forEach(t => translationMap.set(t.english.toLowerCase(), t.chinese));
+                if (wordsToProcess.length > 0) {
+                    // Step 2: Batch generate all distractors in one API call.
+                    const wordsToProcessList = wordsToProcess.map(w => w.english);
+                    const allQuizWordsList = words.map(w => w.english);
+                    const batchDistractorsResult = await callGeminiForBatchMcqOptions(wordsToProcessList, allQuizWordsList);
 
-                        // 3. Build the final options array with objects
-                        const finalOptions = [];
-                        // Add correct answer
-                        finalOptions.push({ english: word.english, chinese: word.chinese });
-                        // Add distractors with their translations
-                        distractorWords.forEach(distractor => {
-                            finalOptions.push({
-                                english: distractor,
-                                chinese: translationMap.get(distractor.toLowerCase()) || '...'
-                            });
-                        });
-                        
-                        word.mcOptions = finalOptions;
-                    }
+                    // Create a map for easy lookup of generated distractors.
+                    const distractorsMap = new Map(batchDistractorsResult.map(item => [item.original_word.toLowerCase(), item.distractors]));
+
+                    // Step 3: Collect all unique distractors that need translation.
+                    const allDistractors = new Set();
+                    batchDistractorsResult.forEach(item => {
+                        item.distractors.forEach(d => allDistractors.add(d));
+                    });
+
+                    // Step 4: Batch translate all unique distractors in one API call.
+                    const translatedDistractors = await callGeminiForTranslation(Array.from(allDistractors));
+                    const translationMap = new Map(translatedDistractors.map(t => [t.english.toLowerCase(), t.chinese]));
+
+                    // Step 5: Populate the mcOptions for each word.
+                    wordsToProcess.forEach(word => {
+                        const wordDistractors = distractorsMap.get(word.english.toLowerCase());
+                        if (wordDistractors) {
+                            word.mcOptions = [
+                                { english: word.english, chinese: word.chinese },
+                                ...wordDistractors.map(d => ({ english: d, chinese: translationMap.get(d.toLowerCase()) || '...' }))
+                            ];
+                        } else {
+                            // Fallback in case a word was missed in the batch result
+                            console.warn(`Could not find distractors for ${word.english} in batch result.`);
+                            word.mcOptions = [
+                                { english: word.english, chinese: word.chinese },
+                                { english: "option", chinese: "选项" },
+                                { english: "choice", chinese: "选择" },
+                                { english: "answer", chinese: "答案" },
+                            ];
+                        }
+                    });
                 }
             } catch (error) {
                 console.error("Error generating MCQ options:", error);
@@ -2088,79 +2176,50 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 hideLoader();
                 return;
             }
-            hideLoader();
 
+            hideLoader();
             quizStartTime = new Date();
             currentMcQuizIndex = 0;
             score = 0;
             currentQuizDetails = { practiceMode: '单词选择题' };
-            
-            words.forEach(word => {
-                word.wasCorrect = false;
-                word.timeTakenSeconds = 0;
-            });
-            
+            words.forEach(word => { word.wasCorrect = false; word.timeTakenSeconds = 0; });
             shuffleArray(words);
-            
-            setupSection.style.display = 'none';
-            completionSection.style.display = 'none';
-            flashcardSection.style.display = 'none';
-            modeSelectionSection.style.display = 'none';
-            quizSection.style.display = 'none';
-            typingPracticeSection.style.display = 'none';
-            mcQuizSection.style.display = 'block';
-
+            showPage('mc-quiz-section');
             showNextMcQuestion();
         };
 
-        const showNextMcQuestion = () => {
-            if (currentMcQuizIndex >= words.length) {
-                showCompletionScreen();
-                return;
-            }
 
+        const showNextMcQuestion = () => {
+            if (currentMcQuizIndex >= words.length) { showCompletionScreen(); return; }
             const word = words[currentMcQuizIndex];
             mcProgress.textContent = `第 ${currentMcQuizIndex + 1} / ${words.length} 题`;
             mcFeedback.textContent = '';
             mcNextButton.style.display = 'none';
-            
             mcOptionsContainer.innerHTML = '';
             const shuffledOptions = [...word.mcOptions];
             shuffleArray(shuffledOptions);
-
             shuffledOptions.forEach(option => {
                 const button = document.createElement('button');
-                // MODIFIED: Display both English and Chinese
                 button.innerHTML = `${option.english}<br><span style="font-size: 0.8em; color: #666; font-weight: normal;">${option.chinese}</span>`;
-                button.classList.add('mc-option-button');
-                // MODIFIED: Dataset uses the English word for checking the answer
+                button.className = 'mc-option-button';
                 button.dataset.word = option.english;
                 mcOptionsContainer.appendChild(button);
                 button.addEventListener('click', () => checkMcAnswer(button, word.english));
             });
-            
             wordStartTime = performance.now();
-            if(autoSpeakEnabled) {
-                speak(word.english);
-            }
+            if(autoSpeakEnabled) speak(word.english);
         };
         
         const checkMcAnswer = (selectedButton, correctAnswer) => {
             const timeTakenSeconds = (performance.now() - wordStartTime) / 1000;
             const currentWord = words[currentMcQuizIndex];
             currentWord.timeTakenSeconds = timeTakenSeconds;
-
             const isCorrect = selectedButton.dataset.word.toLowerCase() === correctAnswer.toLowerCase();
-            
             Array.from(mcOptionsContainer.children).forEach(button => {
                 button.disabled = true;
-                if (button.dataset.word.toLowerCase() === correctAnswer.toLowerCase()) {
-                    button.classList.add('correct-answer');
-                } else if (button === selectedButton) {
-                    button.classList.add('wrong-answer');
-                }
+                if (button.dataset.word.toLowerCase() === correctAnswer.toLowerCase()) button.classList.add('correct-answer');
+                else if (button === selectedButton) button.classList.add('wrong-answer');
             });
-
             if (isCorrect) {
                 score++;
                 currentWord.wasCorrect = true;
@@ -2168,38 +2227,26 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 mcFeedback.className = 'correct';
             } else {
                 currentWord.wasCorrect = false;
-                // MODIFIED: Show Chinese translation in the feedback for the correct answer
                 mcFeedback.innerHTML = `❌ 错误！正确答案是: <strong>${currentWord.english}</strong> (${currentWord.chinese})`;
                 mcFeedback.className = 'incorrect';
             }
-
             mcNextButton.style.display = 'block';
             mcNextButton.focus();
         };
         
-        mcSpeakButton.addEventListener('click', () => {
-            if (currentMcQuizIndex < words.length) {
-                speak(words[currentMcQuizIndex].english);
-            }
-        });
-        
-        mcNextButton.addEventListener('click', () => {
-            currentMcQuizIndex++;
-            showNextMcQuestion();
-        });
-
+        mcSpeakButton.addEventListener('click', () => { if (currentMcQuizIndex < words.length) speak(words[currentMcQuizIndex].english); });
+        mcNextButton.addEventListener('click', () => { currentMcQuizIndex++; showNextMcQuestion(); });
         mcBackToMenuButton.addEventListener('click', showCompletionScreen);
 
-        // --- NEW: Typing Practice Logic ---
+        // --- Typing Practice Logic ---
         const startTypingPractice = () => {
-            unlockAudioContext(); // Ensure audio is ready
-            setupSection.style.display = 'none';
-            typingPracticeSection.style.display = 'flex';
+            unlockAudioContext(); 
             isTypingPracticeActive = true;
             waitingForRestart = true;
             typingInfo.innerHTML = `<p>请按 'a' 键开始新一轮练习</p>`;
             nextCharIndicator.style.display = 'none';
             document.addEventListener('keydown', handleTypingKeyPress);
+            showPage('typing-practice-section');
         };
 
         const startNewTypingRound = () => {
@@ -2211,46 +2258,35 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
         };
         
         const endTypingRound = () => {
-            isTypingPracticeActive = false; // Temporarily disable listener
+            isTypingPracticeActive = false; 
             const endTime = performance.now();
             const elapsedTime = (endTime - typingStartTime) / 1000;
-            
             let isNewRecord = bestTypingScores.length < 5 || elapsedTime < bestTypingScores[bestTypingScores.length - 1].score;
-            
             let message = `🎉 太棒了！用时 <strong>${elapsedTime.toFixed(2)}</strong> 秒！`;
             if (isNewRecord) {
                 message = `<span class="new-record">🏆 新纪录！太厉害了！用时 <strong>${elapsedTime.toFixed(2)}</strong> 秒！</span>`;
                 saveTypingScoreToFirestore(elapsedTime);
             }
             message += `<br><span style="font-size: 0.8em; color: #666;">请按 'a' 键开始新一轮练习</span>`;
-            
             typingInfo.innerHTML = message;
             nextCharIndicator.style.display = 'none';
             waitingForRestart = true;
-            isTypingPracticeActive = true; // Re-enable listener
+            isTypingPracticeActive = true; 
         };
 
         const handleTypingKeyPress = (event) => {
-            if (!isTypingPracticeActive || event.key.length > 1) { // Ignore keys like Shift, Ctrl
-                return;
-            }
-            
+            if (!isTypingPracticeActive || event.key.length > 1) return;
             const keyPressed = event.key.toLowerCase();
-
             if (waitingForRestart) {
-                if (keyPressed === 'a') {
-                    startNewTypingRound();
-                }
+                if (keyPressed === 'a') startNewTypingRound();
                 return;
             }
-
             const targetChar = alphabet[currentTargetCharIndex];
             if (keyPressed === targetChar) {
                 currentTargetCharIndex++;
                 if (currentTargetCharIndex < alphabet.length) {
                     updateNextCharDisplay();
-                    const nextChar = alphabet[currentTargetCharIndex].toUpperCase();
-                    typingInfo.innerHTML = `<p>正在计时... 字母: <span style="color: #dc3545;">${nextChar}</span></p>`;
+                    typingInfo.innerHTML = `<p>正在计时... 字母: <span style="color: #dc3545;">${alphabet[currentTargetCharIndex].toUpperCase()}</span></p>`;
                 } else {
                     endTypingRound();
                 }
@@ -2274,26 +2310,16 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             if (!isAuthReady) return;
             const docRef = doc(db, TYPING_SCORES_DOC);
             onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    bestTypingScores = docSnap.data().scores || [];
-                } else {
-                    bestTypingScores = [];
-                }
+                bestTypingScores = docSnap.exists() ? (docSnap.data().scores || []) : [];
                 displayLeaderboard();
-            }, (error) => {
-                console.error("Error loading typing scores:", error);
-            });
+            }, (error) => console.error("Error loading typing scores:", error));
         };
 
         const saveTypingScoreToFirestore = async (newScore) => {
             if (!isAuthReady) return;
-            const newEntry = { score: newScore, date: new Date().toISOString().split('T')[0], user: userId.substring(0, 6) };
+            const newEntry = { score: newScore, date: new Date().toISOString().split('T')[0], user: currentUserProfile || 'Anonymous' }; 
             let updatedScores = [...bestTypingScores, newEntry];
-            updatedScores.sort((a, b) => a.score - b.score);
-            if (updatedScores.length > 5) {
-                updatedScores = updatedScores.slice(0, 5);
-            }
-            
+            updatedScores.sort((a, b) => a.score - b.score).slice(0, 5);
             try {
                 await setDoc(doc(db, TYPING_SCORES_DOC), { scores: updatedScores });
                 console.log("Typing score saved successfully.");
@@ -2303,16 +2329,8 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
         };
 
         const displayLeaderboard = () => {
-            leaderboardList.innerHTML = '';
-            if (bestTypingScores.length === 0) {
-                leaderboardList.innerHTML = '<li>暂无记录</li>';
-                return;
-            }
-            bestTypingScores.forEach(entry => {
-                const li = document.createElement('li');
-                li.textContent = `${entry.score.toFixed(2)}s - by ${entry.user || 'anon'}`;
-                leaderboardList.appendChild(li);
-            });
+            leaderboardList.innerHTML = bestTypingScores.length === 0 ? '<li>暂无记录</li>' : 
+                bestTypingScores.map(entry => `<li>${entry.score.toFixed(2)}s - by ${entry.user || 'anon'}</li>`).join('');
         };
         
         typingBackButton.addEventListener('click', () => {
@@ -2321,31 +2339,20 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             goBackToMainMenu();
         });
 
-
         const goBackToMainMenu = () => {
-            completionSection.style.display = 'none';
-            quizSection.style.display = 'none';
-            flashcardSection.style.display = 'none';
-            modeSelectionSection.style.display = 'none';
-            mcQuizSection.style.display = 'none';
-            typingPracticeSection.style.display = 'none';
-            setupSection.style.display = 'block';
-            
+            showPage('setup-section');
             words = [];
+            originalWords = [];
             wordInput.value = '';
             uploadStatus.textContent = '未选择任何文件';
             fileUpload.value = '';
             selectedFile = null;
             startButton.disabled = true;
             uploadConfirmButton.disabled = true;
-            autoSpeakCheckbox.checked = true;
-            autoSpeakEnabled = true;
-            googleTtsCheckbox.checked = false;
-            googleTranslateTtsEnabled = false;
             newWordsRadio.checked = true;
-            
             audioCache.clear();
-
+            exampleSentenceCache.clear();
+            isTypingWithWordsMode = false;
             loadPracticeSessionsFromFirestore();
             updatePracticeModeDisplay();
         };
@@ -2362,25 +2369,19 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
         const updateStartButtonState = () => {
             let canStart = false;
             const selectedMode = document.querySelector('input[name="practice-mode"]:checked').value;
-
             switch(selectedMode) {
                 case 'new-words':
                     canStart = wordInput.value.trim() !== '' || (selectedFile && !uploadConfirmButton.disabled);
                     break;
                 case 'wrong-words':
-                    const checkedSessions = inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked');
-                    canStart = checkedSessions.length > 0;
+                    canStart = inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked').length > 0;
                     break;
                 case 'word-library':
                     canStart = words.length > 0;
                     break;
                 case 'mc-quiz':
                     const mcSource = document.querySelector('input[name="mc-source"]:checked').value;
-                    if (mcSource === 'random') {
-                        canStart = parseInt(randomWordCountInput.value) > 0 && allWordsFromLibrary.length > 0;
-                    } else { // manual
-                        canStart = words.length > 0;
-                    }
+                    canStart = (mcSource === 'random') ? (parseInt(randomWordCountInput.value) > 0 && allWordsFromLibrary.length > 0) : (words.length > 0);
                     break;
                 case 'typing-practice':
                     canStart = true;
@@ -2392,129 +2393,87 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
         const updatePracticeModeDisplay = () => {
             document.querySelectorAll('.mode-setup-section').forEach(el => el.style.display = 'none');
             const selectedMode = document.querySelector('input[name="practice-mode"]:checked').value;
-            commonSettings.style.display = 'block'; // Show common settings by default
-            
+            commonSettings.style.display = 'block';
             switch(selectedMode) {
-                case 'new-words':
-                    newWordsInputArea.style.display = 'flex';
-                    break;
-                case 'wrong-words':
-                    if (persistentWrongWords.length > 0) {
-                        inlineWrongWordsSelection.style.display = 'flex';
-                        showInlineWrongWordsSelection();
-                    }
-                    break;
-                case 'word-library':
-                    wordLibrarySelectionArea.style.display = 'flex';
-                    updateSelectedLibraryDisplay();
-                    break;
-                case 'mc-quiz':
-                    multipleChoiceSetupArea.style.display = 'flex';
-                    updateMcSourceDisplay();
-                    break;
-                case 'typing-practice':
-                    simpleModeArea.style.display = 'flex';
-                    commonSettings.style.display = 'none'; // Hide settings not relevant to typing
-                    break;
+                case 'new-words': newWordsInputArea.style.display = 'flex'; break;
+                case 'wrong-words': if (persistentWrongWords.length > 0) { inlineWrongWordsSelection.style.display = 'flex'; showInlineWrongWordsSelection(); } break;
+                case 'word-library': wordLibrarySelectionArea.style.display = 'flex'; updateSelectedLibraryDisplay(); break;
+                case 'mc-quiz': multipleChoiceSetupArea.style.display = 'flex'; updateMcSourceDisplay(); break;
+                case 'typing-practice': simpleModeArea.style.display = 'flex'; commonSettings.style.display = 'none'; break;
             }
             updateStartButtonState();
         };
         
         const updateMcSourceDisplay = () => {
             const mcSource = document.querySelector('input[name="mc-source"]:checked').value;
-            if (mcSource === 'random') {
-                mcRandomOptions.style.display = 'flex';
-                mcManualOptions.style.display = 'none';
-            } else {
-                mcRandomOptions.style.display = 'none';
-                mcManualOptions.style.display = 'block';
-            }
+            mcRandomOptions.style.display = (mcSource === 'random') ? 'flex' : 'none';
+            mcManualOptions.style.display = (mcSource === 'manual') ? 'block' : 'none';
             updateStartButtonState();
         };
-
 
         // --- Inline Wrong Words Selection Logic ---
         const showInlineWrongWordsSelection = () => {
-            inlineWrongWordsSessionsList.innerHTML = '';
-            if (allPracticeSessions && allPracticeSessions.length > 0) {
-                allPracticeSessions.forEach(session => {
-                    const wrongWordsInSession = session.sessionWords?.filter(w => !w.wasCorrect) || [];
-                    if (wrongWordsInSession.length === 0) return;
-
-                    const sessionItem = document.createElement('div');
-                    sessionItem.classList.add('session-item');
-                    sessionItem.dataset.sessionId = session.id;
-
-                    const sessionHeader = document.createElement('div');
-                    sessionHeader.classList.add('session-header');
-                    
-                    const sessionDate = session.endTime.toDate ? session.endTime.toDate().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未知日期';
-                    const accuracyText = session.accuracy !== undefined ? `${(session.accuracy * 100).toFixed(0)}%` : 'N/A';
-                    const modeText = session.practiceMode || '未知模式';
-                    const libraryText = modeText === '单词库练习' && session.libraryInfo ? `(${session.libraryInfo.subsetName})` : '';
-
-                    sessionHeader.innerHTML = `
-                        <input type="checkbox" value="${session.id}">
-                        <div class="session-info">
-                            <strong>${sessionDate}</strong> (${wrongWordsInSession.length} 个错词, 正确率 ${accuracyText})
-                            <span class="session-mode">${modeText} ${libraryText}</span>
-                        </div>
-                        <span class="toggle-icon">▶</span>
-                    `;
-                    sessionItem.appendChild(sessionHeader);
-
-                    const wordsList = document.createElement('ul');
-                    wordsList.classList.add('session-words-list');
-                    (session.sessionWords || []).forEach(word => {
-                        const listItem = document.createElement('li');
-                        const statusClass = word.wasCorrect ? 'correct' : 'incorrect';
-                        const statusSymbol = word.wasCorrect ? '✔' : '❌';
-                        listItem.innerHTML = `<span class="${statusClass}">${statusSymbol} ${word.english}: ${word.chinese} (${(word.timeTakenSeconds || 0).toFixed(2)}s)</span>`;
-                        wordsList.appendChild(listItem);
-                    });
-                    sessionItem.appendChild(wordsList);
-
-                    inlineWrongWordsSessionsList.appendChild(sessionItem);
-
-                    sessionHeader.addEventListener('click', (e) => {
-                        if (e.target.type === 'checkbox') return;
-                        e.stopPropagation();
-                        wordsList.classList.toggle('show');
-                        sessionHeader.querySelector('.toggle-icon').classList.toggle('expanded');
-                    });
-                });
-            } else {
+            if (!allPracticeSessions || allPracticeSessions.length === 0) {
                 inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: #777;">暂无错题记录。</p>';
+                return;
             }
+            
+            inlineWrongWordsSessionsList.innerHTML = '';
+            allPracticeSessions.forEach(session => {
+                const wrongWordsInSession = session.sessionWords?.filter(w => !w.wasCorrect) || [];
+                if (wrongWordsInSession.length === 0) return;
+
+                const sessionItem = document.createElement('div');
+                sessionItem.className = 'session-item';
+                const sessionHeader = document.createElement('div');
+                sessionHeader.className = 'session-header';
+                
+                const sessionDate = session.endTime.toDate ? session.endTime.toDate().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未知日期';
+                const accuracyText = session.accuracy !== undefined ? `${(session.accuracy * 100).toFixed(0)}%` : 'N/A';
+                const profileNameText = session.profileName ? ` [${session.profileName}]` : '';
+
+                sessionHeader.innerHTML = `
+                    <input type="checkbox" value="${session.id}">
+                    <div class="session-info">
+                        <strong>${sessionDate}</strong>${profileNameText} (${wrongWordsInSession.length} 个错词, 正确率 ${accuracyText})
+                        <span class="session-mode">${session.practiceMode || '未知模式'}</span>
+                    </div>
+                    <span class="toggle-icon">▶</span>`;
+                sessionItem.appendChild(sessionHeader);
+
+                const wordsList = document.createElement('ul');
+                wordsList.className = 'session-words-list';
+                session.sessionWords.forEach(word => {
+                    const statusClass = word.wasCorrect ? 'correct' : 'incorrect';
+                    const statusSymbol = word.wasCorrect ? '✔' : '❌';
+                    wordsList.innerHTML += `<li><span class="${statusClass}">${statusSymbol} ${word.english}: ${word.chinese}</span></li>`;
+                });
+                sessionItem.appendChild(wordsList);
+                inlineWrongWordsSessionsList.appendChild(sessionItem);
+
+                sessionHeader.addEventListener('click', (e) => {
+                    if (e.target.type === 'checkbox') return;
+                    wordsList.classList.toggle('show');
+                    sessionHeader.querySelector('.toggle-icon').classList.toggle('expanded');
+                });
+            });
             updateStartButtonState();
         };
 
-        inlineWrongWordsSelection.addEventListener('change', (event) => {
-            if (event.target.type === 'checkbox') {
-                updateStartButtonState();
-            }
-        });
-
+        inlineWrongWordsSelection.addEventListener('change', (e) => { if (e.target.type === 'checkbox') updateStartButtonState(); });
 
         document.getElementById('clear-wrong-words-button').addEventListener('click', () => {
-             showMessage(`请输入确认码以清除所有错题记录。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-clear-wrong-words" class="secondary" style="width: auto; margin-right: 10px;">确认清除</button><button id="cancel-clear-wrong-words" style="width: auto;">取消</button>`);
-
+            showMessage(`请输入确认码以清除所有错题记录。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-clear-wrong-words" class="secondary" style="width: auto; margin-right: 10px;">确认清除</button><button id="cancel-clear-wrong-words" style="width: auto;">取消</button>`);
             document.getElementById('confirm-clear-wrong-words').onclick = async () => {
-                const code = document.getElementById('confirm-code-input').value;
-                if (code === '1234') {
+                if (document.getElementById('confirm-code-input').value === '1234') {
                     messageDialog.style.display = 'none';
                     showLoader("正在清除所有记录...");
                     try {
                         const sessionsCollectionPath = `${USER_SESSIONS_COLLECTION_BASE}${userId}/practiceSessions`;
-                        const q = query(collection(db, sessionsCollectionPath));
-                        const querySnapshot = await getDocs(q);
-                        
+                        const querySnapshot = await getDocs(query(collection(db, sessionsCollectionPath)));
                         const batch = writeBatch(db);
-                        querySnapshot.forEach(doc => {
-                            batch.delete(doc.ref);
-                        });
+                        querySnapshot.forEach(doc => batch.delete(doc.ref));
                         await batch.commit();
-
                         await loadPracticeSessionsFromFirestore();
                         showMessage('所有错题记录已清除。');
                         newWordsRadio.checked = true;
@@ -2522,17 +2481,10 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                     } catch (error) {
                         console.error("清除错题记录时出错: ", error);
                         showMessage("清除失败，请检查网络或重试。");
-                    } finally {
-                        hideLoader();
-                    }
-                } else {
-                    showMessage('确认码不正确，清除操作已取消。');
-                }
+                    } finally { hideLoader(); }
+                } else { showMessage('确认码不正确，清除操作已取消。'); }
             };
-
-            document.getElementById('cancel-clear-wrong-words').onclick = () => {
-                messageDialog.style.display = 'none';
-            };
+            document.getElementById('cancel-clear-wrong-words').onclick = () => { messageDialog.style.display = 'none'; };
         });
 
         // --- Setup Section Logic ---
@@ -2542,13 +2494,9 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 uploadConfirmButton.disabled = true;
                 selectedFile = null;
                 fileUpload.value = '';
-                newWordsRadio.checked = true;
-                updatePracticeModeDisplay();
             } else if (selectedFile) {
                  uploadStatus.textContent = `已选择: ${selectedFile.name}`;
                  uploadConfirmButton.disabled = false;
-                 newWordsRadio.checked = true;
-                 updatePracticeModeDisplay();
             } else {
                  uploadStatus.textContent = '未选择任何文件';
                  uploadConfirmButton.disabled = true;
@@ -2563,14 +2511,11 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             if (!selectedFile) {
                 uploadStatus.textContent = '未选择任何文件';
                 uploadConfirmButton.disabled = true;
-                updateStartButtonState();
-                return;
+            } else {
+                uploadStatus.textContent = `已选择: ${selectedFile.name}`;
+                uploadConfirmButton.disabled = false;
+                wordInput.value = '';
             }
-            uploadStatus.textContent = `已选择: ${selectedFile.name}`;
-            uploadConfirmButton.disabled = false;
-            wordInput.value = '';
-            newWordsRadio.checked = true;
-            updatePracticeModeDisplay();
             updateStartButtonState();
         });
 
@@ -2580,97 +2525,65 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 showLoader('正在处理文件...');
                 const base64Data = await fileToBase64(selectedFile);
                 const mimeType = selectedFile.type || getMimeType(selectedFile.name);
-
                 showLoader('正在提取文件内容...');
                 const extractedText = await extractTextFromFile(base64Data, mimeType);
-                wordInput.value = extractedText; // Populate textarea with extracted text
-
+                wordInput.value = extractedText;
                 uploadStatus.textContent = `文件内容已提取，请点击“准备开始”。`;
-                selectedFile = null; // Reset file selection
+                selectedFile = null; 
                 fileUpload.value = '';
                 uploadConfirmButton.disabled = true;
-                newWordsRadio.checked = true;
-                updatePracticeModeDisplay();
                 updateStartButtonState();
-
             } catch (error) {
                 console.error("处理文件失败:", error);
                 showMessage(`处理文件失败: ${error.message}`);
                 uploadStatus.textContent = '处理失败，请重试。';
-                words = [];
-            } finally {
-                hideLoader();
-            }
+            } finally { hideLoader(); }
         });
 
         const getMimeType = (filename) => {
             const extension = filename.split('.').pop().toLowerCase();
-            const mimeTypes = {
-                'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'heic': 'image/heic',
-                'txt': 'text/plain', 'csv': 'text/csv', 'doc': 'application/msword',
-                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'xls': 'application/vnd.ms-excel',
-                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'pdf': 'application/pdf'
-            };
+            const mimeTypes = { 'jpg': 'image/jpeg', 'png': 'image/png', 'txt': 'text/plain', 'pdf': 'application/pdf' };
             return mimeTypes[extension] || 'application/octet-stream';
         };
 
-        document.querySelectorAll('input[name="practice-mode"]').forEach(radio => {
-            radio.addEventListener('change', updatePracticeModeDisplay);
-        });
-        
-        mcSourceRadios.forEach(radio => {
-            radio.addEventListener('change', updateMcSourceDisplay);
-        });
-        
+        document.querySelectorAll('input[name="practice-mode"]').forEach(radio => radio.addEventListener('change', updatePracticeModeDisplay));
+        mcSourceRadios.forEach(radio => radio.addEventListener('change', updateMcSourceDisplay));
         randomWordCountInput.addEventListener('input', updateStartButtonState);
-        selectMcWordsButton.addEventListener('click', () => {
-             openWordLibraryModal('select-mc');
-        });
-
-        googleTtsCheckbox.addEventListener('change', () => {
-            googleTranslateTtsEnabled = googleTtsCheckbox.checked;
-        });
+        selectMcWordsButton.addEventListener('click', () => openWordLibraryModal('select-mc'));
+        googleTtsCheckbox.addEventListener('change', () => { googleTranslateTtsEnabled = googleTtsCheckbox.checked; });
         
         startButton.addEventListener('click', async () => {
+            if (!currentUserProfile) {
+                showMessage("开始练习前，请先选择或创建一个练习用户名。");
+                return;
+            }
             let tempWords = [];
             const selectedMode = document.querySelector('input[name="practice-mode"]:checked').value;
             
-            // Handle typing practice mode separately
-            if (selectedMode === 'typing-practice') {
-                startTypingPractice();
-                return;
-            }
+            if (selectedMode === 'typing-practice') { startTypingPractice(); return; }
 
-            // Logic for fetching words based on other modes
             if (selectedMode === 'wrong-words') {
-                const selectedSessionIds = Array.from(inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+                const selectedSessionIds = Array.from(inlineWrongWordsSelection.querySelectorAll('input:checked')).map(cb => cb.value);
                 if (selectedSessionIds.length === 0) { showMessage('请选择至少一个错题练习会话。'); return; }
                 let wordsToPracticeMap = new Map();
                 allPracticeSessions.forEach(session => {
                     if (selectedSessionIds.includes(session.id)) {
                         (session.sessionWords || []).filter(w => !w.wasCorrect).forEach(word => {
-                            if (!wordsToPracticeMap.has(word.english)) {
-                                wordsToPracticeMap.set(word.english, { english: word.english, chinese: word.chinese });
-                            }
+                            wordsToPracticeMap.set(word.english, { english: word.english, chinese: word.chinese });
                         });
                     }
                 });
                 tempWords = Array.from(wordsToPracticeMap.values());
-            } 
-            else if (selectedMode === 'word-library' || (selectedMode === 'mc-quiz' && document.querySelector('input[name="mc-source"]:checked').value === 'manual')) {
+            } else if (selectedMode === 'word-library' || (selectedMode === 'mc-quiz' && document.querySelector('input[name="mc-source"]:checked').value === 'manual')) {
                 if (words.length === 0) { showMessage('请从单词库中选择至少一个单词。'); return; }
                 tempWords = [...words];
-            }
-            else if (selectedMode === 'mc-quiz' && document.querySelector('input[name="mc-source"]:checked').value === 'random') {
+            } else if (selectedMode === 'mc-quiz' && document.querySelector('input[name="mc-source"]:checked').value === 'random') {
                 const count = parseInt(randomWordCountInput.value);
                 if (isNaN(count) || count <= 0) { showMessage('请输入有效的随机单词数量。'); return; }
-                if (count > allWordsFromLibrary.length) { showMessage(`单词库中只有 ${allWordsFromLibrary.length} 个单词，无法抽取 ${count} 个。`); return; }
+                if (count > allWordsFromLibrary.length) { showMessage(`单词库中只有 ${allWordsFromLibrary.length} 个单词。`); return; }
                 shuffleArray(allWordsFromLibrary);
                 tempWords = allWordsFromLibrary.slice(0, count);
-            }
-            else { // new-words mode
+            } else { // new-words
                 const parsedWords = parseWordInput(wordInput.value);
                 if (parsedWords.length === 0) { showMessage('请输入单词！'); return; }
                 try {
@@ -2679,38 +2592,90 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 } catch (error) {
                      console.error("处理单词时发生错误:", error);
                      showMessage(`处理单词时发生错误: ${error.message}`);
-                     hideLoader();
                      return;
-                } finally {
-                    hideLoader();
-                }
+                } finally { hideLoader(); }
             }
 
-            // Transition to next step
             if (tempWords.length > 0) {
-                words = tempWords;
+                words = [...tempWords];
+                originalWords = [...tempWords]; // Keep a backup of the original list for repetitions
                 if (selectedMode === 'mc-quiz') {
                     await startMcQuiz();
                 } else {
-                    setupSection.style.display = 'none';
                     modeSelectionWordCount.textContent = words.length;
-                    modeSelectionSection.style.display = 'block';
+                    showPage('mode-selection-section');
+                    // Ensure the repetition setup is hidden initially
+                    modeSelectionSection.querySelector('.button-group').style.display = 'flex';
+                    typingRepetitionSetup.style.display = 'none';
                 }
             } else {
                 showMessage('未能成功处理或选中单词，请检查输入或网络。');
             }
         });
 
-        // Event listeners for the mode selection screen
         modeSelectFlashcard.addEventListener('click', startFlashcards);
-        modeSelectPractice.addEventListener('click', startQuiz);
+        modeSelectPractice.addEventListener('click', () => {
+            isTypingWithWordsMode = false;
+            words = [...originalWords]; // Ensure we start with the original list
+            startQuiz();
+        });
         modeSelectBack.addEventListener('click', () => {
-            modeSelectionSection.style.display = 'none';
-            setupSection.style.display = 'block';
-            if (!wordLibraryRadio.checked) { words = []; }
+            showPage('setup-section');
+            if (!wordLibraryRadio.checked) {
+                words = [];
+                originalWords = [];
+            }
             updateStartButtonState();
+            modeSelectionSection.querySelector('.button-group').style.display = 'flex';
+            typingRepetitionSetup.style.display = 'none';
         });
 
+        // --- NEW: Event listeners for "Typing with Words" feature ---
+        modeSelectTypingWithWords.addEventListener('click', () => {
+            modeSelectionSection.querySelector('.button-group').style.display = 'none';
+            typingRepetitionSetup.style.display = 'block';
+        });
+
+        cancelTypingWithWordsSetup.addEventListener('click', () => {
+            modeSelectionSection.querySelector('.button-group').style.display = 'flex';
+            typingRepetitionSetup.style.display = 'none';
+        });
+
+        startTypingWithWordsPractice.addEventListener('click', () => {
+            let repetitionCount = 1;
+            const selectedRadio = document.querySelector('input[name="repetition-count"]:checked').value;
+            if (selectedRadio === 'custom') {
+                repetitionCount = parseInt(customRepetitionInput.value, 10) || 1;
+            } else {
+                repetitionCount = parseInt(selectedRadio, 10);
+            }
+
+            if (repetitionCount < 1) repetitionCount = 1;
+
+            let repeatedWords = [];
+            originalWords.forEach(word => {
+                for (let i = 0; i < repetitionCount; i++) {
+                    repeatedWords.push({ ...word });
+                }
+            });
+            words = repeatedWords; // Overwrite the global words array for this quiz session
+
+            isTypingWithWordsMode = true;
+            startQuiz();
+        });
+
+        repetitionRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const isCustom = document.querySelector('input[name="repetition-count"]:checked').value === 'custom';
+                customRepetitionInput.disabled = !isCustom;
+                if(isCustom) customRepetitionInput.focus();
+            });
+        });
+        customRepetitionInput.disabled = document.querySelector('input[name="repetition-count"]:checked').value !== 'custom';
+        customRepetitionInput.addEventListener('input', () => {
+             document.querySelector('input[name="repetition-count"][value="custom"]').checked = true;
+             customRepetitionInput.disabled = false;
+        });
 
         // --- Word Library Management Logic ---
         const updateSelectedLibraryDisplay = () => {
@@ -2850,7 +2815,7 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                             const subsetsToDeleteSnapshot = await getDocs(query(collection(db, PUBLIC_SUBSETS_COLLECTION), where("libraryId", "==", libraryIdToDelete)));
                             for (const subsetDoc of subsetsToDeleteSnapshot.docs) {
                                 const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION), where("subsetId", "==", subsetDoc.id)));
-                                wordsSnapshot.forEach(wordDoc => batch.delete(wordDoc.ref));
+                                wordsSnapshot.forEach(wordDoc => batch.delete(doc.ref));
                                 batch.delete(subsetDoc.ref);
                             }
                             batch.delete(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryIdToDelete));
@@ -3232,7 +3197,6 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
 
         librarySelectionTree.addEventListener('click', (e) => {
             const target = e.target;
-            // Toggle word list visibility
             if (target.closest('.subset-header')) {
                 const header = target.closest('.subset-header');
                 const wordList = header.nextElementSibling;
@@ -3245,14 +3209,12 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
 
         librarySelectionTree.addEventListener('change', (e) => {
             const target = e.target;
-            // Subset checkbox changed
             if (target.classList.contains('subset-checkbox')) {
                 const subsetId = target.dataset.subsetId;
                 const isChecked = target.checked;
                 const wordCheckboxes = librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]`);
                 wordCheckboxes.forEach(cb => cb.checked = isChecked);
             }
-            // Word checkbox changed
             if (target.classList.contains('word-checkbox')) {
                 const subsetId = target.dataset.subsetId;
                 const allWordCheckboxes = librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]`);
@@ -3271,11 +3233,9 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
                 }
             }
             
-            // Update count and button state
             const selectedWords = librarySelectionTree.querySelectorAll('.word-checkbox:checked');
-            const count = selectedWords.length;
-            selectedWordCountSpan.textContent = count;
-            confirmLibrarySelectionButton.disabled = count === 0;
+            selectedWordCountSpan.textContent = selectedWords.length;
+            confirmLibrarySelectionButton.disabled = selectedWords.length === 0;
         });
 
         confirmLibrarySelectionButton.addEventListener('click', () => {
@@ -3290,9 +3250,11 @@ Provide the response as a single, valid JSON object with these exact keys: "simi
             updateStartButtonState();
         });
 
-        // Initial update of button states and display
+        // Initial setup
         updatePracticeModeDisplay();
         updateStartButtonState();
     </script>
 </body>
 </html>
+
+
