@@ -909,6 +909,53 @@
         #word-library-modal .subset-header:hover { background: var(--color-surface-soft); }
         #word-library-modal .subset-header input[type="checkbox"] { margin-right: 12px; accent-color: var(--color-primary); }
         #word-library-modal .subset-toggle { margin-right: 8px; transition: transform var(--transition); display: inline-block; }
+        /* 子集快速选择工具 */
+        #word-library-modal .subset-quick-select {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        #word-library-modal .subset-count-input {
+            width: 48px;
+            padding: 4px 6px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+            background: var(--color-surface);
+        }
+        #word-library-modal .subset-count-input:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 2px rgba(55, 48, 163, 0.1);
+        }
+        #word-library-modal .subset-quick-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+        }
+        #word-library-modal .subset-quick-btn:hover {
+            background: var(--color-primary-soft);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+        #word-library-modal .subset-quick-btn:active {
+            transform: scale(0.95);
+        }
+        #word-library-modal .subset-quick-btn.selected {
+            background: var(--color-primary);
+            color: #fff;
+            border-color: var(--color-primary);
+        }
         #word-library-modal .words-list-container { list-style: none; padding-left: 36px; display: none; }
         #word-library-modal .words-list-container.show { display: block; }
         #word-library-modal .word-item { display: flex; align-items: center; padding: 8px 0; }
@@ -3904,21 +3951,26 @@
                     const libNode = document.createElement('div');
                     libNode.className = 'library-node';
                     libNode.innerHTML = `<div class="library-header">${lib.name}</div>`;
-                    
+
                     const subsetsInLib = allSubsets.filter(s => s.libraryId === lib.id);
                     if (subsetsInLib.length > 0) {
                         subsetsInLib.forEach(subset => {
                             const subsetNode = document.createElement('div');
                             subsetNode.className = 'subset-node';
-                            
+
                             const wordsInSubset = allWords.filter(w => w.subsetId === subset.id);
-                            
+
                             const subsetHeader = document.createElement('div');
                             subsetHeader.className = 'subset-header';
                             subsetHeader.innerHTML = `
                                 <span class="subset-toggle">▶</span>
                                 <input type="checkbox" class="subset-checkbox" data-subset-id="${subset.id}">
                                 <label>${subset.name} (${wordsInSubset.length} 词)</label>
+                                <div class="subset-quick-select" data-subset-id="${subset.id}" data-total="${wordsInSubset.length}">
+                                    <input type="number" class="subset-count-input" min="1" max="${wordsInSubset.length}" value="" placeholder="N" data-subset-id="${subset.id}">
+                                    <button type="button" class="subset-quick-btn subset-first-btn" data-subset-id="${subset.id}" data-total="${wordsInSubset.length}" title="选择前N个">前N</button>
+                                    <button type="button" class="subset-quick-btn subset-last-btn" data-subset-id="${subset.id}" data-total="${wordsInSubset.length}" title="选择后N个">后N</button>
+                                </div>
                             `;
                             subsetNode.appendChild(subsetHeader);
 
@@ -3997,10 +4049,98 @@
                 english: cb.dataset.english,
                 chinese: cb.dataset.chinese
             }));
-            
+
             wordLibraryModal.style.display = 'none';
             updateSelectedLibraryDisplay();
             updateStartButtonState();
+        });
+
+        // --- 子集快速选择功能 ---
+        // 选择子集中的前N个单词
+        const selectFirstNWords = (subsetId, count) => {
+            const wordCbs = Array.from(librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]`));
+            wordCbs.forEach((cb, index) => {
+                cb.checked = index < count;
+            });
+            updateSubsetCheckboxState(subsetId);
+            updateGlobalSelectionCount();
+        };
+
+        // 选择子集中的后N个单词
+        const selectLastNWords = (subsetId, count) => {
+            const wordCbs = Array.from(librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]`));
+            const total = wordCbs.length;
+            wordCbs.forEach((cb, index) => {
+                cb.checked = index >= (total - count);
+            });
+            updateSubsetCheckboxState(subsetId);
+            updateGlobalSelectionCount();
+        };
+
+        // 更新子集checkbox状态
+        const updateSubsetCheckboxState = (subsetId) => {
+            const allWordCbs = librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]`);
+            const checkedWordCbs = librarySelectionTree.querySelectorAll(`.word-checkbox[data-subset-id="${subsetId}"]:checked`);
+            const subsetCheckbox = librarySelectionTree.querySelector(`.subset-checkbox[data-subset-id="${subsetId}"]`);
+
+            if (checkedWordCbs.length === 0) {
+                subsetCheckbox.checked = false;
+                subsetCheckbox.indeterminate = false;
+            } else if (checkedWordCbs.length === allWordCbs.length) {
+                subsetCheckbox.checked = true;
+                subsetCheckbox.indeterminate = false;
+            } else {
+                subsetCheckbox.checked = false;
+                subsetCheckbox.indeterminate = true;
+            }
+        };
+
+        // 更新全局选中计数
+        const updateGlobalSelectionCount = () => {
+            const selectedWords = librarySelectionTree.querySelectorAll('.word-checkbox:checked');
+            selectedWordCountSpan.textContent = selectedWords.length;
+            confirmLibrarySelectionButton.disabled = selectedWords.length === 0;
+        };
+
+        // 监听子集快速选择按钮点击
+        librarySelectionTree.addEventListener('click', (e) => {
+            const target = e.target;
+
+            // 前N个按钮
+            if (target.classList.contains('subset-first-btn')) {
+                e.stopPropagation();
+                const subsetId = target.dataset.subsetId;
+                const total = parseInt(target.dataset.total);
+                const input = librarySelectionTree.querySelector(`.subset-count-input[data-subset-id="${subsetId}"]`);
+                const count = parseInt(input.value) || 10;
+                const actualCount = Math.min(count, total);
+                selectFirstNWords(subsetId, actualCount);
+                input.value = actualCount;
+            }
+
+            // 后N个按钮
+            if (target.classList.contains('subset-last-btn')) {
+                e.stopPropagation();
+                const subsetId = target.dataset.subsetId;
+                const total = parseInt(target.dataset.total);
+                const input = librarySelectionTree.querySelector(`.subset-count-input[data-subset-id="${subsetId}"]`);
+                const count = parseInt(input.value) || 10;
+                const actualCount = Math.min(count, total);
+                selectLastNWords(subsetId, actualCount);
+                input.value = actualCount;
+            }
+        });
+
+        // 监听数量输入框回车
+        librarySelectionTree.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter' && e.target.classList.contains('subset-count-input')) {
+                const subsetId = e.target.dataset.subsetId;
+                const total = parseInt(e.target.max);
+                const count = parseInt(e.target.value) || 10;
+                const actualCount = Math.min(count, total);
+                selectFirstNWords(subsetId, actualCount);
+                e.target.value = actualCount;
+            }
         });
 
         // Initial setup
