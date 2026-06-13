@@ -5,51 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <title>智能英语单词默写 Pro</title>
     <style>
-        /* ========== 设计系统 v2：高级美观 ========== */
+        /* ========== 设计系统 v3：文具盒 (Pencil Case) ========== */
         :root {
-            --color-bg: #f8fafc;
-            --color-bg-warm: #faf9f7;
-            --color-surface: #ffffff;
-            --color-surface-soft: #f1f5f9;
-            --color-surface-elevated: #ffffff;
-            --color-primary: #3730a3;
-            --color-primary-hover: #312e81;
-            --color-primary-soft: #eef2ff;
-            --color-primary-muted: #c7d2fe;
-            --color-secondary: #475569;
-            --color-secondary-hover: #334155;
-            --color-success: #047857;
-            --color-success-soft: #ecfdf5;
-            --color-warn: #b45309;
-            --color-warn-soft: #fffbeb;
-            --color-error: #b91c1c;
-            --color-error-soft: #fef2f2;
-            --color-text: #0f172a;
-            --color-text-muted: #64748b;
-            --color-border: #e2e8f0;
-            --color-border-focus: #3730a3;
-            --radius-sm: 12px;
-            --radius-md: 16px;
-            --radius-lg: 22px;
-            --radius-xl: 28px;
+            /* Surface: warm cream/kraft paper */
+            --color-bg: #FFF8F0;
+            --color-bg-warm: #FFF3E6;
+            --color-surface: #FFFDF9;
+            --color-surface-soft: #F7F0E6;
+            --color-surface-elevated: #FFFFFF;
+            /* Primary: Coral Orange */
+            --color-primary: #FF6B4A;
+            --color-primary-hover: #E85D3C;
+            --color-primary-soft: #FFF0EC;
+            --color-primary-muted: #FFBBA8;
+            /* Secondary: Teal */
+            --color-secondary: #2A9D8F;
+            --color-secondary-hover: #21867A;
+            /* Accent: Sunny Yellow */
+            --color-accent: #FFD93D;
+            --color-accent-soft: #FFF8DC;
+            /* Semantic */
+            --color-success: #6BCB77;
+            --color-success-soft: #F0FFF2;
+            --color-warn: #F2994A;
+            --color-warn-soft: #FFF5EB;
+            --color-error: #FF6B6B;
+            --color-error-soft: #FFF0F0;
+            /* Text: warm browns */
+            --color-text: #2D2A26;
+            --color-text-muted: #7A7570;
+            /* Border: warm beige */
+            --color-border: #E8DFD4;
+            --color-border-focus: #FF6B4A;
+            /* Radius */
+            --radius-sm: 8px;
+            --radius-md: 10px;
+            --radius-lg: 12px;
+            --radius-xl: 14px;
             --radius-full: 9999px;
-            --shadow-xs: 0 1px 3px rgba(15, 23, 42, 0.05);
-            --shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
-            --shadow-md: 0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
-            --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.12), 0 8px 16px rgba(15, 23, 42, 0.06);
-            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --accent-bar: linear-gradient(90deg, #3730a3 0%, #4f46e5 50%, #6366f1 100%);
+            /* Shadows: hard offset (sticker feel) */
+            --shadow-xs: 2px 2px 0 0 #E8DFD4;
+            --shadow-sm: 3px 3px 0 0 #D4C9B8;
+            --shadow-md: 4px 4px 0 0 #D4C9B8, 0 8px 20px rgba(45, 42, 38, 0.06);
+            --shadow-lg: 6px 6px 0 0 #D4C9B8, 0 16px 32px rgba(45, 42, 38, 0.08);
+            /* Typography */
+            --font-display: 'Lexend', 'Noto Sans SC', sans-serif;
+            --font-sans: 'Nunito', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-cjk: 'ZCOOL KuaiLe', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            /* Transition */
+            --transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Accent: washi tape */
+            --accent-bar: repeating-linear-gradient(45deg, #FF6B4A, #FF6B4A 4px, #FF8A70 4px, #FF8A70 8px);
+            /* Kraft border color */
+            --kraft-border: #D4C9B8;
         }
 
         * { box-sizing: border-box; }
 
         body {
             font-family: var(--font-sans);
-            background: linear-gradient(160deg, #f1f5f9 0%, #f8fafc 40%, #faf9f7 100%);
+            background-color: #FFF8F0;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 31px, #EDE5D8 31px, #EDE5D8 32px);
+            background-size: 100% 32px;
+            background-position: 0 16px;
             color: var(--color-text);
             display: flex;
             justify-content: center;
@@ -64,21 +87,24 @@
             width: 100%;
             max-width: 820px;
             background: var(--color-surface);
-            padding: 44px 44px 40px 44px;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-lg);
+            padding: 40px 36px 36px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
             position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(226, 232, 240, 0.85);
+            overflow: visible;
+            border: 2px solid var(--kraft-border);
         }
         .container::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
+            top: -8px;
+            left: 28px;
+            width: 110px;
+            height: 22px;
             background: var(--accent-bar);
+            border-radius: 2px;
+            opacity: 0.9;
+            transform: rotate(-2deg);
         }
 
         #setup-section {
@@ -91,27 +117,29 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 253, 249, 0.95);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
             z-index: 10;
             display: none;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            border-radius: var(--radius-xl);
+            border-radius: var(--radius-md);
         }
         .spinner {
-            border: 4px solid var(--color-surface-soft);
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--color-border);
             border-top-color: var(--color-primary);
             border-radius: 50%;
-            width: 52px;
-            height: 52px;
-            animation: spin 0.75s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
         #loader p {
-            margin-top: 20px;
+            margin-top: 18px;
             font-weight: 600;
             font-size: 15px;
+            font-family: var(--font-display);
             color: var(--color-primary);
         }
         @keyframes spin {
@@ -123,7 +151,8 @@
             color: var(--color-primary);
             margin-bottom: 24px;
             font-weight: 700;
-            letter-spacing: -0.03em;
+            font-family: var(--font-display);
+            letter-spacing: -0.01em;
         }
         h1 { font-size: 1.9rem; letter-spacing: -0.04em; }
         h2 { font-size: 1.45rem; }
@@ -141,8 +170,8 @@
             width: 100%;
             height: 124px;
             padding: 16px 18px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
+            border: 2px dashed var(--color-border);
+            border-radius: 6px;
             font-size: 15px;
             font-family: inherit;
             margin-bottom: 18px;
@@ -150,25 +179,26 @@
             resize: vertical;
             background: var(--color-surface);
             color: var(--color-text);
-            transition: border-color var(--transition), box-shadow var(--transition);
+            transition: border-color var(--transition), border-style var(--transition), box-shadow var(--transition);
         }
-        textarea::placeholder { color: var(--color-text-muted); opacity: 0.85; }
+        textarea::placeholder { color: var(--color-text-muted); opacity: 0.7; }
         textarea:focus {
             outline: none;
+            border-style: solid;
             border-color: var(--color-border-focus);
-            box-shadow: 0 0 0 4px rgba(55, 48, 163, 0.12);
+            box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.12);
         }
 
         .upload-section {
             border: 2px dashed var(--color-border);
             border-radius: var(--radius-md);
-            padding: 24px;
+            padding: 22px;
             margin-bottom: 18px;
             text-align: center;
             background: var(--color-surface-soft);
             transition: border-color var(--transition), background var(--transition);
         }
-        .upload-section:hover { border-color: var(--color-primary); background: rgba(55, 48, 163, 0.04); }
+        .upload-section:hover { border-color: var(--color-primary); background: var(--color-primary-soft); }
         #upload-status {
             color: var(--color-text-muted);
             margin-top: 12px;
@@ -181,36 +211,42 @@
         button {
             display: block;
             width: 100%;
-            padding: 15px 22px;
+            padding: 14px 22px;
             font-size: 16px;
             font-weight: 600;
-            font-family: inherit;
+            font-family: var(--font-display);
             color: #fff;
             background: var(--color-primary);
             border: none;
-            border-radius: var(--radius-md);
+            border-radius: 6px;
             cursor: pointer;
-            transition: background var(--transition), transform 0.12s ease, box-shadow var(--transition);
+            position: relative;
+            box-shadow: 3px 3px 0 0 #D4543A;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
         }
-        button:active:not(:disabled) { transform: scale(0.98); }
+        button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 #D4543A; }
         button.secondary {
             background: var(--color-secondary);
             color: #fff;
+            box-shadow: 3px 3px 0 0 #1B7A6E;
         }
         button.tertiary {
             background: var(--color-success);
             color: #fff;
+            box-shadow: 3px 3px 0 0 #4FA85A;
         }
         button.secondary:hover:not(:disabled) { background: var(--color-secondary-hover); }
-        button.tertiary:hover:not(:disabled) { background: #065f46; }
+        button.tertiary:hover:not(:disabled) { background: #56b464; }
         button:disabled {
             background: var(--color-text-muted);
             cursor: not-allowed;
-            opacity: 0.6;
+            opacity: 0.5;
+            box-shadow: 2px 2px 0 0 #B8B0A8;
         }
         button:hover:not(:disabled) {
             background: var(--color-primary-hover);
-            box-shadow: 0 8px 24px rgba(55, 48, 163, 0.3);
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 0 #D4543A;
         }
 
         .quiz-section, #mc-quiz-section { display: none; }
@@ -219,34 +255,37 @@
         .chinese-prompt {
             font-size: 2rem;
             font-weight: 700;
+            font-family: var(--font-display);
             text-align: center;
-            margin: 26px 0;
-            padding: 30px 26px;
-            background: var(--color-primary-soft);
-            border-radius: var(--radius-lg);
-            color: var(--color-primary);
+            margin: 24px 0;
+            padding: 28px 24px;
+            background: var(--color-surface-soft);
+            color: var(--color-text);
             word-wrap: break-word;
-            border: 1px solid rgba(55, 48, 163, 0.12);
+            border: 2px solid var(--kraft-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
         }
         #english-input {
             width: 100%;
             padding: 18px 22px;
             font-size: 22px;
-            font-family: inherit;
+            font-family: var(--font-mono);
             text-align: center;
-            border: 2px solid var(--color-border);
-            border-radius: var(--radius-md);
+            border: 2px dashed var(--color-border);
+            border-radius: 6px;
             box-sizing: border-box;
             margin-bottom: 18px;
             letter-spacing: 2px;
             background: var(--color-surface);
             color: var(--color-text);
-            transition: border-color var(--transition), box-shadow var(--transition);
+            transition: border-color var(--transition), border-style var(--transition), box-shadow var(--transition);
         }
         #english-input:focus {
             outline: none;
+            border-style: solid;
             border-color: var(--color-border-focus);
-            box-shadow: 0 0 0 4px rgba(55, 48, 163, 0.12);
+            box-shadow: 0 0 0 3px rgba(255, 107, 74, 0.12);
         }
         #feedback, #mc-feedback {
             text-align: center;
@@ -262,18 +301,20 @@
         .quiz-actions { display: flex; gap: 14px; }
 
         .completion-section { display: none; text-align: center; }
-        .completion-section h2 { color: var(--color-success); font-size: 1.55rem; }
+        .completion-section h2 { color: var(--color-primary); font-size: 1.55rem; font-family: var(--font-display); }
         #score-display { font-size: 1.25rem; margin: 26px 0; color: var(--color-text); line-height: 1.65; }
         #wrong-words-list { text-align: left; margin-top: 26px; }
         #wrong-words-list h3 { text-align: center; color: var(--color-error); font-size: 1.12rem; }
         #wrong-words-list ul { list-style: none; padding: 0; }
         #wrong-words-list li {
             background: var(--color-error-soft);
-            border: 1px solid rgba(185, 28, 28, 0.18);
-            border-radius: var(--radius-md);
+            border: 2px solid #FFD4CC;
+            border-left: 4px solid var(--color-error);
+            border-radius: 6px;
             padding: 14px 18px;
             margin-bottom: 12px;
             font-size: 15px;
+            box-shadow: 2px 2px 0 0 #FFD4CC;
         }
 
         .checkbox-container {
@@ -295,12 +336,13 @@
         .radio-group {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             margin-bottom: 24px;
-            padding: 26px 28px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
             background: var(--color-surface-soft);
+            background-image: repeating-linear-gradient(transparent, transparent 27px, #EDE5D8 27px, #EDE5D8 28px);
             transition: border-color var(--transition);
         }
         .radio-group label {
@@ -318,14 +360,14 @@
         }
 
         .mode-setup-section {
-            margin-top: 26px;
-            padding: 26px 28px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
+            margin-top: 22px;
+            padding: 22px 24px;
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
             background: var(--color-surface-soft);
             display: none;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
         }
         .mode-setup-section h3 {
             text-align: center;
@@ -445,8 +487,8 @@
         }
         .voice-status-bar--info {
             background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-            color: #3730a3;
-            border-top: 1px solid rgba(55, 48, 163, 0.1);
+            color: #FF6B4A;
+            border-top: 1px solid rgba(255, 107, 74, 0.1);
         }
         .voice-status-bar--warn {
             background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
@@ -467,7 +509,7 @@
             background-position: center;
         }
         .voice-status-bar--info .voice-status-icon {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233730a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF6B4A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3C/svg%3E");
         }
         .voice-status-bar--warn .voice-status-icon {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b45309' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Ccircle cx='12' cy='17' r='1' fill='%23b45309'/%3E%3C/svg%3E");
@@ -479,15 +521,16 @@
 
         #example-sentence-container {
             margin-top: 22px;
-            padding: 20px 22px;
-            background: var(--color-surface-soft);
-            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            background: var(--color-accent-soft);
+            border-radius: var(--radius-md);
             text-align: center;
             border: 1px solid var(--color-border);
+            transform: rotate(-0.5deg);
         }
         #example-sentence-container p { margin: 0; line-height: 1.55; }
-        #english-example-sentence { font-weight: 600; color: var(--color-primary); margin-bottom: 6px; }
-        #chinese-example-sentence { color: var(--color-text-muted); font-size: 14px; }
+        #english-example-sentence { font-weight: 600; color: var(--color-text); margin-bottom: 6px; }
+        #chinese-example-sentence { color: var(--color-text-muted); font-size: 14px; font-family: var(--font-cjk); }
 
         /* Word Library Specific Styles */
         .word-library-selection-display {
@@ -517,7 +560,7 @@
         .modal-content {
             background: var(--color-surface);
             padding: 0;
-            border-radius: var(--radius-xl);
+            border-radius: var(--radius-md);
             box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 560px;
@@ -525,9 +568,9 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            border: 1px solid var(--color-border);
+            border: 2px solid var(--kraft-border);
         }
-        #word-library-modal .modal-header {
+        .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -536,24 +579,14 @@
             background: var(--color-surface);
             flex-shrink: 0;
         }
-        #word-library-modal .modal-header h2 {
+        .modal-header h2 {
             margin: 0;
             color: var(--color-text);
             font-size: 1.25rem;
             font-weight: 700;
             letter-spacing: -0.02em;
         }
-        #word-library-modal .modal-header h2::before {
-            content: '';
-            display: inline-block;
-            width: 4px;
-            height: 1.1em;
-            background: linear-gradient(180deg, #3730a3, #6366f1);
-            border-radius: 2px;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-        #word-library-modal .modal-close-button {
+        .modal-close-button {
             background: var(--color-surface-soft);
             border: none;
             width: 36px;
@@ -566,11 +599,22 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
             transition: color var(--transition), background var(--transition);
         }
-        #word-library-modal .modal-close-button:hover {
+        .modal-close-button:hover {
             color: var(--color-text);
             background: var(--color-border);
+        }
+        #word-library-modal .modal-header h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 1.1em;
+            background: linear-gradient(180deg, #FF6B4A, #FF8A70);
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 10px;
         }
         #word-library-modal #manage-view,
         #word-library-modal #select-view {
@@ -621,7 +665,7 @@
             content: '';
             width: 18px;
             height: 18px;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233730a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF6B4A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat;
         }
         #word-library-modal .modal-add-new-form {
             max-height: 0;
@@ -656,7 +700,7 @@
         #word-library-modal .modal-input-group input:focus {
             outline: none;
             border-color: var(--color-border-focus);
-            box-shadow: 0 0 0 4px rgba(55, 48, 163, 0.1);
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.1);
         }
         #word-library-modal .modal-input-group button {
             width: auto;
@@ -832,7 +876,7 @@
         #words-management-section #subset-words-input:focus {
             outline: none;
             border-color: var(--color-border-focus);
-            box-shadow: 0 0 0 4px rgba(55, 48, 163, 0.1);
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.1);
         }
         #words-management-section .modal-upload-area {
             border: 2px dashed var(--color-border);
@@ -929,7 +973,7 @@
         #word-library-modal .subset-count-input:focus {
             outline: none;
             border-color: var(--color-border-focus);
-            box-shadow: 0 0 0 2px rgba(55, 48, 163, 0.1);
+            box-shadow: 0 0 0 2px rgba(255, 107, 74, 0.1);
         }
         #word-library-modal .subset-quick-btn {
             padding: 4px 8px;
@@ -981,10 +1025,10 @@
         .flashcard-progress { font-size: 15px; color: var(--color-text-muted); font-weight: 500; }
         .flashcard {
             background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-xl);
+            border: 2px solid var(--kraft-border);
+            border-radius: var(--radius-md);
             padding: 36px;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-sm);
             text-align: center;
             position: relative;
             min-height: 360px;
@@ -992,18 +1036,22 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            background-image: repeating-linear-gradient(transparent, transparent 27px, #EDE5D8 27px, #EDE5D8 28px);
+            background-position: 0 20px;
         }
         .flashcard-word {
             font-size: 2.8rem;
             font-weight: 700;
+            font-family: var(--font-display);
             color: var(--color-primary);
             margin-bottom: 14px;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.01em;
         }
         .flashcard-pos { font-style: italic; color: var(--color-text-muted); margin-bottom: 22px; font-size: 15px; }
-        .flashcard-chinese { font-size: 1.42rem; color: var(--color-text); margin-bottom: 26px; font-weight: 500; }
+        .flashcard-chinese { font-size: 1.42rem; color: var(--color-text); margin-bottom: 26px; font-weight: 500; font-family: var(--font-cjk); }
         .flashcard-example { font-size: 15px; line-height: 1.58; color: var(--color-text-muted); width: 100%; }
         .flashcard-example .eng { font-weight: 600; color: var(--color-text); }
+        .flashcard-example .chn { font-family: var(--font-cjk); }
         .flashcard-nav { display: flex; justify-content: space-between; gap: 14px; margin-top: 22px; }
         .flashcard-nav button, #flashcard-speak-button { width: 100%; }
         #flashcard-speak-button { margin-top: 18px; }
@@ -1056,7 +1104,7 @@
             border-radius: var(--radius-md);
             transition: background var(--transition);
         }
-        #mc-quiz-prompt button:hover { background: rgba(55, 48, 163, 0.1); }
+        #mc-quiz-prompt button:hover { background: rgba(255, 107, 74, 0.1); }
         #mc-options-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1067,28 +1115,40 @@
             padding: 20px 16px;
             font-size: 17px;
             font-weight: 600;
+            font-family: var(--font-sans);
             background: var(--color-surface);
             color: var(--color-text);
-            border: 2px solid var(--color-border);
-            border-radius: var(--radius-md);
+            border: 2px solid var(--kraft-border);
+            border-radius: 6px;
             text-align: center;
             line-height: 1.45;
-            transition: border-color var(--transition), background var(--transition);
+            box-shadow: 2px 2px 0 0 var(--kraft-border);
+            transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
         }
+        .mc-option-button:nth-child(1) { transform: rotate(-0.3deg); }
+        .mc-option-button:nth-child(2) { transform: rotate(0.4deg); }
+        .mc-option-button:nth-child(3) { transform: rotate(-0.5deg); }
+        .mc-option-button:nth-child(4) { transform: rotate(0.2deg); }
         .mc-option-button:hover:not(:disabled) {
             background: var(--color-surface-soft);
             border-color: var(--color-primary);
+            transform: translate(-1px, -1px) rotate(0deg);
+            box-shadow: 3px 3px 0 0 var(--color-primary-muted);
         }
         .mc-option-button.correct-answer {
             background: var(--color-success-soft);
             border-color: var(--color-success);
             color: var(--color-success);
+            box-shadow: 2px 2px 0 0 #4FA85A;
+            transform: rotate(0deg);
         }
         .mc-option-button.wrong-answer {
             background: var(--color-error-soft);
             border-color: var(--color-error);
             color: var(--color-error);
             opacity: 0.9;
+            box-shadow: 2px 2px 0 0 #E05050;
+            transform: rotate(0deg);
         }
 
         /* A-Z 打字练习：不修改 #keyboard-container / #keyboard-img / #next-char-indicator 的 position、width、height、margin、top、left、font-size、display，仅调整视觉 */
@@ -1117,8 +1177,9 @@
             position: absolute;
             font-size: 48px;
             font-weight: bold;
-            color: #b91c1c;
-            background-color: rgba(254, 243, 199, 0.95);
+            font-family: var(--font-display);
+            color: var(--color-error);
+            background-color: rgba(255, 217, 61, 0.9);
             border-radius: 50%;
             width: 60px;
             height: 60px;
@@ -1128,13 +1189,14 @@
             text-transform: uppercase;
             pointer-events: none;
             transition: top 0.1s, left 0.1s;
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 0 16px rgba(255, 217, 61, 0.45);
             display: none;
         }
         #typing-info {
             text-align: center;
             font-size: 1.22rem;
             font-weight: 600;
+            font-family: var(--font-display);
             color: var(--color-primary);
             min-height: 60px;
             display: flex;
@@ -1189,14 +1251,28 @@
         }
 
         #profile-section {
-            background: var(--color-surface-soft);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
-            padding: 24px 26px;
-            margin-bottom: 26px;
+            background: var(--color-surface);
+            border: 2px solid var(--kraft-border);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 22px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
+            box-shadow: var(--shadow-xs);
+            position: relative;
+        }
+        #profile-section::before {
+            content: '';
+            position: absolute;
+            top: -7px;
+            left: 16px;
+            width: 56px;
+            height: 16px;
+            background: var(--color-secondary);
+            border-radius: 2px;
+            transform: rotate(-2deg);
+            opacity: 0.85;
         }
         #profile-display { text-align: center; font-size: 15px; color: var(--color-text); }
         #current-profile-name { color: var(--color-primary); font-weight: 600; }
@@ -1216,18 +1292,454 @@
         #profile-controls input { flex-grow: 1; max-width: 220px; }
         #profile-controls button { width: auto; padding: 12px 20px; font-size: 14px; font-weight: 600; border-radius: var(--radius-md); }
 
-        #persistent-profile-display {
+        /* 同步码 UI 样式 */
+        #sync-section {
+            border-top: 1px solid var(--color-border);
+            padding-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #sync-display { text-align: center; font-size: 14px; color: var(--color-text); }
+        #current-sync-code { color: var(--color-success); font-weight: 600; }
+        #sync-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        #sync-controls input {
+            padding: 10px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            background: var(--color-surface);
+            flex-grow: 1;
+            max-width: 220px;
+        }
+        #sync-controls input:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.1);
+        }
+        #sync-controls button { width: auto; padding: 10px 16px; font-size: 13px; font-weight: 600; border-radius: var(--radius-md); }
+        #sync-hint { font-size: 12px; color: var(--color-text-muted); text-align: center; }
+
+        /* 数据分析面板样式 */
+        #analysis-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.45);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            padding: 24px;
+        }
+        #analysis-modal .modal-content {
+            max-width: 680px;
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+        .analysis-section {
+            margin-bottom: 22px;
+            padding: 18px 20px;
+            background: var(--color-surface-soft);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+        .analysis-section h3 {
+            margin: 0 0 14px 0;
+            font-size: 1rem;
+            color: var(--color-primary);
+            text-align: left;
+        }
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .overview-cell {
+            text-align: center;
+            padding: 10px 6px;
+            background: var(--color-surface);
+            border-radius: 6px;
+            border: 1px solid var(--color-border);
+        }
+        .overview-val {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            color: var(--color-text);
+            margin-bottom: 2px;
+        }
+        .overview-label {
+            display: block;
+            font-size: 11px;
+            color: var(--color-text-muted);
+        }
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .analysis-stat {
+            text-align: center;
+            padding: 12px;
+            background: var(--color-surface);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--color-border);
+        }
+        .analysis-stat .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            display: block;
+        }
+        .analysis-stat .stat-label {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            margin-top: 4px;
+            display: block;
+        }
+        .analysis-trend-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+        .analysis-trend-row:last-child { border-bottom: none; }
+        .trend-up { color: var(--color-success); }
+        .trend-down { color: var(--color-error); }
+        .error-word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+        .error-word-item:last-child { border-bottom: none; }
+        .error-word-rank { width: 28px; color: var(--color-text-muted); font-weight: 600; }
+        .error-word-info { flex: 1; }
+        .error-word-info .word { font-weight: 600; color: var(--color-text); }
+        .error-word-info .meaning { color: var(--color-text-muted); font-size: 13px; }
+        .error-word-stats { text-align: right; font-size: 13px; color: var(--color-text-muted); }
+        .error-word-stats .accuracy { font-weight: 600; }
+        .accuracy-low { color: var(--color-error); }
+        .accuracy-mid { color: var(--color-warn); }
+        .accuracy-high { color: var(--color-success); }
+        .expand-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--color-primary);
+            background: transparent;
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .expand-btn:hover { background: var(--color-primary-soft); }
+        .mastery-bar {
+            display: flex;
+            height: 24px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .mastery-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            min-width: 30px;
+        }
+        .mastery-mastered { background: var(--color-success); }
+        .mastery-learning { background: var(--color-warn); }
+        .mastery-weak { background: var(--color-error); }
+        .mastery-bar-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            min-width: 30px;
+            cursor: pointer;
+            transition: filter var(--transition), outline var(--transition);
+            position: relative;
+        }
+        .mastery-bar-segment:hover { filter: brightness(1.15); }
+        .mastery-bar-segment.active { outline: 2px solid var(--color-text); outline-offset: -2px; }
+        .mastery-hint {
+            text-align: center;
+            font-size: 12px;
+            color: var(--color-text-muted);
+            margin-top: 6px;
+            margin-bottom: 4px;
+        }
+        .mastery-detail {
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            max-height: 240px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+        .mastery-detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+        .mastery-detail-item:last-child { border-bottom: none; }
+        .mastery-detail-item .word { font-weight: 600; }
+        .mastery-detail-item .meaning { color: var(--color-text-muted); margin-left: 6px; }
+        .mastery-detail-item .stats { text-align: right; font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+        .mastery-detail-item .date { font-size: 11px; color: var(--color-text-muted); }
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin-top: 10px;
+        }
+        .habit-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 14px;
+        }
+        .habit-row:last-child { border-bottom: none; }
+        .habit-mode { font-weight: 600; flex: 1; }
+        .habit-stats { display: flex; gap: 16px; color: var(--color-text-muted); font-size: 13px; }
+        .habit-summary {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: var(--color-surface);
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--color-border);
+            font-size: 13px;
+            color: var(--color-text-muted);
+        }
+        .habit-summary strong { color: var(--color-text); }
+        .streak-display {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--color-warn);
+            padding: 10px;
+        }
+        .streak-display .streak-count { font-size: 2.5rem; }
+        #analysis-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--color-text-muted);
+        }
+
+        /* 齿轮设置按钮 */
+        #settings-gear-button {
             position: absolute;
-            top: 18px;
-            right: 28px;
+            top: 14px;
+            right: 14px;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--kraft-border);
+            border-radius: 6px;
+            background: var(--color-surface-soft);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition), border-color var(--transition);
+            z-index: 10;
+            box-shadow: 2px 2px 0 0 var(--kraft-border);
+            font-size: 20px;
+            line-height: 1;
+            padding: 0;
+            color: var(--color-primary);
+        }
+        #settings-gear-button:hover {
+            background: var(--color-primary-soft);
+            border-color: var(--color-primary);
+            box-shadow: 3px 3px 0 0 var(--color-primary-muted);
+        }
+
+        /* 设置弹窗 */
+        #settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.45);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1002;
+            padding: 24px;
+        }
+        #settings-modal .modal-content {
+            max-width: 520px;
+        }
+        #settings-modal .settings-group {
+            margin-bottom: 22px;
+        }
+        #settings-modal .settings-group-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        #settings-modal .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+        #settings-modal .settings-row-label {
             font-size: 14px;
             color: var(--color-text);
-            background: rgba(248, 250, 252, 0.98);
+        }
+        #settings-modal .settings-row-desc {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            margin-top: 2px;
+        }
+        #settings-modal .settings-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--color-primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        #settings-modal .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        #settings-modal .sync-status.active {
+            background: var(--color-success-soft);
+            color: var(--color-success);
+        }
+        #settings-modal .sync-status.inactive {
+            background: var(--color-surface-soft);
+            color: var(--color-text-muted);
+        }
+        #settings-modal .sync-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        #settings-modal .sync-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+        #settings-modal .sync-input-row input:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.1);
+        }
+        #settings-modal .sync-input-row button {
+            width: auto;
             padding: 10px 16px;
-            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            flex-shrink: 0;
+        }
+        #settings-modal .sync-hint {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* 学习分析按钮 */
+        #analysis-quick-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            font-size: 18px;
+            line-height: 1;
+            color: var(--color-text-muted);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        #analysis-quick-btn:hover {
+            background: var(--color-primary-soft);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 107, 74, 0.15);
+        }
+
+        /* profile-section 新布局 */
+        #profile-section {
+            position: relative;
+        }
+        #profile-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        #profile-display-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        #persistent-profile-display {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            font-size: 13px;
+            color: var(--color-text);
+            background: var(--color-surface-soft);
+            padding: 6px 12px;
+            border-radius: 6px;
             border: 1px solid var(--color-border);
             z-index: 5;
             pointer-events: none;
+            box-shadow: 1px 1px 0 0 var(--color-border);
         }
 
         #advanced-typing-section {
@@ -1237,17 +1749,18 @@
             gap: 24px;
         }
         #advanced-typing-prompt {
+            font-family: var(--font-mono);
             font-size: 2.5rem;
             font-weight: 700;
             letter-spacing: 0.5em;
             padding: 28px 26px;
             background: var(--color-surface-soft);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-md);
             min-height: 54px;
             text-align: center;
             word-break: break-all;
             user-select: none;
-            border: 1px solid var(--color-border);
+            border: 2px dashed var(--color-border);
         }
         #advanced-typing-prompt span { transition: color 0.3s ease-out; }
         #advanced-typing-prompt .correctly-typed { color: var(--color-text-muted); }
@@ -1260,6 +1773,166 @@
         #advanced-typing-feedback .combo { color: var(--color-warn); animation: pulse 0.5s; }
         #advanced-typing-back-button { width: auto; padding: 12px 26px; font-size: 15px; margin-top: 12px; border-radius: var(--radius-md); }
 
+        /* ========== Phase 4: 动画 ========== */
+        /* 页面切换淡入 */
+        .quiz-section, #mc-quiz-section, .completion-section, #flashcard-section,
+        #typing-practice-section, #advanced-typing-section, #mode-selection-section {
+            animation: pageFadeIn 280ms ease-out;
+        }
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 弹窗弹入 */
+        .modal-content {
+            animation: modalIn 250ms cubic-bezier(0.0, 0.0, 0.2, 1);
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        /* 答对弹跳 */
+        .correct-bounce {
+            animation: correctBounce 400ms ease;
+        }
+        @keyframes correctBounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.04); }
+            60% { transform: scale(0.98); }
+            100% { transform: scale(1); }
+        }
+        /* 答错抖动 */
+        .incorrect-shake {
+            animation: shakeIn 350ms ease-out;
+        }
+        @keyframes shakeIn {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+        /* 答错反馈带背景 */
+        #feedback.incorrect, #mc-feedback.incorrect {
+            background: var(--color-error-soft);
+            border: 1px solid rgba(255, 107, 107, 0.25);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+        }
+        #feedback.correct, #mc-feedback.correct {
+            background: var(--color-success-soft);
+            border: 1px solid rgba(107, 203, 119, 0.25);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+        }
+        /* 骨架屏 shimmer */
+        .skeleton-pulse {
+            background: linear-gradient(90deg, var(--color-surface-soft) 25%, #EDE5D8 50%, var(--color-surface-soft) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ========== Phase 5: 触控目标 + 焦点状态 + z-index ========== */
+        /* 全局焦点环 */
+        *:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+        :focus:not(:focus-visible) { outline: none; }
+        button:focus-visible,
+        .mc-option-button:focus-visible,
+        .modal-list-item:focus-visible,
+        .session-item:focus-visible,
+        .radio-group label:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(255, 107, 74, 0.12);
+        }
+        /* 触控目标最小 44px */
+        .modal-close-button { width: 44px; height: 44px; }
+        #analysis-quick-btn { width: 44px; height: 44px; }
+        #settings-gear-button { width: 44px; height: 44px; }
+        .modal-icon-btn { width: 44px; height: 44px; background-size: 18px; }
+        .subset-quick-btn { padding: 8px 12px; font-size: 13px; }
+        .subset-count-input { width: 56px; }
+        /* z-index 分层 */
+        :root {
+            --z-base: 0;
+            --z-elevated: 5;
+            --z-sticky: 10;
+            --z-overlay: 100;
+            --z-modal: 200;
+            --z-toast: 300;
+        }
+        #persistent-profile-display { z-index: var(--z-elevated); }
+        #settings-gear-button { z-index: var(--z-sticky); }
+        #loader { z-index: var(--z-toast); }
+        #word-library-modal { z-index: var(--z-overlay); }
+        #analysis-modal { z-index: var(--z-modal); }
+        #settings-modal { z-index: var(--z-modal); }
+        #message-dialog { z-index: var(--z-toast); }
+
+        /* ========== Phase 6: 空状态 ========== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 24px;
+            color: var(--color-text-muted);
+        }
+        .empty-state-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            font-family: var(--font-display);
+        }
+        .empty-state-desc {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ========== 响应式：移动端 ========== */
+        @media (max-width: 640px) {
+            body { padding: 12px 8px; }
+            .container { padding: 28px 18px 24px; border-radius: var(--radius-sm); }
+            .container::before { width: 80px; height: 18px; left: 16px; top: -6px; }
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            h3 { font-size: 1.05rem; }
+            #profile-controls { flex-direction: column; }
+            #profile-controls select, #profile-controls input { max-width: 100%; }
+            #profile-top-row { flex-wrap: wrap; }
+            .radio-group { padding: 16px; gap: 10px; }
+            .radio-group label { font-size: 14px; }
+            .mode-setup-section { padding: 16px; }
+            .upload-buttons { flex-direction: column; }
+            .quiz-actions { flex-direction: column; }
+            .chinese-prompt { font-size: 1.6rem; padding: 20px 16px; }
+            #english-input { font-size: 18px; padding: 14px 16px; }
+            #mc-options-container { grid-template-columns: 1fr; }
+            .flashcard { min-height: 260px; padding: 24px 16px; }
+            .flashcard-word { font-size: 2.2rem; }
+            .flashcard-chinese { font-size: 1.2rem; }
+            .flashcard-nav { flex-direction: column; gap: 10px; }
+            .flashcard-nav button { width: 100%; }
+            #settings-gear-button { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 18px; }
+            #persistent-profile-display { font-size: 11px; padding: 4px 8px; top: 10px; left: 10px; }
+            .modal-content { max-width: 100%; border-radius: var(--radius-sm); }
+            .modal-header { padding: 18px 20px 14px; }
+            .inline-buttons { flex-direction: column; }
+            .inline-buttons button { width: 100%; }
+            #leaderboard { padding: 10px 14px; }
+            #leaderboard-lists-container { flex-direction: column; gap: 10px; }
+            .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+            .analysis-stat .stat-value { font-size: 1.2rem; }
+            #advanced-typing-prompt { font-size: 1.8rem; letter-spacing: 0.3em; }
+            .subset-quick-select { flex-wrap: wrap; }
+        }
+
     </style>
 </head>
 <body>
@@ -1270,6 +1943,9 @@
             <p id="loader-text">正在处理...</p>
         </div>
 
+        <!-- 齿轮设置按钮 -->
+        <button id="settings-gear-button" title="设置">⚙</button>
+
         <!-- NEW: Persistent Profile Display (for non-setup pages) -->
         <div id="persistent-profile-display" style="display: none;"></div>
 
@@ -1279,8 +1955,11 @@
             
             <!-- MODIFIED: Profile Section is now here -->
             <div id="profile-section">
-                <div id="profile-display">
-                    当前练习用户: <span id="current-profile-name">未选择</span>
+                <div id="profile-top-row">
+                    <div id="profile-display-line">
+                        <span id="profile-display">当前: <span id="current-profile-name">未选择</span></span>
+                    </div>
+                    <button id="analysis-quick-btn" title="学习分析"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></button>
                 </div>
                 <div id="profile-controls">
                     <select id="profile-select">
@@ -1383,22 +2062,6 @@
 
 
             <div id="common-settings" style="margin-top:20px;">
-                <div class="checkbox-container">
-                    <input type="checkbox" id="auto-speak-checkbox" checked>
-                    <label for="auto-speak-checkbox">自动读出单词</label>
-                </div>
-                <div class="checkbox-container">
-                    <input type="checkbox" id="google-tts-checkbox">
-                    <label for="google-tts-checkbox">使用在线词典发音（Free Dictionary API）</label>
-                </div>
-                <div class="checkbox-container">
-                    <input type="checkbox" id="merriam-webster-tts-checkbox">
-                    <label for="merriam-webster-tts-checkbox">使用 Merriam-Webster 发音（Learner's）</label>
-                </div>
-                <div class="checkbox-container">
-                    <input type="checkbox" id="show-example-sentence-checkbox">
-                    <label for="show-example-sentence-checkbox">显示单词例句</label>
-                </div>
             </div>
 
             <button id="start-button" disabled>准备开始</button>
@@ -1515,7 +2178,7 @@
         
         <div id="typing-practice-section">
             <div id="leaderboard">
-                <h4>🏆 英雄榜 🏆</h4>
+                <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M6 3h12v6a6 6 0 0 1-12 0V3Z"/><path d="M10 15h4v3h-4z"/><path d="M8 21h8"/><path d="M12 18v3"/></svg> 英雄榜 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M6 3h12v6a6 6 0 0 1-12 0V3Z"/><path d="M10 15h4v3h-4z"/><path d="M8 21h8"/><path d="M12 18v3"/></svg></h4>
                 <div id="leaderboard-lists-container"></div>
             </div>
             <h2>A-Z 打字练习</h2>
@@ -1616,13 +2279,88 @@
         </div>
     </div>
 
+    <!-- 设置弹窗 -->
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> 设置</h2>
+                <button class="modal-close-button" id="settings-close-button">&times;</button>
+            </div>
+            <div style="padding: 24px 28px 28px;">
+                <!-- 同步码 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">云同步</div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span class="settings-row-label">同步状态:</span>
+                        <span id="settings-sync-status" class="sync-status inactive">未设置</span>
+                    </div>
+                    <div class="sync-input-row">
+                        <input type="text" id="sync-code-input" placeholder="输入同步码 (4-32字符)" maxlength="32">
+                        <button id="set-sync-button">设置</button>
+                        <button id="clear-sync-button" class="secondary" style="display:none;">清除</button>
+                    </div>
+                    <div class="sync-hint">在所有设备上输入相同的同步码，即可实时共享练习记录、错题和设置。</div>
+                </div>
+
+                <!-- 朗读与显示 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">朗读与显示</div>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">自动读出单词</div><div class="settings-row-desc">练习时自动朗读当前单词</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="auto-speak-checkbox" checked title="自动读出单词">
+                    </div>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Free Dictionary 发音</div><div class="settings-row-desc">使用在线词典真人发音</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="google-tts-checkbox" title="Free Dictionary 发音">
+                    </div>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">Merriam-Webster 发音</div><div class="settings-row-desc">使用韦氏词典发音</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="merriam-webster-tts-checkbox" title="Merriam-Webster 发音">
+                    </div>
+                    <div class="settings-row">
+                        <div><div class="settings-row-label">显示例句</div><div class="settings-row-desc">检查答案后显示英文例句</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="show-example-sentence-checkbox" title="显示例句">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据分析弹窗 -->
+    <div id="analysis-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -3px;"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg> 学习数据分析</h2>
+                <button class="modal-close-button" id="analysis-close-button">&times;</button>
+            </div>
+            <div id="analysis-body" style="padding: 24px 28px 28px;">
+                <div id="analysis-empty" class="empty-state"><div class="empty-state-title">暂无练习记录</div><div class="empty-state-desc">完成练习后再来查看数据分析。</div></div>
+                <div id="analysis-content" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase variables
+        // SVG Icon Constants (consistent stroke style, 18px default)
+        const ICON = {
+            chart: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>`,
+            trophy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2"/><path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2"/><path d="M6 3h12v6a6 6 0 0 1-12 0V3Z"/><path d="M10 15h4v3h-4z"/><path d="M8 21h8"/><path d="M12 18v3"/></svg>`,
+            fire: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+            trendUp: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+            alertCircle: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+            clipboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>`,
+            calendar: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+            check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6BCB77" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+            xmark: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`,
+            gear: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
+        };
+
         let app;
         let db;
         let auth;
@@ -1646,9 +2384,7 @@
         const PUBLIC_LIBRARIES_COLLECTION = `artifacts/${appId}/public/data/wordLibraries`;
         const PUBLIC_SUBSETS_COLLECTION = `artifacts/${appId}/public/data/wordSubsets`;
         const PUBLIC_WORDS_COLLECTION = `artifacts/${appId}/public/data/libraryWords`;
-        const USER_SESSIONS_COLLECTION_BASE = `artifacts/${appId}/users/`; 
         const TYPING_SCORES_DOC = `artifacts/${appId}/public/data/typingScores/top10`;
-        const USER_PROFILES_COLLECTION_BASE = `artifacts/${appId}/users/`;
 
 
         // Global variables
@@ -1686,6 +2422,17 @@
         let advancedTypingTotalErrors = 0;
         const COMBO_THRESHOLD_MS = 1000;
         // MODIFICATION END
+
+        // 同步码相关变量
+        let syncCode = localStorage.getItem('vocabSyncCode') || '';
+        let profilesUnsubscribe = null;
+        let sessionsUnsubscribe = null;
+        let settingsUnsubscribe = null;
+
+        const getUserDataPath = () => {
+            const key = syncCode || userId;
+            return `artifacts/${appId}/users/${key}`;
+        };
         
         const keyCoordinates = {
             'q': { top: 18.0, left: 9.5 }, 'w': { top: 18.0, left: 16.5 }, 'e': { top: 18.0, left: 22.5 }, 'r': { top: 18.0, left: 29.0 }, 't': { top: 18.0, left: 36.0 }, 'y': { top: 18.0, left: 42.5 }, 'u': { top: 18.0, left: 49.5 }, 'i': { top: 18.0, left: 56.5 }, 'o': { top: 18.0, left: 62.5 }, 'p': { top: 18.0, left: 69.5 },
@@ -1821,6 +2568,22 @@
         const newProfileNameInput = document.getElementById('new-profile-name-input');
         const setProfileButton = document.getElementById('set-profile-button');
         const persistentProfileDisplay = document.getElementById('persistent-profile-display');
+        // 同步码 DOM 引用
+        const syncCodeInput = document.getElementById('sync-code-input');
+        const setSyncButton = document.getElementById('set-sync-button');
+        const clearSyncButton = document.getElementById('clear-sync-button');
+        // 数据分析 DOM 引用
+        const analysisModal = document.getElementById('analysis-modal');
+        const analysisCloseButton = document.getElementById('analysis-close-button');
+        const analysisBody = document.getElementById('analysis-body');
+        const analysisContent = document.getElementById('analysis-content');
+        const analysisEmpty = document.getElementById('analysis-empty');
+        const openAnalysisButton = document.getElementById('analysis-quick-btn');
+        // 设置弹窗 DOM 引用
+        const settingsGearButton = document.getElementById('settings-gear-button');
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsCloseButton = document.getElementById('settings-close-button');
+        const settingsSyncStatus = document.getElementById('settings-sync-status');
         const modeSelectTypingWithWords = document.getElementById('mode-select-typing-with-words');
         const typingRepetitionSetup = document.getElementById('typing-repetition-setup');
         const startTypingWithWordsPractice = document.getElementById('start-typing-with-words-practice');
@@ -1854,10 +2617,19 @@
                     isAuthReady = true;
                     console.log("Firebase Ready. User ID:", userId);
 
-                    await initUserProfile(); 
+                    // 加载同步码
+                    syncCode = localStorage.getItem('vocabSyncCode') || '';
+                    updateSyncDisplay();
 
-                    loadPracticeSessionsFromFirestore();
-                    loadAllWordsFromLibrary(); 
+                    await initUserProfile();
+
+                    if (syncCode) {
+                        setupSyncListener();
+                        loadSettingsFromFirestore();
+                    } else {
+                        loadPracticeSessionsFromFirestore();
+                    }
+                    loadAllWordsFromLibrary();
                     loadTypingScoresFromFirestore(); 
                 });
             } catch (error) {
@@ -1966,7 +2738,7 @@
         const initUserProfile = async () => {
             if (!isAuthReady || !userId) return;
 
-            const profilesCollectionPath = `${USER_PROFILES_COLLECTION_BASE}${userId}/profiles`;
+            const profilesCollectionPath = `${getUserDataPath()}/profiles`;
             try {
                 const querySnapshot = await getDocs(collection(db, profilesCollectionPath));
                 allUserProfiles = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -2021,7 +2793,7 @@
                 }
                 showLoader('正在创建用户...');
                 try {
-                    const profilesCollectionPath = `${USER_PROFILES_COLLECTION_BASE}${userId}/profiles`;
+                    const profilesCollectionPath = `${getUserDataPath()}/profiles`;
                     await addDoc(collection(db, profilesCollectionPath), { name: newProfile, createdAt: serverTimestamp() });
                     currentUserProfile = newProfile;
                     localStorage.setItem('currentUserProfile', newProfile);
@@ -2052,13 +2824,251 @@
             }
         });
 
+        // --- 同步码功能 ---
+        const updateSyncDisplay = () => {
+            if (settingsSyncStatus) {
+                if (syncCode) {
+                    settingsSyncStatus.className = 'sync-status active';
+                    settingsSyncStatus.textContent = `已同步: ${syncCode}`;
+                } else {
+                    settingsSyncStatus.className = 'sync-status inactive';
+                    settingsSyncStatus.textContent = '未设置';
+                }
+            }
+            if (clearSyncButton) {
+                clearSyncButton.style.display = syncCode ? 'inline-block' : 'none';
+            }
+            if (syncCodeInput && syncCode) {
+                syncCodeInput.value = syncCode;
+            }
+            // persistent profile display sync indicator
+            if (persistentProfileDisplay) {
+                const syncTag = syncCode ? ` <span style="font-size:11px;color:var(--color-success);">☁</span>` : '';
+                persistentProfileDisplay.innerHTML = `练习用户: <strong>${currentUserProfile || '未选择'}</strong>${syncTag}`;
+            }
+        };
+
+        const handleSetSyncCode = async () => {
+            const code = syncCodeInput.value.trim();
+            if (!code) { showMessage('请输入同步码。'); return; }
+            if (code.length < 4 || code.length > 32) { showMessage('同步码长度需为 4-32 个字符。'); return; }
+            if (!/^[a-zA-Z0-9一-鿿_-]+$/.test(code)) { showMessage('同步码只能包含字母、数字、中文、连字符、下划线。'); return; }
+            if (code === syncCode) { showMessage('同步码未变更。'); return; }
+            if (!isAuthReady) { showMessage('Firebase 尚未就绪，请稍后再试。'); return; }
+
+            if (syncCode) {
+                const confirmed = await new Promise(resolve => {
+                    showMessage(`更换同步码将切换到不同的数据集，当前同步码下的数据将保留在服务器上。<br><br>是否继续？<br><br><button id="confirm-change-sync" class="secondary" style="width:auto;margin-right:10px;">确认更换</button><button id="cancel-change-sync" style="width:auto;">取消</button>`);
+                    document.getElementById('confirm-change-sync').onclick = () => { messageDialog.style.display = 'none'; resolve(true); };
+                    document.getElementById('cancel-change-sync').onclick = () => { messageDialog.style.display = 'none'; resolve(false); };
+                });
+                if (!confirmed) return;
+            }
+
+            syncCode = code;
+            localStorage.setItem('vocabSyncCode', code);
+            updateSyncDisplay();
+            showLoader('正在同步数据...');
+            try {
+                await migrateDataToSyncCode();
+                detachSyncListeners();
+                setupSyncListener();
+                await initUserProfile();
+                await loadPracticeSessionsFromFirestore();
+                await loadSettingsFromFirestore();
+                showMessage(`同步码已设置为: <strong>${code}</strong>，数据已同步。`);
+            } catch (e) {
+                console.error('Sync setup error:', e);
+                showMessage('同步设置失败: ' + e.message);
+            } finally {
+                hideLoader();
+            }
+        };
+
+        const handleClearSyncCode = async () => {
+            if (!syncCode) return;
+            showMessage(`确定要清除同步码吗？<br>此设备将回退到本地数据，服务器上的同步码数据将保留。<br><br><button id="confirm-clear-sync" class="secondary" style="width:auto;margin-right:10px;">确认清除</button><button id="cancel-clear-sync" style="width:auto;">取消</button>`);
+            document.getElementById('confirm-clear-sync').onclick = async () => {
+                messageDialog.style.display = 'none';
+                syncCode = '';
+                localStorage.removeItem('vocabSyncCode');
+                updateSyncDisplay();
+                detachSyncListeners();
+                showLoader('正在加载本地数据...');
+                await initUserProfile();
+                loadPracticeSessionsFromFirestore();
+                hideLoader();
+                showMessage('同步码已清除，已回退到本地数据。');
+            };
+            document.getElementById('cancel-clear-sync').onclick = () => { messageDialog.style.display = 'none'; };
+        };
+
+        const migrateDataToSyncCode = async () => {
+            if (!syncCode || !userId || userId === syncCode) return;
+            const oldBase = `artifacts/${appId}/users/${userId}`;
+            const newBase = getUserDataPath();
+            try {
+                const newProfilesSnap = await getDocs(collection(db, `${newBase}/profiles`));
+                if (newProfilesSnap.docs.length > 0) return;
+                const oldProfilesSnap = await getDocs(collection(db, `${oldBase}/profiles`));
+                const oldSessionsSnap = await getDocs(collection(db, `${oldBase}/practiceSessions`));
+                if (oldProfilesSnap.docs.length === 0 && oldSessionsSnap.docs.length === 0) return;
+                const batch = writeBatch(db);
+                oldProfilesSnap.docs.forEach(d => {
+                    batch.set(doc(collection(db, `${newBase}/profiles`)), d.data());
+                });
+                oldSessionsSnap.docs.forEach(d => {
+                    batch.set(doc(collection(db, `${newBase}/practiceSessions`)), d.data());
+                });
+                await batch.commit();
+                console.log(`Migrated ${oldProfilesSnap.docs.length} profiles, ${oldSessionsSnap.docs.length} sessions.`);
+            } catch (e) {
+                console.error('Migration error:', e);
+            }
+        };
+
+        const detachSyncListeners = () => {
+            if (profilesUnsubscribe) { profilesUnsubscribe(); profilesUnsubscribe = null; }
+            if (sessionsUnsubscribe) { sessionsUnsubscribe(); sessionsUnsubscribe = null; }
+            if (settingsUnsubscribe) { settingsUnsubscribe(); settingsUnsubscribe = null; }
+        };
+
+        const setupSyncListener = () => {
+            if (!syncCode || !isAuthReady) return;
+            const basePath = getUserDataPath();
+
+            profilesUnsubscribe = onSnapshot(
+                collection(db, `${basePath}/profiles`),
+                (snapshot) => {
+                    allUserProfiles = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    updateProfileUI();
+                    if (currentUserProfile && !allUserProfiles.some(p => p.name === currentUserProfile)) {
+                        currentUserProfile = null;
+                        localStorage.removeItem('currentUserProfile');
+                    }
+                    updateAllProfileDisplays();
+                },
+                (error) => console.error('Sync profiles error:', error)
+            );
+
+            sessionsUnsubscribe = onSnapshot(
+                query(collection(db, `${basePath}/practiceSessions`), orderBy('endTime', 'desc')),
+                (snapshot) => {
+                    allPracticeSessions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const map = new Map();
+                    allPracticeSessions.forEach(session => {
+                        if (session.sessionWords && Array.isArray(session.sessionWords)) {
+                            session.sessionWords.forEach(word => {
+                                if (!word.wasCorrect) {
+                                    const ts = session.endTime?.toMillis?.() ?? (session.endTime ? new Date(session.endTime).getTime() : 0);
+                                    if (!map.has(word.english) || map.get(word.english).timestamp < ts) {
+                                        map.set(word.english, { english: word.english, chinese: word.chinese, timestamp: ts });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    persistentWrongWords = Array.from(map.values());
+                    wrongWordsCountSpan.textContent = persistentWrongWords.length;
+                    wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+                },
+                (error) => console.error('Sync sessions error:', error)
+            );
+
+            settingsUnsubscribe = onSnapshot(
+                doc(db, `${basePath}/settings/preferences`),
+                (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.currentUserProfile !== undefined) {
+                            currentUserProfile = data.currentUserProfile || null;
+                            localStorage.setItem('currentUserProfile', currentUserProfile || '');
+                            updateAllProfileDisplays();
+                        }
+                        if (data.autoSpeak !== undefined) {
+                            autoSpeakEnabled = data.autoSpeak;
+                            autoSpeakCheckbox.checked = autoSpeakEnabled;
+                        }
+                        if (data.googleTts !== undefined) {
+                            googleTranslateTtsEnabled = data.googleTts;
+                            googleTtsCheckbox.checked = googleTranslateTtsEnabled;
+                        }
+                        if (data.merriamWebsterTts !== undefined) {
+                            merriamWebsterTtsEnabled = data.merriamWebsterTts;
+                            merriamWebsterTtsCheckbox.checked = merriamWebsterTtsEnabled;
+                        }
+                        if (data.showExampleSentence !== undefined) {
+                            showExampleSentenceEnabled = data.showExampleSentence;
+                            showExampleSentenceCheckbox.checked = showExampleSentenceEnabled;
+                        }
+                    }
+                },
+                (error) => console.error('Sync settings error:', error)
+            );
+        };
+
+        const saveSettingsToFirestore = async () => {
+            if (!syncCode || !isAuthReady) return;
+            try {
+                const settingsRef = doc(db, `${getUserDataPath()}/settings/preferences`);
+                await setDoc(settingsRef, {
+                    currentUserProfile: currentUserProfile || '',
+                    autoSpeak: autoSpeakEnabled,
+                    googleTts: googleTranslateTtsEnabled,
+                    merriamWebsterTts: merriamWebsterTtsEnabled,
+                    showExampleSentence: showExampleSentenceEnabled,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+            } catch (e) {
+                console.error('Save settings error:', e);
+            }
+        };
+
+        const loadSettingsFromFirestore = async () => {
+            if (!syncCode || !isAuthReady) return;
+            try {
+                const settingsRef = doc(db, `${getUserDataPath()}/settings/preferences`);
+                const docSnap = await getDoc(settingsRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.currentUserProfile !== undefined) {
+                        currentUserProfile = data.currentUserProfile || null;
+                        localStorage.setItem('currentUserProfile', currentUserProfile || '');
+                        updateAllProfileDisplays();
+                    }
+                    if (data.autoSpeak !== undefined) {
+                        autoSpeakEnabled = data.autoSpeak;
+                        autoSpeakCheckbox.checked = autoSpeakEnabled;
+                    }
+                    if (data.googleTts !== undefined) {
+                        googleTranslateTtsEnabled = data.googleTts;
+                        googleTtsCheckbox.checked = googleTranslateTtsEnabled;
+                    }
+                    if (data.merriamWebsterTts !== undefined) {
+                        merriamWebsterTtsEnabled = data.merriamWebsterTts;
+                        merriamWebsterTtsCheckbox.checked = merriamWebsterTtsEnabled;
+                    }
+                    if (data.showExampleSentence !== undefined) {
+                        showExampleSentenceEnabled = data.showExampleSentence;
+                        showExampleSentenceCheckbox.checked = showExampleSentenceEnabled;
+                    }
+                }
+            } catch (e) {
+                if (e.code !== 'not-found') console.error('Load settings error:', e);
+            }
+        };
+
+        setSyncButton.addEventListener('click', handleSetSyncCode);
+        clearSyncButton.addEventListener('click', handleClearSyncCode);
+        syncCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSetSyncCode(); });
+
 
         // --- Firestore-based Session Management Functions ---
         const loadPracticeSessionsFromFirestore = async () => {
             if (!isAuthReady || !userId) return;
             showLoader('正在加载错题记录...');
             try {
-                const sessionsCollectionPath = `${USER_SESSIONS_COLLECTION_BASE}${userId}/practiceSessions`;
+                const sessionsCollectionPath = `${getUserDataPath()}/practiceSessions`;
                 const q = query(collection(db, sessionsCollectionPath), orderBy("endTime", "desc"));
                 const querySnapshot = await getDocs(q);
 
@@ -2066,14 +3076,15 @@
 
                 const overallUniqueWrongWordsMap = new Map();
                 allPracticeSessions.forEach(session => {
-                    if(session.sessionWords && Array.isArray(session.sessionWords)) {
+                    if (session.sessionWords && Array.isArray(session.sessionWords)) {
                         session.sessionWords.forEach(word => {
                             if (!word.wasCorrect) {
-                                if (!overallUniqueWrongWordsMap.has(word.english) || overallUniqueWrongWordsMap.get(word.english).timestamp < session.endTime.toMillis()) {
+                                const ts = session.endTime?.toMillis?.() ?? (session.endTime ? new Date(session.endTime).getTime() : 0);
+                                if (!overallUniqueWrongWordsMap.has(word.english) || overallUniqueWrongWordsMap.get(word.english).timestamp < ts) {
                                     overallUniqueWrongWordsMap.set(word.english, {
                                         english: word.english,
                                         chinese: word.chinese,
-                                        timestamp: session.endTime.toMillis()
+                                        timestamp: ts
                                     });
                                 }
                             }
@@ -2120,7 +3131,7 @@
             };
 
             try {
-                const sessionsCollectionPath = `${USER_SESSIONS_COLLECTION_BASE}${userId}/practiceSessions`;
+                const sessionsCollectionPath = `${getUserDataPath()}/practiceSessions`;
                 await addDoc(collection(db, sessionsCollectionPath), sessionData);
                 console.log("Practice session saved to Firestore.");
             } catch (error) {
@@ -2407,6 +3418,7 @@
             }
 
             persistentProfileDisplay.style.display = (pageId === 'setup-section') ? 'none' : 'block';
+            settingsGearButton.style.display = (pageId === 'setup-section') ? 'flex' : 'none';
         };
 
         const startQuiz = () => {
@@ -2457,13 +3469,13 @@
             if (userAnswer === correctAnswer) {
                 score++;
                 words[currentWordIndex].wasCorrect = true;
-                feedback.innerHTML = `✔ 正确! <span style="font-size: 0.8em; color: #555;">(${timeTakenSeconds.toFixed(2)}s)</span>`;
-                feedback.className = 'correct';
+                feedback.innerHTML = `${ICON.check} 正确! <span style="font-size: 0.8em; color: var(--color-text-muted);">(${timeTakenSeconds.toFixed(2)}s)</span>`;
+                feedback.className = 'correct correct-bounce';
             } else {
                 words[currentWordIndex].wasCorrect = false;
                 const currentWord = words[currentWordIndex];
-                feedback.innerHTML = `❌ 错误！正确答案是: <strong style="color: #333;">${currentWord.english}</strong> <span style="font-size: 0.8em; color: #555;">(${timeTakenSeconds.toFixed(2)}s)</span>`;
-                feedback.className = 'incorrect';
+                feedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong style="color: var(--color-text);">${currentWord.english}</strong> <span style="font-size: 0.8em; color: var(--color-text-muted);">(${timeTakenSeconds.toFixed(2)}s)</span>`;
+                feedback.className = 'incorrect incorrect-shake';
             }
 
             englishInput.disabled = true;
@@ -2524,7 +3536,7 @@
                 progressText.textContent = `第 ${currentWordIndex + 1} / ${words.length} 题`;
                 
                 if (isTypingWithWordsMode) {
-                    chinesePrompt.innerHTML = `<span style="display: block; font-size: 1.5rem; color: #6c757d; margin-bottom: 10px; font-weight: normal; letter-spacing: 1px;">${word.english}</span><span>${word.chinese}</span>`;
+                    chinesePrompt.innerHTML = `<span style="display: block; font-size: 1.5rem; color: var(--color-text-muted); margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; font-family: var(--font-display);">${word.english}</span><span>${word.chinese}</span>`;
                     if (showExampleSentenceEnabled) {
                         await showExampleSentenceForWord(word);
                     } else {
@@ -2808,12 +3820,12 @@
             if (isCorrect) {
                 score++;
                 currentWord.wasCorrect = true;
-                mcFeedback.innerHTML = `✔ 正确!`;
-                mcFeedback.className = 'correct';
+                mcFeedback.innerHTML = `${ICON.check} 正确!`;
+                mcFeedback.className = 'correct correct-bounce';
             } else {
                 currentWord.wasCorrect = false;
-                mcFeedback.innerHTML = `❌ 错误！正确答案是: <strong>${currentWord.english}</strong> (${currentWord.chinese})`;
-                mcFeedback.className = 'incorrect';
+                mcFeedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong>${currentWord.english}</strong> (${currentWord.chinese})`;
+                mcFeedback.className = 'incorrect incorrect-shake';
             }
             mcNextButton.style.display = 'block';
             mcNextButton.focus();
@@ -2850,7 +3862,7 @@
             let isNewRecord = bestTypingScores.length < 10 || elapsedTime < bestTypingScores[bestTypingScores.length - 1].score;
             let message = `🎉 太棒了！用时 <strong>${elapsedTime.toFixed(2)}</strong> 秒！`;
             if (isNewRecord) {
-                message = `<span class="new-record">🏆 新纪录！太厉害了！用时 <strong>${elapsedTime.toFixed(2)}</strong> 秒！</span>`;
+                message = `<span class="new-record">${ICON.trophy} 新纪录！太厉害了！用时 <strong>${elapsedTime.toFixed(2)}</strong> 秒！</span>`;
                 saveTypingScoreToFirestore(elapsedTime);
             }
             message += `<br><span style="font-size: 0.8em; color: #666;">请按 'a' 键开始新一轮练习</span>`;
@@ -3222,7 +4234,7 @@
                 wordsList.className = 'session-words-list';
                 session.sessionWords.forEach(word => {
                     const statusClass = word.wasCorrect ? 'correct' : 'incorrect';
-                    const statusSymbol = word.wasCorrect ? '✔' : '❌';
+                    const statusSymbol = word.wasCorrect ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6BCB77" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>';
                     wordsList.innerHTML += `<li><span class="${statusClass}">${statusSymbol} ${word.english}: ${word.chinese}</span></li>`;
                 });
                 sessionItem.appendChild(wordsList);
@@ -3246,7 +4258,7 @@
                     messageDialog.style.display = 'none';
                     showLoader("正在清除所有记录...");
                     try {
-                        const sessionsCollectionPath = `${USER_SESSIONS_COLLECTION_BASE}${userId}/practiceSessions`;
+                        const sessionsCollectionPath = `${getUserDataPath()}/practiceSessions`;
                         const querySnapshot = await getDocs(query(collection(db, sessionsCollectionPath)));
                         const batch = writeBatch(db);
                         querySnapshot.forEach(doc => batch.delete(doc.ref));
@@ -3327,9 +4339,10 @@
         mcSourceRadios.forEach(radio => radio.addEventListener('change', updateMcSourceDisplay));
         randomWordCountInput.addEventListener('input', updateStartButtonState);
         selectMcWordsButton.addEventListener('click', () => openWordLibraryModal('select-mc'));
-        googleTtsCheckbox.addEventListener('change', () => { googleTranslateTtsEnabled = googleTtsCheckbox.checked; });
-        merriamWebsterTtsCheckbox.addEventListener('change', () => { merriamWebsterTtsEnabled = merriamWebsterTtsCheckbox.checked; });
-        showExampleSentenceCheckbox.addEventListener('change', () => { showExampleSentenceEnabled = showExampleSentenceCheckbox.checked; });
+        autoSpeakCheckbox.addEventListener('change', () => { autoSpeakEnabled = autoSpeakCheckbox.checked; saveSettingsToFirestore(); });
+        googleTtsCheckbox.addEventListener('change', () => { googleTranslateTtsEnabled = googleTtsCheckbox.checked; saveSettingsToFirestore(); });
+        merriamWebsterTtsCheckbox.addEventListener('change', () => { merriamWebsterTtsEnabled = merriamWebsterTtsCheckbox.checked; saveSettingsToFirestore(); });
+        showExampleSentenceCheckbox.addEventListener('change', () => { showExampleSentenceEnabled = showExampleSentenceCheckbox.checked; saveSettingsToFirestore(); });
 
         startButton.addEventListener('click', async () => {
             if (!currentUserProfile) {
@@ -4141,6 +5154,401 @@
                 selectFirstNWords(subsetId, actualCount);
                 e.target.value = actualCount;
             }
+        });
+
+        // --- 数据分析功能 ---
+        const analyzeLearningData = () => {
+            const sessions = allPracticeSessions;
+            if (!sessions || sessions.length === 0) return null;
+
+            const now = new Date();
+            const DECAY_LAMBDA_ACTIVE = 0.03;   // 7天内有练习 → 慢衰减
+            const DECAY_LAMBDA_IDLE = 0.06;      // 超过7天无练习 → 快衰减
+
+            // Helper: 转本地日期字符串
+            const toLocalDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const parseSessionDate = (session) => session.endTime?.toDate?.() ?? (session.endTime ? new Date(session.endTime) : null);
+            const daysBetween = (d1, d2) => Math.floor((d2 - d1) / 86400000);
+
+            // 分离正式练习 vs 错题练习
+            const FORMAL_MODES = ['单词拼写', '单词库拼写', '单词选择题', '看词打字练习'];
+            const formalSessions = [];
+            const drillSessions = [];
+            sessions.forEach(s => {
+                const mode = s.practiceMode || '';
+                if (mode === '错题练习') drillSessions.push(s);
+                else formalSessions.push(s);
+            });
+
+            // === 总览统计（所有练习都算）===
+            let totalWords = 0, totalCorrect = 0, totalDuration = 0, totalTimeTaken = 0;
+            const dailyMap = new Map();
+            const modeMap = new Map();
+
+            sessions.forEach(session => {
+                const d = parseSessionDate(session);
+                if (!d || isNaN(d.getTime())) return;
+                const dateStr = toLocalDateStr(d);
+                totalDuration += session.totalDurationSeconds || 0;
+
+                if (!dailyMap.has(dateStr)) dailyMap.set(dateStr, { sessions: 0, words: 0, correct: 0 });
+                const day = dailyMap.get(dateStr);
+                day.sessions++;
+
+                const mode = session.practiceMode || '未知';
+                if (!modeMap.has(mode)) modeMap.set(mode, { sessions: 0, words: 0, correct: 0 });
+                const modeStat = modeMap.get(mode);
+                modeStat.sessions++;
+
+                if (session.sessionWords && Array.isArray(session.sessionWords)) {
+                    session.sessionWords.forEach(w => {
+                        totalWords++;
+                        day.words++;
+                        modeStat.words++;
+                        totalTimeTaken += w.timeTakenSeconds || 0;
+                        if (w.wasCorrect) { totalCorrect++; day.correct++; modeStat.correct++; }
+                    });
+                }
+            });
+
+            // === 单词级别统计（仅正式练习用于掌握度）===
+            const formalWordStats = new Map(); // key -> { english, chinese, errorCount, totalCount, lastPracticeDate }
+            const allWordLastSeen = new Map();  // key -> Date（含错题练习，用于衰减）
+
+            formalSessions.forEach(session => {
+                const d = parseSessionDate(session);
+                if (!d || isNaN(d.getTime())) return;
+                if (!session.sessionWords || !Array.isArray(session.sessionWords)) return;
+                session.sessionWords.forEach(w => {
+                    const key = (w.english || '').toLowerCase();
+                    if (!key) return;
+                    if (!formalWordStats.has(key)) {
+                        formalWordStats.set(key, { english: w.english, chinese: w.chinese, errorCount: 0, totalCount: 0, lastPracticeDate: d });
+                    }
+                    const ws = formalWordStats.get(key);
+                    ws.totalCount++;
+                    if (w.chinese && !ws.chinese) ws.chinese = w.chinese;
+                    if (!w.wasCorrect) ws.errorCount++;
+                    if (d > ws.lastPracticeDate) ws.lastPracticeDate = d;
+                    allWordLastSeen.set(key, d);
+                });
+            });
+
+            // 错题练习也更新 lastSeen（影响衰减速度，不影响正确率）
+            drillSessions.forEach(session => {
+                const d = parseSessionDate(session);
+                if (!d || isNaN(d.getTime())) return;
+                if (!session.sessionWords || !Array.isArray(session.sessionWords)) return;
+                session.sessionWords.forEach(w => {
+                    const key = (w.english || '').toLowerCase();
+                    if (!key) return;
+                    const existing = allWordLastSeen.get(key);
+                    if (!existing || d > existing) allWordLastSeen.set(key, d);
+                });
+            });
+
+            // === 动态掌握度计算 ===
+            const mastered = [], learning = [], weak = [];
+            formalWordStats.forEach((ws, key) => {
+                const accuracy = ws.totalCount > 0 ? (ws.totalCount - ws.errorCount) / ws.totalCount : 0;
+                const lastSeen = allWordLastSeen.get(key) || ws.lastPracticeDate;
+                const daysSinceAnyPractice = daysBetween(lastSeen, now);
+                const lambda = daysSinceAnyPractice <= 7 ? DECAY_LAMBDA_ACTIVE : DECAY_LAMBDA_IDLE;
+                const decay = Math.exp(-lambda * daysSinceAnyPractice);
+                const decayedScore = accuracy * decay;
+
+                const entry = {
+                    english: ws.english,
+                    chinese: ws.chinese,
+                    accuracy,
+                    totalCount: ws.totalCount,
+                    errorCount: ws.errorCount,
+                    lastPracticeDate: toLocalDateStr(ws.lastPracticeDate),
+                    decayedScore
+                };
+
+                if (decayedScore >= 0.85 && daysSinceAnyPractice <= 7 && ws.totalCount >= 2) {
+                    mastered.push(entry);
+                } else if (decayedScore >= 0.40) {
+                    learning.push(entry);
+                } else {
+                    weak.push(entry);
+                }
+            });
+
+            mastered.sort((a, b) => b.decayedScore - a.decayedScore);
+            learning.sort((a, b) => b.decayedScore - a.decayedScore);
+            weak.sort((a, b) => b.errorCount - a.errorCount || b.decayedScore - a.decayedScore);
+
+            // === 每日趋势（最近14天）===
+            const dailyStats = Array.from(dailyMap.entries())
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([date, d]) => ({ date, ...d, accuracy: d.words > 0 ? d.correct / d.words : 0 }));
+            const last14 = dailyStats.slice(-14);
+
+            // 趋势比较
+            const recent3 = dailyStats.slice(-3);
+            const prev3 = dailyStats.slice(-6, -3);
+            const recent3Avg = recent3.length > 0 ? recent3.reduce((s, d) => s + d.accuracy, 0) / recent3.length : 0;
+            const prev3Avg = prev3.length > 0 ? prev3.reduce((s, d) => s + d.accuracy, 0) / prev3.length : 0;
+
+            // === 练习习惯 ===
+            const habits = Array.from(modeMap.entries())
+                .map(([mode, m]) => ({ mode, ...m, accuracy: m.words > 0 ? m.correct / m.words : 0 }))
+                .sort((a, b) => b.sessions - a.sessions);
+            const totalSessions = sessions.length;
+            const mostUsed = habits.length > 0 ? habits[0] : null;
+            const weakest = habits.length > 0 ? [...habits].sort((a, b) => a.accuracy - b.accuracy)[0] : null;
+
+            // === 连续天数 ===
+            let streak = 0;
+            const todayStr = toLocalDateStr(now);
+            const dateSet = new Set(dailyStats.map(d => d.date));
+            let checkDate = todayStr;
+            if (!dateSet.has(checkDate)) {
+                const yesterday = new Date(now.getTime() - 86400000);
+                checkDate = toLocalDateStr(yesterday);
+            }
+            while (dateSet.has(checkDate)) {
+                streak++;
+                const d = new Date(checkDate + 'T00:00:00');
+                d.setDate(d.getDate() - 1);
+                checkDate = toLocalDateStr(d);
+            }
+
+            return {
+                totalSessions, totalWords, totalDuration, totalTimeTaken,
+                overallAccuracy: totalWords > 0 ? totalCorrect / totalWords : 0,
+                avgTimePerWord: totalWords > 0 ? totalTimeTaken / totalWords : 0,
+                streak,
+                dailyTrend: last14,
+                trendDiff: recent3Avg - prev3Avg,
+                mastery: { mastered, learning, weak },
+                habits: { byMode: habits, mostUsed, weakest, totalSessions }
+            };
+        };
+
+        let trendChart = null; // Chart.js 实例引用
+        let activeMasteryTab = null; // 当前展开的掌握度分类
+
+        const renderAnalysisPanel = (data) => {
+            if (!data) {
+                analysisEmpty.style.display = 'block';
+                analysisContent.style.display = 'none';
+                return;
+            }
+            analysisEmpty.style.display = 'none';
+            analysisContent.style.display = 'block';
+            activeMasteryTab = null;
+
+            // 销毁旧图表
+            if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+            const formatDuration = (s) => {
+                const h = Math.floor(s / 3600);
+                const m = Math.floor((s % 3600) / 60);
+                return h > 0 ? `${h}小时${m}分` : `${m}分`;
+            };
+            const accClass = (a) => a >= 0.8 ? 'accuracy-high' : a >= 0.5 ? 'accuracy-mid' : 'accuracy-low';
+            const accPercent = (a) => `${(a * 100).toFixed(0)}%`;
+
+            let html = '';
+
+            // 1. 练习概览（3列2行，紧凑卡片）
+            html += `<div class="analysis-section" style="padding:16px 18px;">
+                <h3 style="margin-bottom:12px;">练习概览</h3>
+                <div class="overview-grid">
+                    <div class="overview-cell"><span class="overview-val">${data.totalSessions}</span><span class="overview-label">练习次数</span></div>
+                    <div class="overview-cell"><span class="overview-val">${data.totalWords}</span><span class="overview-label">练习单词</span></div>
+                    <div class="overview-cell"><span class="overview-val ${accClass(data.overallAccuracy)}">${accPercent(data.overallAccuracy)}</span><span class="overview-label">正确率</span></div>
+                    <div class="overview-cell"><span class="overview-val">${formatDuration(data.totalDuration)}</span><span class="overview-label">总时长</span></div>
+                    <div class="overview-cell"><span class="overview-val">${data.avgTimePerWord.toFixed(1)}s</span><span class="overview-label">平均用时</span></div>
+                    <div class="overview-cell"><span class="overview-val">${ICON.fire} ${data.streak}天</span><span class="overview-label">连续练习</span></div>
+                </div>
+            </div>`;
+
+            // 2. 正确率趋势折线图
+            if (data.dailyTrend.length > 0) {
+                html += `<div class="analysis-section"><h3>${ICON.trendUp} 正确率趋势</h3>
+                    <div class="chart-container"><canvas id="trend-chart-canvas"></canvas></div>
+                    <div style="text-align:center;padding:8px 0;font-weight:600;font-size:14px;" class="${data.trendDiff > 0.02 ? 'trend-up' : data.trendDiff < -0.02 ? 'trend-down' : ''}">
+                        近期趋势: ${data.trendDiff > 0.02 ? `↑ 上升 (+${(data.trendDiff * 100).toFixed(0)}%)` : data.trendDiff < -0.02 ? `↓ 下降 (${(data.trendDiff * 100).toFixed(0)}%)` : '→ 稳定'}
+                    </div></div>`;
+            }
+
+            // 3. 单词掌握度（优先级提高）
+            const mTotal = data.mastery.mastered.length + data.mastery.learning.length + data.mastery.weak.length;
+            if (mTotal > 0) {
+                const mPct = (n) => mTotal > 0 ? Math.max(3, Math.round(n / mTotal * 100)) : 0;
+                html += `<div class="analysis-section"><h3>${ICON.chart} 单词掌握度</h3>
+                    <div class="mastery-hint">点击色块查看该分类单词</div>
+                    <div class="mastery-bar">
+                        ${data.mastery.mastered.length > 0 ? `<div class="mastery-bar-segment mastery-mastered" data-type="mastered" style="width:${mPct(data.mastery.mastered.length)}%">${data.mastery.mastered.length}</div>` : ''}
+                        ${data.mastery.learning.length > 0 ? `<div class="mastery-bar-segment mastery-learning" data-type="learning" style="width:${mPct(data.mastery.learning.length)}%">${data.mastery.learning.length}</div>` : ''}
+                        ${data.mastery.weak.length > 0 ? `<div class="mastery-bar-segment mastery-weak" data-type="weak" style="width:${mPct(data.mastery.weak.length)}%">${data.mastery.weak.length}</div>` : ''}
+                    </div>
+                    <div style="display:flex;justify-content:space-around;font-size:13px;margin-top:8px;">
+                        <span style="color:var(--color-success);cursor:pointer;" data-type="mastered">已掌握 ${data.mastery.mastered.length}</span>
+                        <span style="color:var(--color-warn);cursor:pointer;" data-type="learning">学习中 ${data.mastery.learning.length}</span>
+                        <span style="color:var(--color-error);cursor:pointer;" data-type="weak">薄弱 ${data.mastery.weak.length}</span>
+                    </div>
+                    <div id="mastery-detail-container"></div>
+                </div>`;
+            }
+
+            // 4. 练习习惯
+            if (data.habits.byMode.length > 1) {
+                html += `<div class="analysis-section"><h3>${ICON.clipboard} 练习习惯</h3>`;
+                data.habits.byMode.forEach(m => {
+                    const pct = data.habits.totalSessions > 0 ? Math.round(m.sessions / data.habits.totalSessions * 100) : 0;
+                    html += `<div class="habit-row">
+                        <span class="habit-mode">${m.mode}</span>
+                        <div class="habit-stats">
+                            <span>${m.sessions}次 (${pct}%)</span>
+                            <span>${m.words}词</span>
+                            <span class="${accClass(m.accuracy)}">${accPercent(m.accuracy)}</span>
+                        </div>
+                    </div>`;
+                });
+                html += `<div class="habit-summary">`;
+                if (data.habits.mostUsed) html += `最常用：<strong>${data.habits.mostUsed.mode}</strong> (${Math.round(data.habits.mostUsed.sessions / data.habits.totalSessions * 100)}% 的练习)`;
+                if (data.habits.weakest && data.habits.byMode.length > 1) html += `<br>最薄弱：<strong>${data.habits.weakest.mode}</strong> (${accPercent(data.habits.weakest.accuracy)} 正确率)`;
+                html += `</div></div>`;
+            }
+
+            analysisContent.innerHTML = html;
+
+            // === 初始化折线图 ===
+            if (data.dailyTrend.length > 0 && typeof Chart !== 'undefined') {
+                const ctx = document.getElementById('trend-chart-canvas');
+                if (ctx) {
+                    trendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.dailyTrend.map(d => d.date.slice(5)),
+                            datasets: [{
+                                label: '正确率',
+                                data: data.dailyTrend.map(d => Math.round(d.accuracy * 100)),
+                                borderColor: '#FF6B4A',
+                                backgroundColor: 'rgba(255, 107, 74, 0.1)',
+                                fill: true,
+                                tension: 0.35,
+                                pointBackgroundColor: '#FF6B4A',
+                                pointBorderColor: '#FFFDF9',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#2D2A26',
+                                    titleFont: { family: 'Nunito' },
+                                    bodyFont: { family: 'Nunito' },
+                                    padding: 10,
+                                    cornerRadius: 6,
+                                    callbacks: {
+                                        label: (ctx) => {
+                                            const d = data.dailyTrend[ctx.dataIndex];
+                                            return [`正确率: ${ctx.parsed.y}%`, `练习: ${d.sessions}次 / ${d.words}词`];
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    min: 0, max: 100,
+                                    ticks: { callback: v => v + '%', font: { family: 'Nunito', size: 11 } },
+                                    grid: { color: 'rgba(0,0,0,0.05)' }
+                                },
+                                x: {
+                                    ticks: { font: { family: 'Nunito', size: 11 } },
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // === 掌握度点击事件 ===
+            const masterySegments = analysisContent.querySelectorAll('.mastery-bar-segment, [data-type]');
+            const masteryDataMap = { mastered: data.mastery.mastered, learning: data.mastery.learning, weak: data.mastery.weak };
+            masterySegments.forEach(el => {
+                el.addEventListener('click', () => {
+                    const type = el.dataset.type;
+                    const detailContainer = document.getElementById('mastery-detail-container');
+                    if (!detailContainer) return;
+
+                    // 取消所有高亮
+                    analysisContent.querySelectorAll('.mastery-bar-segment').forEach(s => s.classList.remove('active'));
+
+                    if (activeMasteryTab === type) {
+                        // 再次点击同一分类 → 收起
+                        activeMasteryTab = null;
+                        detailContainer.innerHTML = '';
+                        return;
+                    }
+
+                    activeMasteryTab = type;
+                    // 高亮当前区块
+                    const activeSeg = analysisContent.querySelector(`.mastery-bar-segment[data-type="${type}"]`);
+                    if (activeSeg) activeSeg.classList.add('active');
+
+                    const words = masteryDataMap[type] || [];
+                    if (words.length === 0) {
+                        detailContainer.innerHTML = '<div class="mastery-detail"><div class="mastery-detail-item" style="justify-content:center;color:var(--color-text-muted);">暂无单词</div></div>';
+                        return;
+                    }
+
+                    let detailHtml = '<div class="mastery-detail">';
+                    words.forEach(w => {
+                        const acc = w.accuracy;
+                        const accColor = acc >= 0.8 ? 'var(--color-success)' : acc >= 0.5 ? 'var(--color-warn)' : 'var(--color-error)';
+                        detailHtml += `<div class="mastery-detail-item">
+                            <div><span class="word">${w.english}</span><span class="meaning">${w.chinese || ''}</span>
+                                ${type === 'weak' && w.errorCount >= 3 ? '<span style="font-size:11px;color:var(--color-error);margin-left:4px;">需重点练习</span>' : ''}
+                            </div>
+                            <div class="stats">错${w.errorCount}次/共${w.totalCount}次 <span style="color:${accColor};font-weight:600;">${accPercent(acc)}</span> <span class="date">${w.lastPracticeDate}</span></div>
+                        </div>`;
+                    });
+                    detailHtml += '</div>';
+                    detailContainer.innerHTML = detailHtml;
+                });
+            });
+        };
+
+        const showAnalysisPanel = () => {
+            const data = analyzeLearningData();
+            renderAnalysisPanel(data);
+            analysisModal.style.display = 'flex';
+        };
+
+        const hideAnalysisPanel = () => {
+            analysisModal.style.display = 'none';
+        };
+
+        openAnalysisButton.addEventListener('click', showAnalysisPanel);
+        analysisCloseButton.addEventListener('click', hideAnalysisPanel);
+        analysisModal.addEventListener('click', (e) => {
+            if (e.target === analysisModal) hideAnalysisPanel();
+        });
+
+        // 设置弹窗
+        const showSettingsModal = () => {
+            settingsModal.style.display = 'flex';
+        };
+        const hideSettingsModal = () => {
+            settingsModal.style.display = 'none';
+        };
+        settingsGearButton.addEventListener('click', showSettingsModal);
+        settingsCloseButton.addEventListener('click', hideSettingsModal);
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) hideSettingsModal();
         });
 
         // Initial setup
