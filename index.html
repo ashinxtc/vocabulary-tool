@@ -2814,6 +2814,9 @@
                 return;
             }
             updateAllProfileDisplays();
+            // 切换用户后重新过滤练习数据和错题
+            const filteredSessions = filterSessionsByProfile(allPracticeSessions);
+            rebuildWrongWordsFromSessions(filteredSessions);
             showMessage(`用户已切换为: <strong>${currentUserProfile}</strong>`);
         };
 
@@ -2955,22 +2958,8 @@
                 query(collection(db, `${basePath}/practiceSessions`), orderBy('endTime', 'desc')),
                 (snapshot) => {
                     allPracticeSessions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                    const map = new Map();
-                    allPracticeSessions.forEach(session => {
-                        if (session.sessionWords && Array.isArray(session.sessionWords)) {
-                            session.sessionWords.forEach(word => {
-                                if (!word.wasCorrect) {
-                                    const ts = session.endTime?.toMillis?.() ?? (session.endTime ? new Date(session.endTime).getTime() : 0);
-                                    if (!map.has(word.english) || map.get(word.english).timestamp < ts) {
-                                        map.set(word.english, { english: word.english, chinese: word.chinese, timestamp: ts });
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    persistentWrongWords = Array.from(map.values());
-                    wrongWordsCountSpan.textContent = persistentWrongWords.length;
-                    wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+                    const filteredSessions = filterSessionsByProfile(allPracticeSessions);
+                    rebuildWrongWordsFromSessions(filteredSessions);
                 },
                 (error) => console.error('Sync sessions error:', error)
             );
@@ -3063,6 +3052,31 @@
         syncCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSetSyncCode(); });
 
 
+        // --- 会话数据按用户过滤 ---
+        const filterSessionsByProfile = (sessions) => {
+            if (!currentUserProfile) return sessions;
+            return sessions.filter(s => s.profileName === currentUserProfile);
+        };
+
+        const rebuildWrongWordsFromSessions = (filteredSessions) => {
+            const map = new Map();
+            filteredSessions.forEach(session => {
+                if (session.sessionWords && Array.isArray(session.sessionWords)) {
+                    session.sessionWords.forEach(word => {
+                        if (!word.wasCorrect) {
+                            const ts = session.endTime?.toMillis?.() ?? (session.endTime ? new Date(session.endTime).getTime() : 0);
+                            if (!map.has(word.english) || map.get(word.english).timestamp < ts) {
+                                map.set(word.english, { english: word.english, chinese: word.chinese, timestamp: ts });
+                            }
+                        }
+                    });
+                }
+            });
+            persistentWrongWords = Array.from(map.values());
+            wrongWordsCountSpan.textContent = persistentWrongWords.length;
+            wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+        };
+
         // --- Firestore-based Session Management Functions ---
         const loadPracticeSessionsFromFirestore = async () => {
             if (!isAuthReady || !userId) return;
@@ -3073,27 +3087,8 @@
                 const querySnapshot = await getDocs(q);
 
                 allPracticeSessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                const overallUniqueWrongWordsMap = new Map();
-                allPracticeSessions.forEach(session => {
-                    if (session.sessionWords && Array.isArray(session.sessionWords)) {
-                        session.sessionWords.forEach(word => {
-                            if (!word.wasCorrect) {
-                                const ts = session.endTime?.toMillis?.() ?? (session.endTime ? new Date(session.endTime).getTime() : 0);
-                                if (!overallUniqueWrongWordsMap.has(word.english) || overallUniqueWrongWordsMap.get(word.english).timestamp < ts) {
-                                    overallUniqueWrongWordsMap.set(word.english, {
-                                        english: word.english,
-                                        chinese: word.chinese,
-                                        timestamp: ts
-                                    });
-                                }
-                            }
-                        });
-                    }
-                });
-                persistentWrongWords = Array.from(overallUniqueWrongWordsMap.values());
-                wrongWordsCountSpan.textContent = persistentWrongWords.length;
-                wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+                const filteredSessions = filterSessionsByProfile(allPracticeSessions);
+                rebuildWrongWordsFromSessions(filteredSessions);
 
             } catch (error) {
                 console.error("Error loading practice sessions from Firestore:", error);
@@ -5158,7 +5153,7 @@
 
         // --- 数据分析功能 ---
         const analyzeLearningData = () => {
-            const sessions = allPracticeSessions;
+            const sessions = filterSessionsByProfile(allPracticeSessions);
             if (!sessions || sessions.length === 0) return null;
 
             const now = new Date();
