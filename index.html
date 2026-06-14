@@ -2911,20 +2911,54 @@
             const oldBase = `artifacts/${appId}/users/${userId}`;
             const newBase = getUserDataPath();
             try {
-                const newProfilesSnap = await getDocs(collection(db, `${newBase}/profiles`));
-                if (newProfilesSnap.docs.length > 0) return;
+                // 读取旧数据（本地 UID 路径）
                 const oldProfilesSnap = await getDocs(collection(db, `${oldBase}/profiles`));
                 const oldSessionsSnap = await getDocs(collection(db, `${oldBase}/practiceSessions`));
                 if (oldProfilesSnap.docs.length === 0 && oldSessionsSnap.docs.length === 0) return;
+
+                // 读取同步码路径的已有数据（用于去重）
+                const existingProfilesSnap = await getDocs(collection(db, `${newBase}/profiles`));
+                const existingSessionsSnap = await getDocs(collection(db, `${newBase}/practiceSessions`));
+
+                // 构建已有数据的去重集合
+                const existingProfileNames = new Set(existingProfilesSnap.docs.map(d => (d.data().name || '').toLowerCase()));
+                const existingSessionKeys = new Set(existingSessionsSnap.docs.map(d => {
+                    const data = d.data();
+                    const ts = data.startTime?.toMillis?.() ?? new Date(data.startTime).getTime();
+                    return `${data.profileName}_${ts}`;
+                }));
+
                 const batch = writeBatch(db);
+                let profilesAdded = 0, sessionsAdded = 0;
+
+                // 合并 profiles（按名称去重）
                 oldProfilesSnap.docs.forEach(d => {
-                    batch.set(doc(collection(db, `${newBase}/profiles`)), d.data());
+                    const name = (d.data().name || '').toLowerCase();
+                    if (!existingProfileNames.has(name)) {
+                        batch.set(doc(collection(db, `${newBase}/profiles`)), d.data());
+                        existingProfileNames.add(name);
+                        profilesAdded++;
+                    }
                 });
+
+                // 合并 sessions（按 profileName + startTime 去重）
                 oldSessionsSnap.docs.forEach(d => {
-                    batch.set(doc(collection(db, `${newBase}/practiceSessions`)), d.data());
+                    const data = d.data();
+                    const ts = data.startTime?.toMillis?.() ?? new Date(data.startTime).getTime();
+                    const key = `${data.profileName}_${ts}`;
+                    if (!existingSessionKeys.has(key)) {
+                        batch.set(doc(collection(db, `${newBase}/practiceSessions`)), data);
+                        existingSessionKeys.add(key);
+                        sessionsAdded++;
+                    }
                 });
-                await batch.commit();
-                console.log(`Migrated ${oldProfilesSnap.docs.length} profiles, ${oldSessionsSnap.docs.length} sessions.`);
+
+                if (profilesAdded > 0 || sessionsAdded > 0) {
+                    await batch.commit();
+                    console.log(`Merged: ${profilesAdded} profiles, ${sessionsAdded} sessions into sync code path.`);
+                } else {
+                    console.log('No new data to migrate - all records already exist in sync code path.');
+                }
             } catch (e) {
                 console.error('Migration error:', e);
             }
