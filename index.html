@@ -4646,15 +4646,22 @@
                         messageDialog.style.display = 'none';
                         showLoader('正在删除单词库...');
                         try {
-                            const batch = writeBatch(db);
+                            // 收集所有需要删除的引用
+                            const refsToDelete = [];
                             const subsetsToDeleteSnapshot = await getDocs(query(collection(db, PUBLIC_SUBSETS_COLLECTION), where("libraryId", "==", libraryIdToDelete)));
                             for (const subsetDoc of subsetsToDeleteSnapshot.docs) {
                                 const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION), where("subsetId", "==", subsetDoc.id)));
-                                wordsSnapshot.forEach(wordDoc => batch.delete(doc.ref));
-                                batch.delete(subsetDoc.ref);
+                                wordsSnapshot.forEach(wordDoc => refsToDelete.push(wordDoc.ref));
+                                refsToDelete.push(subsetDoc.ref);
                             }
-                            batch.delete(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryIdToDelete));
-                            await batch.commit();
+                            refsToDelete.push(doc(db, PUBLIC_LIBRARIES_COLLECTION, libraryIdToDelete));
+
+                            // 分批删除（每批最多 450 条，留余量）
+                            for (let i = 0; i < refsToDelete.length; i += 450) {
+                                const batch = writeBatch(db);
+                                refsToDelete.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                                await batch.commit();
+                            }
 
                             if (selectedLibraryId === libraryIdToDelete) {
                                 selectedLibraryId = null; selectedLibraryName = null;
@@ -4748,6 +4755,7 @@
                 const q = query(subsetsRef, where("libraryId", "==", libraryId));
                 const querySnapshot = await getDocs(q);
                 const loadedSubsets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allSubsets = loadedSubsets; // 保存到全局变量供删除等操作使用
 
                 const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
                 const qWords = query(wordsRef, where("libraryId", "==", libraryId));
@@ -4819,11 +4827,15 @@
                     messageDialog.style.display = 'none';
                     showLoader('正在删除子集...');
                     try {
-                        const batch = writeBatch(db);
                         const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION), where("subsetId", "==", subsetIdToDelete)));
-                        wordsSnapshot.forEach(doc => batch.delete(doc.ref));
-                        batch.delete(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetIdToDelete));
-                        await batch.commit();
+                        const refsToDelete = wordsSnapshot.docs.map(d => d.ref);
+                        refsToDelete.push(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetIdToDelete));
+
+                        for (let i = 0; i < refsToDelete.length; i += 450) {
+                            const batch = writeBatch(db);
+                            refsToDelete.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                            await batch.commit();
+                        }
 
                         if (selectedSubsetId === subsetIdToDelete) {
                             selectedSubsetId = null; selectedSubsetName = null;
@@ -4842,7 +4854,35 @@
                 document.getElementById('cancel-delete-subset').onclick = () => { messageDialog.style.display = 'none'; };
             }
             if (target.classList.contains('rename-subset-button')) {
-                // Similar rename logic as for libraries
+                const subsetId = target.dataset.id;
+                const subsetName = target.dataset.name;
+                const subset = allSubsets.find(s => s.id === subsetId);
+                if (!subset) return;
+
+                const isOwner = subset.userId === userId;
+                const promptHtml = isOwner ?
+                    `请输入 "${subsetName}" 的新名称：<br><input type="text" id="rename-input" value="${subsetName}">` :
+                    `请输入确认码以重命名子集 "<strong>${subsetName}</strong>"：<br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><input type="text" id="rename-input" value="${subsetName}" placeholder="新名称">`;
+
+                showMessage(`${promptHtml}<br><br><button id="confirm-rename-subset" class="secondary" style="width:auto;margin-right:10px;">确认</button><button id="cancel-rename-subset" style="width:auto;">取消</button>`);
+
+                document.getElementById('confirm-rename-subset').onclick = async () => {
+                    const newName = document.getElementById('rename-input').value.trim();
+                    const codeInput = document.getElementById('confirm-code-input');
+                    if (codeInput && codeInput.value !== '1234') { showMessage('确认码不正确。'); return; }
+                    if (!newName) { showMessage('请输入有效的子集名称。'); return; }
+                    showLoader('正在重命名...');
+                    try {
+                        await setDoc(doc(db, PUBLIC_SUBSETS_COLLECTION, subsetId), { name: newName }, { merge: true });
+                        if (selectedSubsetId === subsetId) selectedSubsetName = newName;
+                        await loadSubsetsForManageMode(selectedLibraryId);
+                        showMessage('子集名称已更新。');
+                    } catch (error) {
+                        console.error('重命名子集失败:', error);
+                        showMessage('重命名失败，请重试。');
+                    } finally { hideLoader(); }
+                };
+                document.getElementById('cancel-rename-subset').onclick = () => { messageDialog.style.display = 'none'; };
             }
         });
 
