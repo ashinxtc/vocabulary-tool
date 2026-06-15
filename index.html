@@ -1766,6 +1766,216 @@
             box-shadow: 1px 1px 0 0 var(--color-border);
         }
 
+        /* ========== 用户切换下拉面板 ========== */
+        .user-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        .user-switcher-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: var(--color-text);
+            transition: all var(--transition);
+        }
+        .user-switcher-trigger:hover {
+            border-color: var(--color-primary);
+            background: var(--color-primary-soft);
+        }
+        .user-switcher-trigger .arrow {
+            font-size: 10px;
+            transition: transform var(--transition);
+        }
+        .user-switcher-trigger.open .arrow {
+            transform: rotate(180deg);
+        }
+        .user-switcher-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 200px;
+            background: var(--color-surface);
+            border: 2px solid var(--kraft-border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            z-index: 20;
+            display: none;
+            overflow: hidden;
+        }
+        .user-switcher-dropdown.show {
+            display: block;
+            animation: dropdownIn 180ms ease-out;
+        }
+        @keyframes dropdownIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-switcher-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background var(--transition);
+            border-bottom: 1px solid var(--color-border);
+        }
+        .user-switcher-item:last-child { border-bottom: none; }
+        .user-switcher-item:hover { background: var(--color-surface-soft); }
+        .user-switcher-item.active {
+            background: var(--color-primary-soft);
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+        .user-switcher-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            flex-shrink: 0;
+        }
+        .user-switcher-divider {
+            height: 1px;
+            background: var(--color-border);
+            margin: 4px 0;
+        }
+        .user-switcher-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: background var(--transition);
+            font-weight: 500;
+        }
+        .user-switcher-action:hover { background: var(--color-surface-soft); }
+        .user-switcher-action.secondary-action {
+            color: var(--color-text-muted);
+            font-size: 12px;
+        }
+        /* 内联创建用户 */
+        .inline-create-user {
+            display: none;
+            padding: 10px 14px;
+            border-top: 1px solid var(--color-border);
+            background: var(--color-surface-soft);
+        }
+        .inline-create-user.show { display: flex; gap: 8px; align-items: center; }
+        .inline-create-user input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background: var(--color-surface);
+        }
+        .inline-create-user input:focus {
+            outline: none;
+            border-color: var(--color-border-focus);
+        }
+        .inline-create-user button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 13px;
+            box-shadow: 2px 2px 0 0 var(--kraft-border);
+        }
+        /* 同步状态行 */
+        .sync-status-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--color-text-muted);
+            margin-top: 4px;
+            cursor: default;
+        }
+        .sync-status-line.has-sync {
+            cursor: pointer;
+        }
+        .sync-status-line.has-sync:hover {
+            color: var(--color-primary);
+        }
+
+        /* ========== 首次使用欢迎面板 ========== */
+        .welcome-panel {
+            background: var(--color-surface);
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 28px 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .welcome-panel h3 {
+            font-size: 1.2rem;
+            color: var(--color-primary);
+            margin-bottom: 16px;
+            font-family: var(--font-display);
+        }
+        .welcome-panel p {
+            font-size: 14px;
+            color: var(--color-text-muted);
+            margin-bottom: 16px;
+        }
+        .welcome-section {
+            margin-bottom: 20px;
+        }
+        .welcome-section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            display: block;
+        }
+        .welcome-input-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        .welcome-input-row input {
+            flex: 1;
+            max-width: 240px;
+            padding: 12px 16px;
+            border: 2px dashed var(--color-border);
+            border-radius: 6px;
+            font-size: 15px;
+            background: var(--color-surface);
+        }
+        .welcome-input-row input:focus {
+            outline: none;
+            border-style: solid;
+            border-color: var(--color-border-focus);
+        }
+        .welcome-input-row button {
+            width: auto;
+            padding: 12px 20px;
+            font-size: 15px;
+        }
+        .welcome-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            color: var(--color-text-muted);
+            font-size: 12px;
+        }
+        .welcome-divider::before,
+        .welcome-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--color-border);
+        }
+
         #advanced-typing-section {
             display: none;
             flex-direction: column;
@@ -1977,20 +2187,54 @@
             <h1>智能英语单词默写</h1>
             <p>选择一种练习模式开始。</p>
             
-            <!-- MODIFIED: Profile Section is now here -->
+            <!-- 用户区域：根据状态显示不同界面 -->
             <div id="profile-section">
-                <div id="profile-top-row">
-                    <div id="profile-display-line">
-                        <span id="profile-display">当前: <span id="current-profile-name">未选择</span></span>
+                <!-- 已有用户时显示 -->
+                <div id="profile-main-row" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+                        <div class="user-switcher">
+                            <div class="user-switcher-trigger" id="user-switcher-trigger">
+                                <span>👤</span>
+                                <span id="current-user-display">未选择</span>
+                                <span class="arrow">▾</span>
+                            </div>
+                            <div class="user-switcher-dropdown" id="user-switcher-dropdown">
+                                <div id="user-switcher-list"></div>
+                                <div class="user-switcher-divider"></div>
+                                <div class="user-switcher-action" id="user-switcher-create">+ 创建新用户</div>
+                                <div class="inline-create-user" id="inline-create-user">
+                                    <input type="text" id="inline-create-input" placeholder="输入用户名" maxlength="20">
+                                    <button id="inline-create-btn" type="button">创建</button>
+                                </div>
+                                <div class="user-switcher-action secondary-action" id="user-switcher-manage">⚙ 管理用户</div>
+                            </div>
+                        </div>
+                        <button id="analysis-quick-btn" title="学习分析"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></button>
                     </div>
-                    <button id="analysis-quick-btn" title="学习分析"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg></button>
+                    <div class="sync-status-line" id="sync-status-line">
+                        <span id="sync-status-icon">☁</span>
+                        <span id="sync-status-text">未同步</span>
+                    </div>
                 </div>
-                <div id="profile-controls">
-                    <select id="profile-select">
-                        <option value="">-- 选择已有用户 --</option>
-                    </select>
-                    <input type="text" id="new-profile-name-input" placeholder="或创建新用户">
-                    <button id="set-profile-button">设置用户</button>
+
+                <!-- 首次使用时显示 -->
+                <div id="welcome-panel" class="welcome-panel" style="display: none;">
+                    <h3>👋 欢迎使用！</h3>
+                    <div class="welcome-section">
+                        <span class="welcome-section-label">有同步码？输入后自动获取数据：</span>
+                        <div class="welcome-input-row">
+                            <input type="text" id="welcome-sync-input" placeholder="输入同步码" maxlength="32">
+                            <button id="welcome-sync-btn" type="button">连接</button>
+                        </div>
+                    </div>
+                    <div class="welcome-divider">或</div>
+                    <div class="welcome-section">
+                        <span class="welcome-section-label">创建本地用户直接开始：</span>
+                        <div class="welcome-input-row">
+                            <input type="text" id="welcome-user-input" placeholder="输入你的名字" maxlength="20">
+                            <button id="welcome-user-btn" type="button">开始使用</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2602,10 +2846,23 @@
         const leaderboardListsContainer = document.getElementById('leaderboard-lists-container');
         const typingBackButton = document.getElementById('typing-back-button');
         const profileSection = document.getElementById('profile-section');
-        const currentProfileNameSpan = document.getElementById('current-profile-name');
-        const profileSelect = document.getElementById('profile-select');
-        const newProfileNameInput = document.getElementById('new-profile-name-input');
-        const setProfileButton = document.getElementById('set-profile-button');
+        const profileMainRow = document.getElementById('profile-main-row');
+        const welcomePanel = document.getElementById('welcome-panel');
+        const currentUserDisplay = document.getElementById('current-user-display');
+        const userSwitcherTrigger = document.getElementById('user-switcher-trigger');
+        const userSwitcherDropdown = document.getElementById('user-switcher-dropdown');
+        const userSwitcherList = document.getElementById('user-switcher-list');
+        const userSwitcherCreate = document.getElementById('user-switcher-create');
+        const inlineCreateUser = document.getElementById('inline-create-user');
+        const inlineCreateInput = document.getElementById('inline-create-input');
+        const inlineCreateBtn = document.getElementById('inline-create-btn');
+        const userSwitcherManage = document.getElementById('user-switcher-manage');
+        const syncStatusLine = document.getElementById('sync-status-line');
+        const syncStatusText = document.getElementById('sync-status-text');
+        const welcomeSyncInput = document.getElementById('welcome-sync-input');
+        const welcomeSyncBtn = document.getElementById('welcome-sync-btn');
+        const welcomeUserInput = document.getElementById('welcome-user-input');
+        const welcomeUserBtn = document.getElementById('welcome-user-btn');
         const persistentProfileDisplay = document.getElementById('persistent-profile-display');
         // 同步码 DOM 引用
         const syncCodeInput = document.getElementById('sync-code-input');
@@ -2785,93 +3042,216 @@
                 console.error("Error fetching user profiles:", error);
                 showMessage("无法加载用户列表。");
             }
-            
-            updateProfileUI();
 
             const lastProfile = localStorage.getItem('currentUserProfile');
             if (lastProfile && allUserProfiles.some(p => p.name === lastProfile)) {
                 currentUserProfile = lastProfile;
-                profileSelect.value = lastProfile;
             } else if (allUserProfiles.length > 0) {
                 currentUserProfile = allUserProfiles[0].name;
-                profileSelect.value = currentUserProfile;
             } else {
                 currentUserProfile = null;
             }
 
             updateAllProfileDisplays();
-            if (!currentUserProfile) {
-                showMessage("欢迎使用！请先选择或创建一个练习用户名，以便记录您的练习进度。");
-            }
         };
 
         const updateProfileUI = () => {
-            profileSelect.innerHTML = '<option value="">-- 选择已有用户 --</option>';
+            // 下拉列表由 updateAllProfileDisplays → renderUserSwitcherList 更新
+            renderUserSwitcherList();
+        };
+
+        const renderUserSwitcherList = () => {
+            if (!userSwitcherList) return;
+            if (allUserProfiles.length === 0) {
+                userSwitcherList.innerHTML = '<div style="padding:12px;text-align:center;color:var(--color-text-muted);font-size:13px;">暂无用户</div>';
+                return;
+            }
+            let html = '';
             allUserProfiles.forEach(profile => {
-                const option = document.createElement('option');
-                option.value = profile.name;
-                option.textContent = profile.name;
-                profileSelect.appendChild(option);
+                const isActive = profile.name === currentUserProfile;
+                html += `<div class="user-switcher-item ${isActive ? 'active' : ''}" data-name="${escapeHtml(profile.name)}">
+                    ${isActive ? '<span class="dot"></span>' : '<span style="width:8px;display:inline-block;"></span>'}
+                    <span>${escapeHtml(profile.name)}</span>
+                </div>`;
+            });
+            userSwitcherList.innerHTML = html;
+
+            // 绑定点击切换
+            userSwitcherList.querySelectorAll('.user-switcher-item').forEach(item => {
+                item.addEventListener('click', async () => {
+                    const name = item.dataset.name;
+                    if (name && name !== currentUserProfile) {
+                        currentUserProfile = name;
+                        localStorage.setItem('currentUserProfile', name);
+                        const filtered = filterSessionsByProfile(allPracticeSessions);
+                        rebuildWrongWordsFromSessions(filtered);
+                        debouncedSaveSettings();
+                        updateAllProfileDisplays();
+                    }
+                    closeUserDropdown();
+                });
             });
         };
 
-        const updateAllProfileDisplays = () => {
-            const profileText = currentUserProfile || '未选择';
-            currentProfileNameSpan.textContent = profileText;
-            persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(profileText)}</strong>`;
+        const openUserDropdown = () => {
+            userSwitcherDropdown.classList.add('show');
+            userSwitcherTrigger.classList.add('open');
+            // 点击外部关闭
+            setTimeout(() => document.addEventListener('click', closeDropdownOutside), 0);
+        };
+        const closeUserDropdown = () => {
+            userSwitcherDropdown.classList.remove('show');
+            userSwitcherTrigger.classList.remove('open');
+            inlineCreateUser.classList.remove('show');
+            document.removeEventListener('click', closeDropdownOutside);
+        };
+        const closeDropdownOutside = (e) => {
+            if (!e.target.closest('.user-switcher')) closeUserDropdown();
         };
 
-        const handleSetProfile = async () => {
-            const selectedProfile = profileSelect.value;
-            const newProfile = newProfileNameInput.value.trim();
-
-            if (newProfile) {
-                if (newProfile.length > 20) { showMessage('用户名不能超过 20 个字符。'); return; }
-                if (/<[^>]+>/.test(newProfile)) { showMessage('用户名不能包含 HTML 标签。'); return; }
-                if (allUserProfiles.some(p => p.name.toLowerCase() === newProfile.toLowerCase())) {
-                    showMessage(`用户名 "${newProfile}" 已存在。`);
-                    return;
-                }
-                showLoader('正在创建用户...');
-                try {
-                    const profilesCollectionPath = `${getUserDataPath()}/profiles`;
-                    await addDoc(collection(db, profilesCollectionPath), { name: newProfile, createdAt: serverTimestamp() });
-                    currentUserProfile = newProfile;
-                    localStorage.setItem('currentUserProfile', newProfile);
-                    newProfileNameInput.value = '';
-                    await initUserProfile(); 
-                    profileSelect.value = newProfile; 
-                } catch (error) {
-                    console.error("Error creating profile:", error);
-                    showMessage("创建用户失败。");
-                } finally {
-                    hideLoader();
-                }
-            } else if (selectedProfile) {
-                currentUserProfile = selectedProfile;
-                localStorage.setItem('currentUserProfile', selectedProfile);
+        userSwitcherTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (userSwitcherDropdown.classList.contains('show')) {
+                closeUserDropdown();
             } else {
-                showMessage("请选择一个已有用户或输入一个新用户名。");
-                return;
-            }
-            updateAllProfileDisplays();
-            // 切换用户后重新过滤练习数据和错题
-            const filteredSessions = filterSessionsByProfile(allPracticeSessions);
-            rebuildWrongWordsFromSessions(filteredSessions);
-            // 同步用户选择到 Firestore（跨设备生效）
-            debouncedSaveSettings();
-            showMessage(`用户已切换为: <strong>${escapeHtml(currentUserProfile)}</strong>`);
-        };
-
-        setProfileButton.addEventListener('click', handleSetProfile);
-        profileSelect.addEventListener('change', () => {
-            if (profileSelect.value) {
-                newProfileNameInput.value = '';
+                openUserDropdown();
             }
         });
 
+        // 创建新用户（内联）
+        userSwitcherCreate.addEventListener('click', () => {
+            inlineCreateUser.classList.toggle('show');
+            if (inlineCreateUser.classList.contains('show')) {
+                inlineCreateInput.value = '';
+                inlineCreateInput.focus();
+            }
+        });
+
+        const handleInlineCreate = async () => {
+            const name = inlineCreateInput.value.trim();
+            if (!name) return;
+            if (name.length > 20) { showMessage('用户名不能超过 20 个字符。'); return; }
+            if (/<[^>]+>/.test(name)) { showMessage('用户名不能包含 HTML 标签。'); return; }
+            if (allUserProfiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+                showMessage(`用户名 "${escapeHtml(name)}" 已存在。`);
+                return;
+            }
+            closeUserDropdown();
+            showLoader('正在创建用户...');
+            try {
+                const profilesPath = `${getUserDataPath()}/profiles`;
+                await addDoc(collection(db, profilesPath), { name: name, createdAt: serverTimestamp() });
+                currentUserProfile = name;
+                localStorage.setItem('currentUserProfile', name);
+                await initUserProfile();
+                debouncedSaveSettings();
+                showMessage(`用户 "${escapeHtml(name)}" 创建成功！`);
+            } catch (e) {
+                console.error('Create user failed:', e);
+                showMessage('创建用户失败。');
+            } finally { hideLoader(); }
+        };
+        inlineCreateBtn.addEventListener('click', handleInlineCreate);
+        inlineCreateInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleInlineCreate(); });
+
+        // 管理用户 → 打开设置弹窗
+        userSwitcherManage.addEventListener('click', () => {
+            closeUserDropdown();
+            showSettingsModal();
+        });
+
+        // 同步状态行点击 → 打开设置弹窗
+        if (syncStatusLine) {
+            syncStatusLine.addEventListener('click', () => {
+                if (syncCode) showSettingsModal();
+            });
+        }
+
+        // 欢迎面板：同步码连接
+        const handleWelcomeSync = async () => {
+            const code = welcomeSyncInput.value.trim();
+            if (!code) { showMessage('请输入同步码。'); return; }
+            if (code.length < 4 || code.length > 32) { showMessage('同步码长度需为 4-32 个字符。'); return; }
+            if (!/^[a-zA-Z0-9一-鿿_-]+$/.test(code)) { showMessage('同步码格式不正确。'); return; }
+            syncCode = code;
+            localStorage.setItem('vocabSyncCode', code);
+            showLoader('正在同步数据...');
+            try {
+                await migrateDataToSyncCode();
+                detachSyncListeners();
+                setupSyncListener();
+                await initUserProfile();
+                await loadPracticeSessionsFromFirestore();
+                await loadSettingsFromFirestore();
+                updateSyncDisplay();
+                showMessage(`同步码已连接: <strong>${escapeHtml(code)}</strong>`);
+            } catch (e) {
+                console.error('Sync failed:', e);
+                showMessage('同步失败: ' + e.message);
+            } finally { hideLoader(); }
+        };
+        welcomeSyncBtn.addEventListener('click', handleWelcomeSync);
+        welcomeSyncInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleWelcomeSync(); });
+
+        // 欢迎面板：创建用户
+        const handleWelcomeUser = async () => {
+            const name = welcomeUserInput.value.trim();
+            if (!name) { showMessage('请输入你的名字。'); return; }
+            if (name.length > 20) { showMessage('名字不能超过 20 个字符。'); return; }
+            if (/<[^>]+>/.test(name)) { showMessage('名字不能包含 HTML 标签。'); return; }
+            showLoader('正在创建用户...');
+            try {
+                const profilesPath = `${getUserDataPath()}/profiles`;
+                await addDoc(collection(db, profilesPath), { name: name, createdAt: serverTimestamp() });
+                currentUserProfile = name;
+                localStorage.setItem('currentUserProfile', name);
+                await initUserProfile();
+                debouncedSaveSettings();
+                showMessage(`欢迎，${escapeHtml(name)}！`);
+            } catch (e) {
+                console.error('Create user failed:', e);
+                showMessage('创建用户失败。');
+            } finally { hideLoader(); }
+        };
+        welcomeUserBtn.addEventListener('click', handleWelcomeUser);
+        welcomeUserInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleWelcomeUser(); });
+
+        const updateAllProfileDisplays = () => {
+            const profileText = currentUserProfile || '未选择';
+            if (currentUserDisplay) currentUserDisplay.textContent = profileText;
+            persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(profileText)}</strong>${syncCode ? ' ☁' : ''}`;
+
+            // 切换主面板 vs 欢迎面板
+            if (profileMainRow && welcomePanel) {
+                if (allUserProfiles.length > 0 || currentUserProfile) {
+                    profileMainRow.style.display = 'block';
+                    welcomePanel.style.display = 'none';
+                } else {
+                    profileMainRow.style.display = 'none';
+                    welcomePanel.style.display = 'block';
+                }
+            }
+
+            // 更新同步状态
+            if (syncStatusText) {
+                if (syncCode) {
+                    syncStatusText.textContent = `已同步: ${syncCode}`;
+                    syncStatusLine?.classList.add('has-sync');
+                } else {
+                    syncStatusText.textContent = '未同步';
+                    syncStatusLine?.classList.remove('has-sync');
+                }
+            }
+
+            // 更新下拉列表
+            renderUserSwitcherList();
+        };
+
+        // handleSetProfile 已被新的用户切换下拉面板替代
+
         // --- 同步码功能 ---
         const updateSyncDisplay = () => {
+            // 更新设置弹窗中的同步状态
             if (settingsSyncStatus) {
                 if (syncCode) {
                     settingsSyncStatus.className = 'sync-status active';
@@ -2887,11 +3267,8 @@
             if (syncCodeInput && syncCode) {
                 syncCodeInput.value = syncCode;
             }
-            // persistent profile display sync indicator
-            if (persistentProfileDisplay) {
-                const syncTag = syncCode ? ` <span style="font-size:11px;color:var(--color-success);">☁</span>` : '';
-                persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(currentUserProfile || '未选择')}</strong>${syncTag}`;
-            }
+            // 同步首页和持久显示
+            updateAllProfileDisplays();
         };
 
         const handleSetSyncCode = async () => {
