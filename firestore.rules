@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 公共数据：单词库、单词、排行榜（所有人可读，认证用户可写）
+    match /artifacts/vocabulary-29bb0/public/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 用户数据：支持同步码访问（认证用户可读写任意路径）
+    match /artifacts/vocabulary-29bb0/users/{anyId}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
