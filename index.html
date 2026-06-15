@@ -2306,20 +2306,20 @@
                 <div class="settings-group">
                     <div class="settings-group-title">朗读与显示</div>
                     <div class="settings-row">
-                        <div><div class="settings-row-label">自动读出单词</div><div class="settings-row-desc">练习时自动朗读当前单词</div></div>
-                        <input type="checkbox" class="settings-checkbox" id="auto-speak-checkbox" checked title="自动读出单词">
+                        <div><label for="auto-speak-checkbox" class="settings-row-label">自动读出单词</label><div class="settings-row-desc">练习时自动朗读当前单词</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="auto-speak-checkbox" checked>
                     </div>
                     <div class="settings-row">
-                        <div><div class="settings-row-label">Free Dictionary 发音</div><div class="settings-row-desc">使用在线词典真人发音</div></div>
-                        <input type="checkbox" class="settings-checkbox" id="google-tts-checkbox" title="Free Dictionary 发音">
+                        <div><label for="google-tts-checkbox" class="settings-row-label">Free Dictionary 发音</label><div class="settings-row-desc">使用在线词典真人发音</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="google-tts-checkbox">
                     </div>
                     <div class="settings-row">
-                        <div><div class="settings-row-label">Merriam-Webster 发音</div><div class="settings-row-desc">使用韦氏词典发音</div></div>
-                        <input type="checkbox" class="settings-checkbox" id="merriam-webster-tts-checkbox" title="Merriam-Webster 发音">
+                        <div><label for="merriam-webster-tts-checkbox" class="settings-row-label">Merriam-Webster 发音</label><div class="settings-row-desc">使用韦氏词典发音</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="merriam-webster-tts-checkbox">
                     </div>
                     <div class="settings-row">
-                        <div><div class="settings-row-label">显示例句</div><div class="settings-row-desc">检查答案后显示英文例句</div></div>
-                        <input type="checkbox" class="settings-checkbox" id="show-example-sentence-checkbox" title="显示例句">
+                        <div><label for="show-example-sentence-checkbox" class="settings-row-label">显示例句</label><div class="settings-row-desc">检查答案后显示英文例句</div></div>
+                        <input type="checkbox" class="settings-checkbox" id="show-example-sentence-checkbox">
                     </div>
                 </div>
             </div>
@@ -2347,6 +2347,12 @@
         import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase variables
+        // XSS 防护：转义 HTML 特殊字符
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        };
+
         // SVG Icon Constants (consistent stroke style, 18px default)
         const ICON = {
             chart: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>`,
@@ -2779,7 +2785,7 @@
         const updateAllProfileDisplays = () => {
             const profileText = currentUserProfile || '未选择';
             currentProfileNameSpan.textContent = profileText;
-            persistentProfileDisplay.innerHTML = `练习用户: <strong>${profileText}</strong>`;
+            persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(profileText)}</strong>`;
         };
 
         const handleSetProfile = async () => {
@@ -2787,6 +2793,8 @@
             const newProfile = newProfileNameInput.value.trim();
 
             if (newProfile) {
+                if (newProfile.length > 20) { showMessage('用户名不能超过 20 个字符。'); return; }
+                if (/<[^>]+>/.test(newProfile)) { showMessage('用户名不能包含 HTML 标签。'); return; }
                 if (allUserProfiles.some(p => p.name.toLowerCase() === newProfile.toLowerCase())) {
                     showMessage(`用户名 "${newProfile}" 已存在。`);
                     return;
@@ -2847,7 +2855,7 @@
             // persistent profile display sync indicator
             if (persistentProfileDisplay) {
                 const syncTag = syncCode ? ` <span style="font-size:11px;color:var(--color-success);">☁</span>` : '';
-                persistentProfileDisplay.innerHTML = `练习用户: <strong>${currentUserProfile || '未选择'}</strong>${syncTag}`;
+                persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(currentUserProfile || '未选择')}</strong>${syncTag}`;
             }
         };
 
@@ -4260,8 +4268,8 @@
                 sessionHeader.innerHTML = `
                     <input type="checkbox" value="${session.id}">
                     <div class="session-info">
-                        <strong>${sessionDate}</strong>${profileNameText} (${wrongWordsInSession.length} 个错词, 正确率 ${accuracyText})
-                        <span class="session-mode">${session.practiceMode || '未知模式'}</span>
+                        <strong>${sessionDate}</strong>${escapeHtml(profileNameText)} (${wrongWordsInSession.length} 个错词, 正确率 ${accuracyText})
+                        <span class="session-mode">${escapeHtml(session.practiceMode || '未知模式')}</span>
                     </div>
                     <span class="toggle-icon">▶</span>`;
                 sessionItem.appendChild(sessionHeader);
@@ -4271,7 +4279,7 @@
                 session.sessionWords.forEach(word => {
                     const statusClass = word.wasCorrect ? 'correct' : 'incorrect';
                     const statusSymbol = word.wasCorrect ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6BCB77" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>';
-                    wordsList.innerHTML += `<li><span class="${statusClass}">${statusSymbol} ${word.english}: ${word.chinese}</span></li>`;
+                    wordsList.innerHTML += `<li><span class="${statusClass}">${statusSymbol} ${escapeHtml(word.english)}: ${escapeHtml(word.chinese)}</span></li>`;
                 });
                 sessionItem.appendChild(wordsList);
                 inlineWrongWordsSessionsList.appendChild(sessionItem);
@@ -5068,10 +5076,12 @@
                                 wordsList.className = 'words-list-container';
                                 wordsList.dataset.subsetId = subset.id;
                                 wordsInSubset.forEach(word => {
+                                    const safeEn = escapeHtml(word.english);
+                                    const safeCh = escapeHtml(word.chinese);
                                     wordsList.innerHTML += `
                                         <li class="word-item">
-                                            <input type="checkbox" class="word-checkbox" data-english="${word.english}" data-chinese="${word.chinese}" data-subset-id="${subset.id}">
-                                            <label>${word.english} - ${word.chinese}</label>
+                                            <input type="checkbox" class="word-checkbox" data-english="${safeEn}" data-chinese="${safeCh}" data-subset-id="${subset.id}">
+                                            <label>${safeEn} - ${safeCh}</label>
                                         </li>
                                     `;
                                 });
@@ -5586,7 +5596,7 @@
                         const acc = w.accuracy;
                         const accColor = acc >= 0.8 ? 'var(--color-success)' : acc >= 0.5 ? 'var(--color-warn)' : 'var(--color-error)';
                         detailHtml += `<div class="mastery-detail-item">
-                            <div><span class="word">${w.english}</span><span class="meaning">${w.chinese || ''}</span>
+                            <div><span class="word">${escapeHtml(w.english)}</span><span class="meaning">${escapeHtml(w.chinese || '')}</span>
                                 ${type === 'weak' && w.errorCount >= 3 ? '<span style="font-size:11px;color:var(--color-error);margin-left:4px;">需重点练习</span>' : ''}
                             </div>
                             <div class="stats">错${w.errorCount}次/共${w.totalCount}次 <span style="color:${accColor};font-weight:600;">${accPercent(acc)}</span> <span class="date">${w.lastPracticeDate}</span></div>
