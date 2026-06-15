@@ -3088,7 +3088,7 @@
 
         // --- 会话数据按用户过滤 ---
         const filterSessionsByProfile = (sessions) => {
-            if (!currentUserProfile) return sessions;
+            if (!currentUserProfile) return []; // 未选择用户时不显示任何数据
             return sessions.filter(s => s.profileName === currentUserProfile);
         };
 
@@ -3109,6 +3109,12 @@
             persistentWrongWords = Array.from(map.values());
             wrongWordsCountSpan.textContent = persistentWrongWords.length;
             wrongWordsRadio.disabled = persistentWrongWords.length === 0;
+            // 如果错题为0且当前选中了错题练习，取消选中
+            if (persistentWrongWords.length === 0 && wrongWordsRadio.checked) {
+                wrongWordsRadio.checked = false;
+                newWordsRadio.checked = true;
+                updatePracticeModeDisplay();
+            }
         };
 
         // --- Firestore-based Session Management Functions ---
@@ -4231,13 +4237,14 @@
 
         // --- Inline Wrong Words Selection Logic ---
         const showInlineWrongWordsSelection = () => {
-            if (!allPracticeSessions || allPracticeSessions.length === 0) {
+            const filteredSessions = filterSessionsByProfile(allPracticeSessions);
+            if (!filteredSessions || filteredSessions.length === 0) {
                 inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: #777;">暂无错题记录。</p>';
                 return;
             }
-            
+
             inlineWrongWordsSessionsList.innerHTML = '';
-            allPracticeSessions.forEach(session => {
+            filteredSessions.forEach(session => {
                 const wrongWordsInSession = session.sessionWords?.filter(w => !w.wasCorrect) || [];
                 if (wrongWordsInSession.length === 0) return;
 
