@@ -4136,6 +4136,12 @@
                         advancedTypingChars.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
                     }
                 }
+                // 定期裁剪已过字符，防止内存膨胀
+                if (advancedTypingCurrentIndex > 100) {
+                    const trimCount = advancedTypingCurrentIndex - 20;
+                    advancedTypingChars.splice(0, trimCount);
+                    advancedTypingCurrentIndex -= trimCount;
+                }
                 updateAdvancedTypingPrompt();
 
             } else {
@@ -4183,6 +4189,11 @@
             mwAudioUrlCache.clear();
             exampleSentenceCache.clear();
             isTypingWithWordsMode = false;
+            // 清理打字练习监听器（防止泄漏）
+            isTypingPracticeActive = false;
+            isAdvancedTypingActive = false;
+            document.removeEventListener('keydown', handleTypingKeyPress);
+            document.removeEventListener('keydown', handleAdvancedTypingKeyPress);
             loadPracticeSessionsFromFirestore();
             updatePracticeModeDisplay();
         };
