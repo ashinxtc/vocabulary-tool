@@ -1536,6 +1536,31 @@
             color: var(--color-text-muted);
         }
         .habit-summary strong { color: var(--color-text); }
+        /* 用户管理列表 */
+        .user-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: background var(--transition);
+        }
+        .user-list-item:last-child { border-bottom: none; }
+        .user-list-item:hover { background: var(--color-surface-soft); }
+        .user-list-item.active {
+            background: var(--color-primary-soft);
+            font-weight: 600;
+        }
+        .user-list-item .user-name { flex: 1; font-size: 14px; }
+        .user-list-item .user-actions { display: flex; gap: 6px; }
+        .user-list-item .user-actions button {
+            width: auto;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            box-shadow: none;
+        }
         .streak-display {
             text-align: center;
             font-size: 1.3rem;
@@ -2299,6 +2324,15 @@
                         <button id="clear-sync-button" class="secondary" style="display:none;">清除</button>
                     </div>
                     <div class="sync-hint">在所有设备上输入相同的同步码，即可实时共享练习记录、错题和设置。</div>
+                </div>
+
+                <!-- 用户管理 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">用户管理</div>
+                    <div id="settings-user-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); margin-bottom: 12px;">
+                        <p style="text-align:center; color: var(--color-text-muted); padding: 12px; font-size: 13px;">加载中...</p>
+                    </div>
+                    <div class="sync-hint">点击用户名可切换，长按或点击右侧按钮可编辑/删除。</div>
                 </div>
 
                 <!-- 朗读与显示 -->
@@ -5643,7 +5677,124 @@
         });
 
         // 设置弹窗
+        const settingsUserList = document.getElementById('settings-user-list');
+
+        const renderSettingsUserList = () => {
+            if (!settingsUserList) return;
+            if (allUserProfiles.length === 0) {
+                settingsUserList.innerHTML = '<p style="text-align:center; color: var(--color-text-muted); padding: 12px; font-size: 13px;">暂无用户，请先创建。</p>';
+                return;
+            }
+            let html = '';
+            allUserProfiles.forEach(profile => {
+                const isActive = profile.name === currentUserProfile;
+                html += `<div class="user-list-item ${isActive ? 'active' : ''}" data-name="${escapeHtml(profile.name)}">
+                    <span class="user-name">${isActive ? '● ' : ''}${escapeHtml(profile.name)}</span>
+                    <div class="user-actions">
+                        <button class="secondary rename-user-btn" data-id="${profile.id}" data-name="${escapeHtml(profile.name)}">改名</button>
+                        <button class="secondary delete-user-btn" data-id="${profile.id}" data-name="${escapeHtml(profile.name)}" style="color:var(--color-error);">删除</button>
+                    </div>
+                </div>`;
+            });
+            settingsUserList.innerHTML = html;
+
+            // 点击用户名切换
+            settingsUserList.querySelectorAll('.user-list-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    const name = item.dataset.name;
+                    if (name && name !== currentUserProfile) {
+                        currentUserProfile = name;
+                        localStorage.setItem('currentUserProfile', name);
+                        updateAllProfileDisplays();
+                        const filtered = filterSessionsByProfile(allPracticeSessions);
+                        rebuildWrongWordsFromSessions(filtered);
+                        debouncedSaveSettings();
+                        renderSettingsUserList();
+                        showMessage(`已切换到: <strong>${escapeHtml(name)}</strong>`);
+                    }
+                });
+            });
+
+            // 改名按钮
+            settingsUserList.querySelectorAll('.rename-user-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const profileId = btn.dataset.id;
+                    const oldName = btn.dataset.name;
+                    showMessage(`请输入 "${escapeHtml(oldName)}" 的新名称：<br><br><input type="text" id="rename-user-input" value="${escapeHtml(oldName)}" style="width:100%;padding:10px;border:1px solid var(--color-border);border-radius:6px;font-size:14px;"><br><br><button id="confirm-rename-user" class="secondary" style="width:auto;margin-right:10px;">确认</button><button id="cancel-rename-user" style="width:auto;">取消</button>`);
+                    document.getElementById('confirm-rename-user').onclick = async () => {
+                        const newName = document.getElementById('rename-user-input').value.trim();
+                        if (!newName) { showMessage('名称不能为空。'); return; }
+                        if (newName.length > 20) { showMessage('名称不能超过 20 个字符。'); return; }
+                        if (/<[^>]+>/.test(newName)) { showMessage('名称不能包含 HTML 标签。'); return; }
+                        if (allUserProfiles.some(p => p.name.toLowerCase() === newName.toLowerCase() && p.id !== profileId)) {
+                            showMessage(`用户名 "${escapeHtml(newName)}" 已存在。`); return;
+                        }
+                        messageDialog.style.display = 'none';
+                        showLoader('正在重命名...');
+                        try {
+                            const profilesPath = `${getUserDataPath()}/profiles`;
+                            await setDoc(doc(db, profilesPath, profileId), { name: newName }, { merge: true });
+                            // 如果改的是当前用户，更新 currentUserProfile
+                            if (currentUserProfile === oldName) {
+                                currentUserProfile = newName;
+                                localStorage.setItem('currentUserProfile', newName);
+                                updateAllProfileDisplays();
+                                debouncedSaveSettings();
+                            }
+                            await initUserProfile();
+                            renderSettingsUserList();
+                            showMessage(`已重命名为 "${escapeHtml(newName)}"。`);
+                        } catch (e) {
+                            console.error('Rename failed:', e);
+                            showMessage('重命名失败，请重试。');
+                        } finally { hideLoader(); }
+                    };
+                    document.getElementById('cancel-rename-user').onclick = () => { messageDialog.style.display = 'none'; };
+                });
+            });
+
+            // 删除按钮
+            settingsUserList.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const profileId = btn.dataset.id;
+                    const profileName = btn.dataset.name;
+                    if (allUserProfiles.length <= 1) {
+                        showMessage('至少需要保留一个用户，无法删除。');
+                        return;
+                    }
+                    showMessage(`确定要删除用户 "<strong>${escapeHtml(profileName)}</strong>" 吗？<br>该用户的练习记录不会被删除，但会变成无主数据。<br><br><button id="confirm-delete-user" class="secondary" style="width:auto;margin-right:10px;color:var(--color-error);">确认删除</button><button id="cancel-delete-user" style="width:auto;">取消</button>`);
+                    document.getElementById('confirm-delete-user').onclick = async () => {
+                        messageDialog.style.display = 'none';
+                        showLoader('正在删除用户...');
+                        try {
+                            const profilesPath = `${getUserDataPath()}/profiles`;
+                            await deleteDoc(doc(db, profilesPath, profileId));
+                            // 如果删的是当前用户，切换到第一个剩余用户
+                            if (currentUserProfile === profileName) {
+                                const remaining = allUserProfiles.filter(p => p.id !== profileId);
+                                currentUserProfile = remaining.length > 0 ? remaining[0].name : null;
+                                localStorage.setItem('currentUserProfile', currentUserProfile || '');
+                                updateAllProfileDisplays();
+                                const filtered = filterSessionsByProfile(allPracticeSessions);
+                                rebuildWrongWordsFromSessions(filtered);
+                                debouncedSaveSettings();
+                            }
+                            await initUserProfile();
+                            renderSettingsUserList();
+                            showMessage(`用户 "${escapeHtml(profileName)}" 已删除。`);
+                        } catch (e) {
+                            console.error('Delete user failed:', e);
+                            showMessage('删除失败，请重试。');
+                        } finally { hideLoader(); }
+                    };
+                    document.getElementById('cancel-delete-user').onclick = () => { messageDialog.style.display = 'none'; };
+                });
+            });
+        };
+
         const showSettingsModal = () => {
+            renderSettingsUserList();
             settingsModal.style.display = 'flex';
         };
         const hideSettingsModal = () => {
