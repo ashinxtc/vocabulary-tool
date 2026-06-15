@@ -2824,7 +2824,9 @@
             // 切换用户后重新过滤练习数据和错题
             const filteredSessions = filterSessionsByProfile(allPracticeSessions);
             rebuildWrongWordsFromSessions(filteredSessions);
-            showMessage(`用户已切换为: <strong>${currentUserProfile}</strong>`);
+            // 同步用户选择到 Firestore（跨设备生效）
+            debouncedSaveSettings();
+            showMessage(`用户已切换为: <strong>${escapeHtml(currentUserProfile)}</strong>`);
         };
 
         setProfileButton.addEventListener('click', handleSetProfile);
