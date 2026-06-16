@@ -3801,10 +3801,6 @@
             return await callCloudFunction("translate", { words: list });
         };
 
-        const callGeminiForVerification = async (wordsWithProvidedChinese) => {
-            return await callCloudFunction("verify", { wordsWithChinese: wordsWithProvidedChinese });
-        };
-
         const callGeminiForExampleSentenceAndTranslation = async (englishWord) => {
             return await callCloudFunction("exampleSentenceDeepSeek", { word: englishWord });
         };
@@ -3819,52 +3815,36 @@
 
 
         const processWordsForQuiz = async (inputWords) => {
-            const wordsWithoutChinese = inputWords.filter(w => !w.chinese);
-            const wordsWithChinese = inputWords.filter(w => w.chinese);
+            if (!inputWords || inputWords.length === 0) return [];
 
-            let translatedWords = [];
-            let wordsToReturn = [...wordsWithChinese]; 
-
-            if (wordsWithoutChinese.length > 0) {
-                showLoader('正在翻译新单词...');
-                const englishOnlyList = wordsWithoutChinese.map(w => w.english);
-                try {
-                    translatedWords = await callGeminiForTranslation(englishOnlyList);
-                    wordsToReturn = [...wordsToReturn, ...translatedWords];
-                } catch (error) {
-                    console.error("翻译新单词时出错:", error);
-                    showMessage("翻译新单词时发生错误，请检查网络或重试。");
-                    return [];
-                }
-            }
-
-            if (wordsWithChinese.length > 0) {
-                showLoader('正在验证已有翻译...');
-                try {
-                    const verifiedResults = await callGeminiForVerification(wordsWithChinese);
-                    
-                    verifiedResults.forEach(verifiedWord => {
-                        if (!verifiedWord.is_accurate) {
-                            const message = `翻译不准确：<br>英文: <strong>${verifiedWord.english}</strong><br>您提供的中文: <strong>${verifiedWord.provided_chinese}</strong><br>正确翻译应为: <strong>${verifiedWord.correct_chinese}</strong>。已自动更新。`;
-                            showMessage(message);
-                            const wordInList = wordsToReturn.find(w => w.english === verifiedWord.english);
-                            if (wordInList) {
-                                wordInList.chinese = verifiedWord.correct_chinese;
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error("验证已有翻译时出错:", error);
-                    showMessage("验证已有翻译时发生错误，将使用您提供的翻译。");
-                }
-            }
-
-            const finalWordsMap = new Map();
-            wordsToReturn.forEach(word => {
-                finalWordsMap.set(word.english.toLowerCase(), word);
+            // 去重
+            const uniqueMap = new Map();
+            inputWords.forEach(word => {
+                if (word && word.english) uniqueMap.set(word.english.toLowerCase(), word);
             });
+            const uniqueWords = Array.from(uniqueMap.values());
 
-            return Array.from(finalWordsMap.values());
+            const wordsWithoutChinese = uniqueWords.filter(w => !w.chinese);
+            const wordsWithChinese = uniqueWords.filter(w => w.chinese);
+
+            // 所有单词都有中文 → 直接返回，零 API 调用
+            if (wordsWithoutChinese.length === 0) {
+                return uniqueWords;
+            }
+
+            // 只翻译缺少中文的单词
+            showLoader(`正在翻译 ${wordsWithoutChinese.length} 个新单词...`);
+            try {
+                const englishOnlyList = wordsWithoutChinese.map(w => w.english);
+                const translatedWords = await callGeminiForTranslation(englishOnlyList);
+                // 合并：已有中文的 + 翻译后的
+                return [...wordsWithChinese, ...translatedWords];
+            } catch (error) {
+                console.error("翻译新单词时出错:", error);
+                showMessage("翻译新单词时发生错误，将使用原始数据。");
+                // 翻译失败时仍返回原始数据（无中文的也保留）
+                return uniqueWords;
+            }
         };
 
 
@@ -4858,7 +4838,7 @@
                 const parsedWords = parseWordInput(wordInput.value);
                 if (parsedWords.length === 0) { showMessage('请输入单词！'); return; }
                 try {
-                    showLoader('正在翻译和验证单词...');
+                    showLoader('正在处理单词...');
                     tempWords = await processWordsForQuiz(parsedWords);
                 } catch (error) {
                      console.error("处理单词时发生错误:", error);
