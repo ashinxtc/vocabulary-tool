@@ -93,7 +93,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
             break;
           }
 
-          // DOCX/DOC 文件：用 mammoth 提取文字
+          // DOCX/DOC 文件：mammoth 提取 + DeepSeek 智能解析
           if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
               || mimeType === 'application/msword'
               || (fileName && /\.docx?$/i.test(fileName))) {
@@ -103,9 +103,52 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
               if (!result.value || !result.value.trim()) {
                 throw new Error("No text extracted from document");
               }
-              res.json({ success: true, data: result.value });
+
+              const rawText = result.value.trim();
+
+              // 如果提取的文字已经是 english#chinese 格式，直接返回
+              const lines = rawText.split('\n').filter(l => l.trim());
+              const hashCount = lines.filter(l => l.includes('#')).length;
+              if (hashCount > lines.length * 0.5) {
+                // 超过一半的行有 #，认为已经是标准格式
+                res.json({ success: true, data: rawText });
+                break;
+              }
+
+              // 用 DeepSeek 智能解析为 english#chinese 格式
+              const truncated = rawText.length > 6000 ? rawText.substring(0, 6000) + "\n...(truncated)" : rawText;
+              const messages = [{
+                role: "user",
+                content: `The following text was extracted from a Word document (.docx). It contains English vocabulary words with their Chinese translations, but the formatting may be messy (e.g., table cells flattened, words and translations on separate lines, mixed with headers/instructions).
+
+Your task: Extract ALL English-Chinese word pairs and output them in a clean format, one pair per line, as "English#Chinese".
+
+Rules:
+1. Each line must be: EnglishWord#ChineseTranslation
+2. If a word has multiple Chinese meanings, keep them together: "abandon#放弃；抛弃"
+3. Skip headers, instructions, page numbers, and non-vocabulary content
+4. Skip lines that are purely Chinese without English
+5. Skip lines that are purely English without Chinese meaning
+6. If you see alternating English/Chinese lines, pair them up
+7. Output ONLY the word pairs, nothing else
+
+Text:
+${truncated}`
+              }];
+
+              const deepseekResponse = await callDeepSeekAPI(messages);
+
+              // 验证 DeepSeek 输出格式
+              const outputLines = deepseekResponse.split('\n').filter(l => l.trim() && l.includes('#'));
+              if (outputLines.length === 0) {
+                // DeepSeek 未能解析，回退到原始文字
+                console.warn("DeepSeek parsing returned no pairs, falling back to raw text");
+                res.json({ success: true, data: rawText });
+              } else {
+                res.json({ success: true, data: outputLines.join('\n') });
+              }
             } catch (docxErr) {
-              res.status(400).json({ success: false, error: `Word 文档提取失败: ${docxErr.message}` });
+              res.status(400).json({ success: false, error: `Word 文档处理失败: ${docxErr.message}` });
             }
             break;
           }
