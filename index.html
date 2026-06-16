@@ -1766,6 +1766,164 @@
             box-shadow: 1px 1px 0 0 var(--color-border);
         }
 
+        /* ========== 快速导入弹窗 ========== */
+        #quick-import-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.45);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: var(--z-modal);
+            padding: 24px;
+        }
+        #quick-import-modal .modal-content {
+            max-width: 560px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .qi-body { padding: 24px 28px 28px; }
+        .qi-section { margin-bottom: 20px; }
+        .qi-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .qi-target-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .qi-target-row select {
+            flex: 1;
+            min-width: 0;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-elevated);
+            color: var(--color-text);
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .qi-target-row select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        .qi-new-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .qi-new-input-row {
+            display: none;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+        }
+        .qi-new-input-row.open { display: flex; }
+        .qi-new-input-row input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--color-surface-elevated);
+            color: var(--color-text);
+        }
+        .qi-new-input-row input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        .qi-drop-zone {
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
+            padding: 32px 20px;
+            text-align: center;
+            background: var(--color-surface-soft);
+            transition: border-color var(--transition), background var(--transition);
+            cursor: pointer;
+        }
+        .qi-drop-zone.drag-over {
+            border-color: var(--color-primary);
+            background: var(--color-primary-soft);
+        }
+        .qi-drop-zone svg {
+            width: 40px;
+            height: 40px;
+            color: var(--color-text-muted);
+            margin-bottom: 8px;
+        }
+        .qi-drop-zone p {
+            margin: 4px 0;
+            color: var(--color-text-muted);
+            font-size: 14px;
+        }
+        .qi-drop-zone .secondary {
+            margin: 8px 0;
+        }
+        .qi-supported {
+            font-size: 12px !important;
+            color: var(--color-text-muted) !important;
+            margin-top: 4px !important;
+        }
+        .qi-preview {
+            display: none;
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: var(--color-success-soft);
+            border: 1px solid var(--color-success);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            color: var(--color-text);
+        }
+        .qi-preview.show { display: block; }
+        .qi-preview-count {
+            font-weight: 700;
+            color: var(--color-secondary);
+        }
+        .qi-preview-list {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            font-size: 13px;
+            color: var(--color-text-muted);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .qi-preview-list li {
+            padding: 2px 0;
+        }
+        .qi-save-bar {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .qi-save-bar.show { display: block; }
+        .qi-save-bar button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        #qi-file-name {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--color-secondary);
+            font-weight: 600;
+        }
+
         /* ========== 用户切换下拉面板 ========== */
         .user-switcher {
             position: relative;
@@ -2312,6 +2470,7 @@
                 <div style="display: flex; gap: 10px; flex-direction: column;">
                     <button id="select-library-for-practice-button">选择单词进行练习</button>
                     <button id="open-manage-modal-button" class="secondary">管理单词库 (创建/删除/编辑)</button>
+                    <button id="open-quick-import-button" class="secondary">📥 快速导入</button>
                 </div>
             </div>
             
@@ -2598,6 +2757,66 @@
                         <div><label for="show-example-sentence-checkbox" class="settings-row-label">显示例句</label><div class="settings-row-desc">检查答案后显示英文例句</div></div>
                         <input type="checkbox" class="settings-checkbox" id="show-example-sentence-checkbox">
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速导入弹窗 -->
+    <div id="quick-import-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📥 快速导入</h2>
+                <button class="modal-close-button" id="qi-close-button">&times;</button>
+            </div>
+            <div class="qi-body">
+                <!-- 目标选择 -->
+                <div class="qi-section">
+                    <div class="qi-section-title">导入目标</div>
+                    <div class="qi-target-row">
+                        <select id="qi-library-select">
+                            <option value="">选择单词库...</option>
+                            <option value="__new__">+ 新建单词库</option>
+                        </select>
+                    </div>
+                    <div id="qi-new-library-row" class="qi-new-input-row">
+                        <input type="text" id="qi-new-library-name" placeholder="输入新单词库名称">
+                        <button id="qi-create-library" class="secondary qi-new-btn" type="button">创建</button>
+                    </div>
+                    <div class="qi-target-row" style="margin-top: 10px;">
+                        <select id="qi-subset-select" disabled>
+                            <option value="">选择子集...</option>
+                        </select>
+                    </div>
+                    <div id="qi-new-subset-row" class="qi-new-input-row">
+                        <input type="text" id="qi-new-subset-name" placeholder="输入新子集名称">
+                        <button id="qi-create-subset" class="secondary qi-new-btn" type="button">创建</button>
+                    </div>
+                </div>
+
+                <!-- 文件上传 -->
+                <div class="qi-section">
+                    <div class="qi-section-title">上传文件</div>
+                    <div id="qi-drop-zone" class="qi-drop-zone">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <p>拖放文件到此处</p>
+                        <p>或</p>
+                        <button id="qi-select-file" type="button" class="secondary">选择文件</button>
+                        <input type="file" id="qi-file-input" accept=".txt,.csv,.doc,.docx,.pdf,.xls,.xlsx,.heic,image/*" style="display:none;">
+                        <p class="qi-supported">支持: TXT, DOCX, PDF, 图片, Excel</p>
+                    </div>
+                    <div id="qi-file-name"></div>
+                </div>
+
+                <!-- 预览区域 -->
+                <div id="qi-preview" class="qi-preview">
+                    <p>检测到 <span id="qi-preview-count" class="qi-preview-count">0</span> 个单词</p>
+                    <ol id="qi-preview-list" class="qi-preview-list"></ol>
+                </div>
+
+                <!-- 导入按钮 -->
+                <div id="qi-save-bar" class="qi-save-bar">
+                    <button id="qi-save-button">导入并保存</button>
                 </div>
             </div>
         </div>
@@ -6174,10 +6393,351 @@
             if (e.target === settingsModal) hideSettingsModal();
         });
 
+        // ========== 快速导入 ==========
+        const quickImportModal = document.getElementById('quick-import-modal');
+        const qiCloseButton = document.getElementById('qi-close-button');
+        const qiLibrarySelect = document.getElementById('qi-library-select');
+        const qiSubsetSelect = document.getElementById('qi-subset-select');
+        const qiNewLibraryRow = document.getElementById('qi-new-library-row');
+        const qiNewLibraryName = document.getElementById('qi-new-library-name');
+        const qiCreateLibrary = document.getElementById('qi-create-library');
+        const qiNewSubsetRow = document.getElementById('qi-new-subset-row');
+        const qiNewSubsetName = document.getElementById('qi-new-subset-name');
+        const qiCreateSubset = document.getElementById('qi-create-subset');
+        const qiDropZone = document.getElementById('qi-drop-zone');
+        const qiFileInput = document.getElementById('qi-file-input');
+        const qiSelectFile = document.getElementById('qi-select-file');
+        const qiFileName = document.getElementById('qi-file-name');
+        const qiPreview = document.getElementById('qi-preview');
+        const qiPreviewCount = document.getElementById('qi-preview-count');
+        const qiPreviewList = document.getElementById('qi-preview-list');
+        const qiSaveBar = document.getElementById('qi-save-bar');
+        const qiSaveButton = document.getElementById('qi-save-button');
+        const openQuickImportButton = document.getElementById('open-quick-import-button');
+
+        let qiDetectedWords = [];
+        let qiLoadedLibraries = [];
+
+        const openQuickImportModal = async () => {
+            // Reset state
+            qiDetectedWords = [];
+            qiPreview.classList.remove('show');
+            qiSaveBar.classList.remove('show');
+            qiFileName.textContent = '';
+            qiFileInput.value = '';
+            qiLibrarySelect.value = '';
+            qiSubsetSelect.innerHTML = '<option value="">选择子集...</option>';
+            qiSubsetSelect.disabled = true;
+            qiNewLibraryRow.classList.remove('open');
+            qiNewSubsetRow.classList.remove('open');
+            qiNewLibraryName.value = '';
+            qiNewSubsetName.value = '';
+
+            quickImportModal.style.display = 'flex';
+
+            // Load libraries
+            if (!isAuthReady || !userId) {
+                showMessage('用户未认证，无法加载单词库。');
+                return;
+            }
+            try {
+                const librariesRef = collection(db, PUBLIC_LIBRARIES_COLLECTION);
+                const querySnapshot = await getDocs(librariesRef);
+                qiLoadedLibraries = querySnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Keep the first two options, append loaded libraries
+                qiLibrarySelect.innerHTML = '<option value="">选择单词库...</option><option value="__new__">+ 新建单词库</option>';
+                qiLoadedLibraries.forEach(lib => {
+                    const opt = document.createElement('option');
+                    opt.value = lib.id;
+                    opt.textContent = lib.name;
+                    qiLibrarySelect.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('加载单词库失败:', err);
+                showMessage('加载单词库失败，请重试。');
+            }
+        };
+
+        const closeQuickImportModal = () => {
+            quickImportModal.style.display = 'none';
+        };
+
+        // Library select change
+        qiLibrarySelect.addEventListener('change', async () => {
+            const val = qiLibrarySelect.value;
+            qiNewLibraryRow.classList.toggle('open', val === '__new__');
+            qiSubsetSelect.innerHTML = '<option value="">选择子集...</option><option value="__new__">+ 新建子集</option>';
+            qiNewSubsetRow.classList.remove('open');
+
+            if (!val || val === '__new__') {
+                qiSubsetSelect.disabled = true;
+                return;
+            }
+
+            // Load subsets for selected library
+            qiSubsetSelect.disabled = true;
+            try {
+                const subsetsRef = collection(db, PUBLIC_SUBSETS_COLLECTION);
+                const q = query(subsetsRef, where('libraryId', '==', val));
+                const snap = await getDocs(q);
+                qiSubsetSelect.innerHTML = '<option value="">选择子集...</option><option value="__new__">+ 新建子集</option>';
+                snap.docs.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.data().name;
+                    qiSubsetSelect.appendChild(opt);
+                });
+                qiSubsetSelect.disabled = false;
+            } catch (err) {
+                console.error('加载子集失败:', err);
+                showMessage('加载子集失败，请重试。');
+            }
+        });
+
+        // Subset select change
+        qiSubsetSelect.addEventListener('change', () => {
+            qiNewSubsetRow.classList.toggle('open', qiSubsetSelect.value === '__new__');
+        });
+
+        // Create new library inline
+        qiCreateLibrary.addEventListener('click', async () => {
+            const name = qiNewLibraryName.value.trim();
+            if (!name) { showMessage('请输入单词库名称。'); return; }
+            if (!userId) { showMessage('用户未认证，无法创建。'); return; }
+            showLoader('正在创建单词库...');
+            try {
+                const ref = await addDoc(collection(db, PUBLIC_LIBRARIES_COLLECTION), { name, userId });
+                qiLoadedLibraries.push({ id: ref.id, name });
+                // Add option and select it
+                const opt = document.createElement('option');
+                opt.value = ref.id;
+                opt.textContent = name;
+                qiLibrarySelect.insertBefore(opt, qiLibrarySelect.querySelector('[value="__new__"]'));
+                qiLibrarySelect.value = ref.id;
+                qiNewLibraryRow.classList.remove('open');
+                qiNewLibraryName.value = '';
+                // Trigger change to load subsets
+                qiLibrarySelect.dispatchEvent(new Event('change'));
+                showMessage(`单词库 "${escapeHtml(name)}" 创建成功！`);
+            } catch (err) {
+                console.error('创建单词库失败:', err);
+                showMessage('创建单词库失败，请重试。');
+            } finally { hideLoader(); }
+        });
+
+        // Create new subset inline
+        qiCreateSubset.addEventListener('click', async () => {
+            const name = qiNewSubsetName.value.trim();
+            const libraryId = qiLibrarySelect.value;
+            if (!name) { showMessage('请输入子集名称。'); return; }
+            if (!libraryId || libraryId === '__new__') { showMessage('请先选择一个单词库。'); return; }
+            if (!userId) { showMessage('用户未认证，无法创建。'); return; }
+            showLoader('正在创建子集...');
+            try {
+                const ref = await addDoc(collection(db, PUBLIC_SUBSETS_COLLECTION), { name, libraryId, userId });
+                const opt = document.createElement('option');
+                opt.value = ref.id;
+                opt.textContent = name;
+                qiSubsetSelect.insertBefore(opt, qiSubsetSelect.querySelector('[value="__new__"]'));
+                qiSubsetSelect.value = ref.id;
+                qiNewSubsetRow.classList.remove('open');
+                qiNewSubsetName.value = '';
+                showMessage(`子集 "${escapeHtml(name)}" 创建成功！`);
+            } catch (err) {
+                console.error('创建子集失败:', err);
+                showMessage('创建子集失败，请重试。');
+            } finally { hideLoader(); }
+        });
+
+        // File handling
+        const handleQuickImportFile = async (file) => {
+            if (!file) return;
+            qiFileName.textContent = '📄 ' + escapeHtml(file.name);
+            qiPreview.classList.remove('show');
+            qiSaveBar.classList.remove('show');
+            qiDetectedWords = [];
+
+            showLoader('正在解析文件...');
+            try {
+                // Read file as base64
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const result = reader.result;
+                        // Strip data:xxx;base64, prefix to get raw base64
+                        const base64 = result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                const text = await extractTextFromFile(base64Data, file.type || 'application/octet-stream');
+                if (!text || !text.trim()) {
+                    showMessage('未能从文件中提取到文本内容。');
+                    hideLoader();
+                    return;
+                }
+
+                hideLoader();
+                showLoader('正在分析单词...');
+
+                const parsed = parseWordInput(text);
+                if (!parsed || parsed.length === 0) {
+                    showMessage('未能从文本中检测到有效的单词格式。请确保每行一个单词，格式为：单词#中文释义');
+                    hideLoader();
+                    return;
+                }
+
+                const processed = await processWordsForQuiz(parsed);
+                qiDetectedWords = processed || [];
+
+                // Show preview
+                qiPreviewCount.textContent = qiDetectedWords.length;
+                qiPreviewList.innerHTML = '';
+                const previewItems = qiDetectedWords.slice(0, 10);
+                previewItems.forEach(w => {
+                    const li = document.createElement('li');
+                    li.textContent = w.chinese ? `${w.english} — ${w.chinese}` : w.english;
+                    qiPreviewList.appendChild(li);
+                });
+                if (qiDetectedWords.length > 10) {
+                    const li = document.createElement('li');
+                    li.textContent = `...还有 ${qiDetectedWords.length - 10} 个单词`;
+                    li.style.fontStyle = 'italic';
+                    qiPreviewList.appendChild(li);
+                }
+                qiPreview.classList.add('show');
+                qiSaveBar.classList.add('show');
+            } catch (err) {
+                console.error('文件解析失败:', err);
+                showMessage('文件解析失败，请重试。');
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // Drag & drop events
+        qiDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            qiDropZone.classList.add('drag-over');
+        });
+        qiDropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            qiDropZone.classList.remove('drag-over');
+        });
+        qiDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            qiDropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) handleQuickImportFile(files[0]);
+        });
+
+        // Click to select file
+        qiSelectFile.addEventListener('click', (e) => {
+            e.stopPropagation();
+            qiFileInput.click();
+        });
+        qiDropZone.addEventListener('click', (e) => {
+            if (e.target === qiSelectFile || qiSelectFile.contains(e.target)) return;
+            qiFileInput.click();
+        });
+        qiFileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) handleQuickImportFile(e.target.files[0]);
+        });
+
+        // Save handler
+        const handleQuickImportSave = async () => {
+            const libraryId = qiLibrarySelect.value;
+            const subsetId = qiSubsetSelect.value;
+
+            if (!libraryId || libraryId === '__new__') {
+                showMessage('请先选择或创建一个单词库。');
+                return;
+            }
+            if (!subsetId || subsetId === '__new__') {
+                showMessage('请先选择或创建一个子集。');
+                return;
+            }
+            if (!qiDetectedWords || qiDetectedWords.length === 0) {
+                showMessage('没有检测到可导入的单词。请先上传文件。');
+                return;
+            }
+            if (!userId) {
+                showMessage('用户未认证，无法保存。');
+                return;
+            }
+
+            showLoader('正在保存单词...');
+            try {
+                // Fetch existing words for deduplication
+                const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
+                const q = query(wordsRef, where('subsetId', '==', subsetId));
+                const existingSnap = await getDocs(q);
+                const existingSet = new Set(existingSnap.docs.map(d => {
+                    const data = d.data();
+                    return data.english ? data.english.toLowerCase() : '';
+                }).filter(Boolean));
+
+                // Filter out duplicates
+                const newWords = qiDetectedWords.filter(w => w.english && !existingSet.has(w.english.toLowerCase()));
+                const duplicateCount = qiDetectedWords.length - newWords.length;
+
+                if (newWords.length === 0) {
+                    showMessage(`所有 ${qiDetectedWords.length} 个单词已存在于该子集中，无需导入。`);
+                    hideLoader();
+                    return;
+                }
+
+                // Batch write using writeBatch
+                const batch = writeBatch(db);
+                newWords.forEach(w => {
+                    const newDocRef = doc(collection(db, PUBLIC_WORDS_COLLECTION));
+                    batch.set(newDocRef, {
+                        english: w.english,
+                        chinese: w.chinese || '',
+                        subsetId: subsetId,
+                        userId: userId,
+                        createdAt: serverTimestamp()
+                    });
+                });
+                await batch.commit();
+
+                let msg = `成功导入 ${newWords.length} 个单词！`;
+                if (duplicateCount > 0) msg += ` (${duplicateCount} 个重复已跳过)`;
+                showMessage(msg);
+
+                // Reset state
+                qiDetectedWords = [];
+                qiPreview.classList.remove('show');
+                qiSaveBar.classList.remove('show');
+                qiFileName.textContent = '';
+                qiFileInput.value = '';
+            } catch (err) {
+                console.error('保存单词失败:', err);
+                showMessage('保存单词失败，请重试。');
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // Event listeners
+        openQuickImportButton.addEventListener('click', openQuickImportModal);
+        qiCloseButton.addEventListener('click', closeQuickImportModal);
+        quickImportModal.addEventListener('click', (e) => {
+            if (e.target === quickImportModal) closeQuickImportModal();
+        });
+        qiSaveButton.addEventListener('click', handleQuickImportSave);
+
         // Escape 键关闭所有弹窗
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (settingsModal.style.display === 'flex') hideSettingsModal();
+                if (quickImportModal.style.display === 'flex') closeQuickImportModal();
+                else if (settingsModal.style.display === 'flex') hideSettingsModal();
                 else if (analysisModal.style.display === 'flex') hideAnalysisPanel();
                 else if (wordLibraryModal.style.display === 'flex') wordLibraryModal.style.display = 'none';
                 else if (messageDialog.style.display === 'flex') messageDialog.style.display = 'none';
