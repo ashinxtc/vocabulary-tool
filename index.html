@@ -5338,15 +5338,18 @@
                 const extractedText = await extractTextFromFile(base64Data, mimeType);
                 let importedWords = await processWordsForQuiz(parseWordInput(extractedText));
 
+                // 去重：跳过已在文本框中的单词
                 const existingWords = new Set(subsetWordsInput.value.split('\n').map(line => line.split('#')[0].trim().toLowerCase()).filter(Boolean));
+                const totalBefore = importedWords.length;
                 const newWordsToAppend = importedWords.filter(w => !existingWords.has(w.english.toLowerCase()));
+                const skipped = totalBefore - newWordsToAppend.length;
 
                 if (newWordsToAppend.length > 0) {
-					const newContentLines = newWordsToAppend.map(w => `${w.english}#${w.chinese || ''}`);
+                    const newContentLines = newWordsToAppend.map(w => `${w.english}#${w.chinese || ''}`);
                     subsetWordsInput.value = subsetWordsInput.value.trim() ? `${subsetWordsInput.value.trim()}\n${newContentLines.join('\n')}` : newContentLines.join('\n');
-                    subsetUploadStatus.textContent = `成功导入 ${newWordsToAppend.length} 个新单词。请点击“保存”。`;
+                    subsetUploadStatus.textContent = `导入 ${newWordsToAppend.length} 个新词` + (skipped > 0 ? `（跳过 ${skipped} 个重复）` : '') + `。请点击”保存”。`;
                 } else {
-                    subsetUploadStatus.textContent = `导入完成，没有发现新单词。`;
+                    subsetUploadStatus.textContent = `全部为重复单词（${skipped} 个），无需导入。`;
                 }
             } catch (error) {
                 console.error("导入文件失败:", error);
@@ -5376,36 +5379,44 @@
                 const inputWordsMap = new Map(processedWordsFromInput.map(w => [w.english.toLowerCase(), w]));
 
                 const batch = writeBatch(db);
-                let changesMade = 0;
+                let added = 0, updated = 0, deleted = 0, skipped = 0;
 
                 for (const [key, inputWord] of inputWordsMap.entries()) {
                     if (existingWordsMap.has(key)) {
                         const existingWord = existingWordsMap.get(key);
                         if (existingWord.chinese !== inputWord.chinese) {
                             batch.update(doc(db, PUBLIC_WORDS_COLLECTION, existingWord.id), { chinese: inputWord.chinese });
-                            changesMade++;
+                            updated++;
+                        } else {
+                            skipped++;
                         }
                     } else {
                         batch.set(doc(collection(db, PUBLIC_WORDS_COLLECTION)), {
                             english: inputWord.english, chinese: inputWord.chinese, subsetId: selectedSubsetId,
                             libraryId: selectedLibraryId, userId: userId
                         });
-                        changesMade++;
+                        added++;
                     }
                 }
 
                 for (const [key, existingWord] of existingWordsMap.entries()) {
                     if (!inputWordsMap.has(key)) {
                         batch.delete(doc(db, PUBLIC_WORDS_COLLECTION, existingWord.id));
-                        changesMade++;
+                        deleted++;
                     }
                 }
 
-                if (changesMade === 0) {
-                    showMessage('没有新的或需要更新的单词。');
+                const totalChanges = added + updated + deleted;
+                if (totalChanges === 0) {
+                    showMessage(`所有 ${skipped} 个单词已存在且无变更。`);
                 } else {
                     await batch.commit();
-                    showMessage(`单词已保存！共 ${changesMade} 处变更。`);
+                    let msg = [];
+                    if (added > 0) msg.push(`新增 ${added} 个`);
+                    if (updated > 0) msg.push(`更新 ${updated} 个`);
+                    if (deleted > 0) msg.push(`删除 ${deleted} 个`);
+                    if (skipped > 0) msg.push(`跳过 ${skipped} 个重复`);
+                    showMessage(`保存完成：${msg.join('，')}。`);
                     await loadSubsetsForManageMode(selectedLibraryId);
                 }
             } catch (error) {
