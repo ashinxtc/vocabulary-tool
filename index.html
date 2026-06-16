@@ -3410,7 +3410,7 @@
                 showMessage(`同步码已连接: <strong>${escapeHtml(code)}</strong>`);
             } catch (e) {
                 console.error('Sync failed:', e);
-                showMessage('同步失败: ' + e.message);
+                showMessage('同步失败: ' + escapeHtml(e.message));
             } finally { hideLoader(); }
         };
         welcomeSyncBtn.addEventListener('click', handleWelcomeSync);
@@ -3525,7 +3525,7 @@
                 showMessage(`同步码已设置为: <strong>${code}</strong>，数据已同步。`);
             } catch (e) {
                 console.error('Sync setup error:', e);
-                showMessage('同步设置失败: ' + e.message);
+                showMessage('同步设置失败: ' + escapeHtml(e.message));
             } finally {
                 hideLoader();
             }
@@ -5000,7 +5000,7 @@
                 updateStartButtonState();
             } catch (error) {
                 console.error("处理文件失败:", error);
-                showMessage(`处理文件失败: ${error.message}`);
+                showMessage(`处理文件失败: ${escapeHtml(error.message)}`);
                 uploadStatus.textContent = '处理失败，请重试。';
             } finally { hideLoader(); }
         });
@@ -5065,7 +5065,7 @@
                     tempWords = await processWordsForQuiz(parsedWords);
                 } catch (error) {
                      console.error("处理单词时发生错误:", error);
-                     showMessage(`处理单词时发生错误: ${error.message}`);
+                     showMessage(`处理单词时发生错误: ${escapeHtml(error.message)}`);
                      return;
                 } finally { hideLoader(); }
             }
@@ -5576,7 +5576,7 @@
                 }
             } catch (error) {
                 console.error("导入文件失败:", error);
-                showMessage(`导入文件失败: ${error.message}`);
+                showMessage(`导入文件失败: ${escapeHtml(error.message)}`);
                 subsetUploadStatus.textContent = '导入失败，请重试。';
             } finally {
                 hideLoader();
