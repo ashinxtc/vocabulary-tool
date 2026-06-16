@@ -58,7 +58,11 @@ async function callDeepSeekAPI(messages) {
   }
 
   const result = await response.json();
-  return result.choices[0].message.content;
+  const content = result.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error("DeepSeek returned empty response. Possible content filter or rate limit.");
+  }
+  return content;
 }
 
 // 辅助函数：解析 JSON
