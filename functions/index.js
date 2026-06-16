@@ -213,7 +213,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
           const result = await callGeminiAPI(payload);
           const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
           if (!jsonText) throw new Error("Could not get verification results.");
-          res.json({ success: true, data: JSON.parse(jsonText) });
+          res.json({ success: true, data: parseGeminiJson(jsonText) || JSON.parse(jsonText) });
           break;
         }
 
@@ -241,7 +241,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
           const result = await callGeminiAPI(payload);
           const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
           if (!jsonText) throw new Error("Could not generate example sentence.");
-          res.json({ success: true, data: JSON.parse(jsonText) });
+          res.json({ success: true, data: parseGeminiJson(jsonText) || JSON.parse(jsonText) });
           break;
         }
 
@@ -297,7 +297,7 @@ Format the response as a single, valid JSON object with these exact keys: "sylla
           const result = await callGeminiAPI(payload);
           const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
           if (!jsonText) throw new Error("Could not generate flashcard data.");
-          res.json({ success: true, data: JSON.parse(jsonText) });
+          res.json({ success: true, data: parseGeminiJson(jsonText) || JSON.parse(jsonText) });
           break;
         }
 
