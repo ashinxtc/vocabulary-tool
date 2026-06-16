@@ -1,0 +1,16 @@
+{
+  "name": "vocab-tool-functions",
+  "description": "Cloud Functions for vocab-tool Gemini API proxy",
+  "version": "1.0.0",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^6.3.0",
+    "mammoth": "^1.12.0"
+  },
+  "private": true
+}

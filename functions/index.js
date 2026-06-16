@@ -2,6 +2,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { defineString } = require("firebase-functions/params");
 const cors = require("cors")({ origin: true });
+const mammoth = require("mammoth");
 
 // 设置全局选项
 setGlobalOptions({
@@ -82,7 +83,48 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
       switch (action) {
         // 1. 提取文件文字
         case "extractText": {
-          const { base64Data, mimeType } = data;
+          const { base64Data, mimeType, fileName } = data;
+          if (!base64Data) {
+            res.status(400).json({ success: false, error: "Missing base64Data" });
+            break;
+          }
+
+          // DOCX/DOC 文件：用 mammoth 提取文字
+          if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+              || mimeType === 'application/msword'
+              || (fileName && /\.docx?$/i.test(fileName))) {
+            try {
+              const buffer = Buffer.from(base64Data, 'base64');
+              const result = await mammoth.extractRawText({ buffer });
+              if (!result.value || !result.value.trim()) {
+                throw new Error("No text extracted from document");
+              }
+              res.json({ success: true, data: result.value });
+            } catch (docxErr) {
+              res.status(400).json({ success: false, error: `Word 文档提取失败: ${docxErr.message}` });
+            }
+            break;
+          }
+
+          // 纯文本文件：直接解码
+          if (mimeType === 'text/plain' || mimeType === 'text/csv'
+              || (fileName && /\.(txt|csv|tsv)$/i.test(fileName))) {
+            const text = Buffer.from(base64Data, 'base64').toString('utf-8');
+            res.json({ success: true, data: text });
+            break;
+          }
+
+          // 图片和 PDF：用 Gemini 提取
+          const geminiSupportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf', 'image/heic', 'image/heif'];
+          if (!geminiSupportedTypes.includes(mimeType) && !mimeType.startsWith('image/')) {
+            res.status(400).json({
+              success: false,
+              error: `不支持的文件格式 (${mimeType})。支持的格式：图片(JPG/PNG/HEIC)、PDF、TXT、DOCX。`
+            });
+            break;
+          }
+
           const payload = {
             contents: [{
               parts: [

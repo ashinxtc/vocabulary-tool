@@ -4014,8 +4014,8 @@
             return result.data;
         };
 
-        const extractTextFromFile = async (base64Data, mimeType) => {
-            return await callCloudFunction("extractText", { base64Data, mimeType });
+        const extractTextFromFile = async (base64Data, mimeType, fileName) => {
+            return await callCloudFunction("extractText", { base64Data, mimeType, fileName });
         };
 
         const callGeminiForTranslation = async (englishWordsOnly) => {
@@ -4991,7 +4991,7 @@
                 const base64Data = await fileToBase64(selectedFile);
                 const mimeType = selectedFile.type || getMimeType(selectedFile.name);
                 showLoader('正在提取文件内容...');
-                const extractedText = await extractTextFromFile(base64Data, mimeType);
+                const extractedText = await extractTextFromFile(base64Data, mimeType, selectedFile.name);
                 wordInput.value = extractedText;
                 uploadStatus.textContent = `文件内容已提取，请点击“准备开始”。`;
                 selectedFile = null; 
@@ -5558,7 +5558,7 @@
                 const base64Data = await fileToBase64(selectedSubsetFile);
                 const mimeType = selectedSubsetFile.type || getMimeType(selectedSubsetFile.name);
 
-                const extractedText = await extractTextFromFile(base64Data, mimeType);
+                const extractedText = await extractTextFromFile(base64Data, mimeType, selectedSubsetFile.name);
                 let importedWords = await processWordsForQuiz(parseWordInput(extractedText));
 
                 // 去重：跳过已在文本框中的单词
@@ -6580,7 +6580,7 @@
                     reader.readAsDataURL(file);
                 });
 
-                const text = await extractTextFromFile(base64Data, file.type || 'application/octet-stream');
+                const text = await extractTextFromFile(base64Data, file.type || 'application/octet-stream', file.name);
                 if (!text || !text.trim()) {
                     showMessage('未能从文件中提取到文本内容。');
                     hideLoader();
