@@ -5234,6 +5234,8 @@
                 const librariesRef = collection(db, PUBLIC_LIBRARIES_COLLECTION);
                 const querySnapshot = await getDocs(librariesRef);
                 allLibraries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // 排序：单词库按名称排序
+                allLibraries.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
 
                 librariesList.innerHTML = '';
                 if (allLibraries.length === 0) {
@@ -5403,6 +5405,8 @@
                 const querySnapshot = await getDocs(q);
                 const loadedSubsets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allSubsets = loadedSubsets; // 保存到全局变量供删除等操作使用
+                // 排序：子集按名称排序
+                allSubsets.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN', { numeric: true, sensitivity: 'base' }));
 
                 const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
                 const qWords = query(wordsRef, where("libraryId", "==", libraryId));
@@ -5658,7 +5662,10 @@
                 const wordsRef = collection(db, PUBLIC_WORDS_COLLECTION);
                 const q = query(wordsRef, where("subsetId", "==", subsetId));
                 const querySnapshot = await getDocs(q);
-                return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const words = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // 按英文单词排序
+                words.sort((a, b) => (a.english || '').localeCompare(b.english || '', 'en'));
+                return words;
             } catch (error) {
                 console.error("从子集加载单词失败:", error);
                 showMessage("从子集加载单词失败，请检查网络。");
@@ -5674,10 +5681,10 @@
             try {
                 const libsSnapshot = await getDocs(query(collection(db, PUBLIC_LIBRARIES_COLLECTION)));
                 const allLibs = libsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                
+
                 const subsetsSnapshot = await getDocs(query(collection(db, PUBLIC_SUBSETS_COLLECTION)));
                 const allSubsets = subsetsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                
+
                 const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION)));
                 const allWords = wordsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -5687,25 +5694,37 @@
                     return;
                 }
 
+                // 排序：单词库按名称排序
+                allLibs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
+
                 allLibs.forEach(lib => {
                     const libNode = document.createElement('div');
                     libNode.className = 'library-node';
-                    libNode.innerHTML = `<div class="library-header">${lib.name}</div>`;
+                    libNode.innerHTML = `<div class="library-header">${escapeHtml(lib.name)}</div>`;
 
                     const subsetsInLib = allSubsets.filter(s => s.libraryId === lib.id);
                     if (subsetsInLib.length > 0) {
+                        // 排序：子集按名称排序（自然排序，支持数字序号）
+                        subsetsInLib.sort((a, b) => {
+                            const nameA = a.name || '';
+                            const nameB = b.name || '';
+                            return nameA.localeCompare(nameB, 'zh-CN', { numeric: true, sensitivity: 'base' });
+                        });
+
                         subsetsInLib.forEach(subset => {
                             const subsetNode = document.createElement('div');
                             subsetNode.className = 'subset-node';
 
                             const wordsInSubset = allWords.filter(w => w.subsetId === subset.id);
+                            // 排序：单词按英文排序
+                            wordsInSubset.sort((a, b) => (a.english || '').localeCompare(b.english || '', 'en'));
 
                             const subsetHeader = document.createElement('div');
                             subsetHeader.className = 'subset-header';
                             subsetHeader.innerHTML = `
                                 <span class="subset-toggle">▶</span>
                                 <input type="checkbox" class="subset-checkbox" data-subset-id="${subset.id}">
-                                <label>${subset.name} (${wordsInSubset.length} 词)</label>
+                                <label>${escapeHtml(subset.name)} (${wordsInSubset.length} 词)</label>
                                 <div class="subset-quick-select" data-subset-id="${subset.id}" data-total="${wordsInSubset.length}">
                                     <input type="number" class="subset-count-input" min="1" max="${wordsInSubset.length}" value="" placeholder="N" data-subset-id="${subset.id}">
                                     <button type="button" class="subset-quick-btn subset-first-btn" data-subset-id="${subset.id}" data-total="${wordsInSubset.length}" title="选择前N个">前N</button>
