@@ -4173,7 +4173,7 @@
             } else {
                 words[currentWordIndex].wasCorrect = false;
                 const currentWord = words[currentWordIndex];
-                feedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong style="color: var(--color-text);">${currentWord.english}</strong> <span style="font-size: 0.8em; color: var(--color-text-muted);">(${timeTakenSeconds.toFixed(2)}s)</span>`;
+                feedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong style="color: var(--color-text);">${escapeHtml(currentWord.english)}</strong> <span style="font-size: 0.8em; color: var(--color-text-muted);">(${timeTakenSeconds.toFixed(2)}s)</span>`;
                 feedback.className = 'incorrect incorrect-shake';
             }
 
@@ -4489,7 +4489,7 @@
             shuffleArray(shuffledOptions);
             shuffledOptions.forEach(option => {
                 const button = document.createElement('button');
-                button.innerHTML = `${option.english}<br><span style="font-size: 0.8em; color: #666; font-weight: normal;">${option.chinese}</span>`;
+                button.innerHTML = `${escapeHtml(option.english)}<br><span style="font-size: 0.8em; color: #666; font-weight: normal;">${escapeHtml(option.chinese)}</span>`;
                 button.className = 'mc-option-button';
                 button.dataset.word = option.english;
                 mcOptionsContainer.appendChild(button);
@@ -4523,7 +4523,7 @@
                 mcFeedback.className = 'correct correct-bounce';
             } else {
                 currentWord.wasCorrect = false;
-                mcFeedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong>${currentWord.english}</strong> (${currentWord.chinese})`;
+                mcFeedback.innerHTML = `${ICON.xmark} 错误！正确答案是: <strong>${escapeHtml(currentWord.english)}</strong> (${escapeHtml(currentWord.chinese)})`;
                 mcFeedback.className = 'incorrect incorrect-shake';
             }
             mcNextButton.style.display = 'block';
@@ -4642,7 +4642,7 @@
             
             bestTypingScores.forEach((entry, index) => {
                 const li = document.createElement('li');
-                li.innerHTML = `<strong>${entry.score.toFixed(2)}s</strong> - ${entry.user || 'anon'}`;
+                li.innerHTML = `<strong>${entry.score.toFixed(2)}s</strong> - ${escapeHtml(entry.user || 'anon')}`;
                 li.title = `${entry.score.toFixed(2)}s - by ${entry.user || 'Anonymous'} on ${entry.date}`;
                 
                 if (index < 5) {
@@ -5283,9 +5283,10 @@
                         div.dataset.name = library.name;
                         
                         const ownerText = library.userId === userId ? ' (我创建的)' : '';
-                        div.innerHTML = `<span>${library.name}${ownerText}</span>
+                        const safeLibName = escapeHtml(library.name);
+                        div.innerHTML = `<span>${safeLibName}${ownerText}</span>
                                         <div class="modal-list-item-actions">
-                                            <button type="button" data-id="${library.id}" data-name="${library.name}" class="modal-icon-btn modal-icon-btn--rename rename-library-button secondary" title="重命名"></button>
+                                            <button type="button" data-id="${library.id}" data-name="${safeLibName}" class="modal-icon-btn modal-icon-btn--rename rename-library-button secondary" title="重命名"></button>
                                             <button type="button" data-id="${library.id}" class="modal-icon-btn modal-icon-btn--delete delete-library-button secondary" title="删除"></button>
                                         </div>`;
                         librariesList.appendChild(div);
@@ -5459,10 +5460,11 @@
                         
                         const wordCount = allWordsInCurrentLibrary.filter(word => word.subsetId === subset.id).length;
                         const ownerText = subset.userId === userId ? ' (我创建的)' : '';
-                        
-                        div.innerHTML = `<span>${subset.name} (${wordCount} 词)${ownerText}</span>
+                        const safeSubName = escapeHtml(subset.name);
+
+                        div.innerHTML = `<span>${safeSubName} (${wordCount} 词)${ownerText}</span>
                                         <div class="modal-list-item-actions">
-                                            <button type="button" data-id="${subset.id}" data-name="${subset.name}" class="modal-icon-btn modal-icon-btn--rename rename-subset-button secondary" title="重命名"></button>
+                                            <button type="button" data-id="${subset.id}" data-name="${safeSubName}" class="modal-icon-btn modal-icon-btn--rename rename-subset-button secondary" title="重命名"></button>
                                             <button type="button" data-id="${subset.id}" class="modal-icon-btn modal-icon-btn--delete delete-subset-button secondary" title="删除"></button>
                                         </div>`;
                         subsetsList.appendChild(div);
