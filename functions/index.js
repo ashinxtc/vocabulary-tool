@@ -49,7 +49,7 @@ async function callDeepSeekAPI(messages) {
     body: JSON.stringify({
       model: "deepseek-chat",
       messages: messages,
-      temperature: 0.7,
+      temperature: 0,
       max_tokens: 16384
     })
   });
@@ -65,6 +65,103 @@ async function callDeepSeekAPI(messages) {
     throw new Error("DeepSeek returned empty response. Possible content filter or rate limit.");
   }
   return content;
+}
+
+// 辅助函数：解析 JSON
+function parseGeminiJson(jsonText) {
+  if (!jsonText || typeof jsonText !== "string") return null;
+  const trimmed = jsonText.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  return JSON.parse(trimmed);
+}
+
+// 多策略本地解析（确定性，不调用 AI）
+function localParseWords(text) {
+  if (!text || typeof text !== 'string') return [];
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  if (lines.length === 0) return [];
+
+  // 策略 1: # 分隔符
+  const hashLines = lines.filter(l => l.includes('#'));
+  if (hashLines.length > lines.length * 0.3) {
+    return hashLines.map(l => {
+      const parts = l.split('#').map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[1]) return { english: parts[0], chinese: parts[1] };
+      return null;
+    }).filter(Boolean);
+  }
+
+  // 策略 2: Tab 分隔
+  const tabLines = lines.filter(l => l.includes('\t'));
+  if (tabLines.length > lines.length * 0.3) {
+    return tabLines.map(l => {
+      const parts = l.split('\t').map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[1]) return { english: parts[0], chinese: parts[1] };
+      return null;
+    }).filter(Boolean);
+  }
+
+  // 策略 3: POS 标签格式 (word POS. chinese)
+  const posResults = [];
+  const singleLetterHeaders = /^[A-Z]$/;
+  const posTagPattern = /\b(modal|abbr|adj|adv|conj|int|num|prep|pron|art|vt|vi|n|v)\.\s/i;
+  for (const line of lines) {
+    if (singleLetterHeaders.test(line)) continue;
+    const match = line.match(posTagPattern);
+    if (match && match.index > 0) {
+      const english = line.substring(0, match.index).trim();
+      // 从 POS 标签之后提取中文（跳过所有 POS 标签）
+      let rest = line.substring(match.index);
+      // 循环移除所有 POS 标签
+      rest = rest.replace(/(?:modal|abbr|adj|adv|conj|int|num|prep|pron|art|vt|vi|n|v)\.\s*/gi, '').trim();
+      if (english && rest && /[一-鿿㐀-䶿]/.test(rest)) {
+        posResults.push({ english, chinese: rest });
+      }
+    }
+  }
+  if (posResults.length > lines.length * 0.3) {
+    return posResults;
+  }
+
+  // 策略 4: 交替英文/中文行
+  const hasCJK = (s) => /[一-鿿㐀-䶿]/.test(s);
+  const hasLatin = (s) => /[a-zA-Z]/.test(s);
+  const nonHeaderLines = lines.filter(l => !singleLetterHeaders.test(l));
+  let altCount = 0;
+  for (let i = 0; i < nonHeaderLines.length - 1; i += 2) {
+    if (hasLatin(nonHeaderLines[i]) && !hasCJK(nonHeaderLines[i]) &&
+        hasCJK(nonHeaderLines[i + 1]) && !hasLatin(nonHeaderLines[i + 1])) {
+      altCount++;
+    }
+  }
+  if (altCount > nonHeaderLines.length * 0.2) {
+    const results = [];
+    for (let i = 0; i < nonHeaderLines.length - 1; i += 2) {
+      if (hasLatin(nonHeaderLines[i]) && hasCJK(nonHeaderLines[i + 1])) {
+        results.push({ english: nonHeaderLines[i].trim(), chinese: nonHeaderLines[i + 1].trim() });
+      }
+    }
+    return results;
+  }
+
+  // 策略 5: 单行中包含英文和中文（空格分隔）
+  const mixedResults = [];
+  for (const line of lines) {
+    if (singleLetterHeaders.test(line)) continue;
+    if (hasLatin(line) && hasCJK(line)) {
+      // 找到中文开始的位置
+      const cjkIndex = line.search(/[一-鿿㐀-䶿]/);
+      if (cjkIndex > 0) {
+        const english = line.substring(0, cjkIndex).trim();
+        const chinese = line.substring(cjkIndex).trim();
+        if (english && chinese) mixedResults.push({ english, chinese });
+      }
+    }
+  }
+  if (mixedResults.length > lines.length * 0.3) {
+    return mixedResults;
+  }
+
+  return []; // 所有策略都失败
 }
 
 // 辅助函数：解析 JSON
@@ -95,7 +192,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
             break;
           }
 
-          // DOCX/DOC 文件：mammoth 提取 + DeepSeek 智能解析（分块处理）
+          // DOCX/DOC 文件：mammoth 提取 + 多策略解析
           if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
               || mimeType === 'application/msword'
               || (fileName && /\.docx?$/i.test(fileName))) {
@@ -108,15 +205,19 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
 
               const rawText = result.value.trim();
 
-              // 如果提取的文字已经是 english#chinese 格式，直接返回
-              const lines = rawText.split('\n').filter(l => l.trim());
-              const hashCount = lines.filter(l => l.includes('#')).length;
-              if (hashCount > lines.length * 0.5) {
-                res.json({ success: true, data: rawText });
+              // 策略 1-5: 本地确定性解析
+              const localResults = localParseWords(rawText);
+              if (localResults.length > 50) {
+                // 本地解析成功（匹配 >50 个词），直接返回
+                console.log(`Local parsing extracted ${localResults.length} words, skipping AI`);
+                const output = localResults.map(p => `${p.english}#${p.chinese}`).join('\n');
+                res.json({ success: true, data: output });
                 break;
               }
 
-              // 分块处理：每块约 8000 字符，在行边界分割
+              // 本地解析不足，回退到 DeepSeek 分块处理
+              console.log(`Local parsing found only ${localResults.length} words, using DeepSeek`);
+
               const CHUNK_SIZE = 8000;
               const textLines = rawText.split('\n');
               const chunks = [];
@@ -131,20 +232,21 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
               }
               if (currentChunk.trim()) chunks.push(currentChunk);
 
-              console.log(`Processing ${chunks.length} chunks for docx file`);
+              console.log(`Processing ${chunks.length} chunks via DeepSeek`);
 
-              // 并行处理所有分块（最多 5 个并发）
-              const allPairs = new Map(); // english.toLowerCase() -> { english, chinese }
+              const allPairs = new Map();
+              // 保留本地解析结果
+              for (const p of localResults) {
+                allPairs.set(p.english.toLowerCase(), p);
+              }
+
               const BATCH_SIZE = 8;
               for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
                 const batch = chunks.slice(i, i + BATCH_SIZE);
                 const results = await Promise.all(batch.map(async (chunk) => {
                   const messages = [{
                     role: "user",
-                    content: `Extract English-Chinese word pairs from this text. Output one pair per line as "English#Chinese". Skip headers, instructions, and non-vocabulary content. Skip purely Chinese or purely English lines. If you see alternating English/Chinese lines, pair them up. Output ONLY the word pairs.
-
-Text:
-${chunk}`
+                    content: `Extract English-Chinese word pairs from this text. Output one pair per line as "English#Chinese". Skip headers, instructions, and non-vocabulary content. Skip purely Chinese or purely English lines. If you see alternating English/Chinese lines, pair them up. Output ONLY the word pairs.\n\nText:\n${chunk}`
                   }];
                   try {
                     const response = await callDeepSeekAPI(messages);
@@ -154,7 +256,6 @@ ${chunk}`
                     return [];
                   }
                 }));
-                // 合并结果并去重
                 for (const chunkLines of results) {
                   for (const line of chunkLines) {
                     const parts = line.split('#').map(s => s.trim());
