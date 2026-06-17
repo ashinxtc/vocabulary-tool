@@ -1217,7 +1217,6 @@
             border-radius: 50%;
             width: 60px;
             height: 60px;
-            display: flex;
             justify-content: center;
             align-items: center;
             text-transform: uppercase;
@@ -2358,6 +2357,7 @@
             .analysis-stat .stat-value { font-size: 1.2rem; }
             #advanced-typing-prompt { font-size: 1.8rem; letter-spacing: 0.3em; }
             .subset-quick-select { flex-wrap: wrap; }
+            .voice-status-bar { margin: 0; }
         }
 
     </style>
@@ -4848,6 +4848,7 @@
             startButton.disabled = true;
             uploadConfirmButton.disabled = true;
             newWordsRadio.checked = true;
+            allWordsInCurrentLibrary = [];
             audioCache.clear();
             audioUrlCache.clear();
             mwAudioUrlCache.clear();
@@ -5253,6 +5254,13 @@
             wordLibraryModal.style.display = 'none';
             updateSelectedLibraryDisplay();
             updateStartButtonState();
+        });
+        wordLibraryModal.addEventListener('click', (e) => {
+            if (e.target === wordLibraryModal) {
+                wordLibraryModal.style.display = 'none';
+                updateSelectedLibraryDisplay();
+                updateStartButtonState();
+            }
         });
 
         createLibraryButton.addEventListener('click', async () => {
