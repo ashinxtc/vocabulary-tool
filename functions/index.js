@@ -537,41 +537,38 @@ Provide the response as a single, valid JSON array of objects. Each object must 
         case "analyzeStructure": {
           const { text } = data;
           if (!text || text.length < 10) {
-            res.json({ success: true, data: { libraryName: "我的单词库", subsets: [{ name: "默认", words: text || "" }] } });
+            res.json({ success: true, data: { libraryName: "我的单词库", subsetNames: ["默认"] } });
             break;
           }
-          // 截取前 8000 字符给 AI 分析（避免 token 过多）
-          const truncated = text.length > 8000 ? text.substring(0, 8000) + "\n...(truncated)" : text;
+          // 只取前 3000 字符给 AI 分析结构（不需要全部文字）
+          const sample = text.length > 3000 ? text.substring(0, 3000) + "\n..." : text;
+          // 估算总行数
+          const totalLines = text.split('\n').filter(l => l.trim()).length;
           const messages = [
             {
               role: "user",
-              content: `分析以下英语单词学习材料内容。这是一个英语单词列表文件。
+              content: `分析以下英语单词学习材料的结构。
+
+这个文件共有约 ${totalLines} 行。
 
 请完成以下任务：
-1. 识别这是什么类型的词汇表（如：教材单元、考试词汇、主题词汇等）
+1. 识别这是什么类型的词汇表（如：教材单元、考试词汇、按字母排列等）
 2. 建议一个合适的单词库名称
-3. 如果内容有明显的分组（如按单元、按主题、按字母），则分成多个子集；如果没有明显分组，就作为一个子集
-4. 提取所有英文单词和中文翻译，格式为 "English#Chinese"
+3. 根据内容结构建议子集划分（如按字母 A-Z、按单元、按主题等）
+4. 如果无法识别明显的分组结构，就作为一个子集
 
-回复严格的 JSON 格式：
+回复严格的 JSON 格式（不要包含单词本身，只需要结构信息）：
 {
   "libraryName": "建议的单词库名称",
+  "description": "简要描述这是什么词汇表",
   "subsets": [
-    {
-      "name": "子集名称",
-      "words": "word1#中文1\\nword2#中文2\\nword3#中文3"
-    }
+    { "name": "子集名称1", "description": "包含什么内容" },
+    { "name": "子集名称2", "description": "包含什么内容" }
   ]
 }
 
-注意：
-- words 字段用换行符 \\n 分隔每个单词
-- 每个单词格式为 "English#Chinese"
-- 如果文件中没有中文翻译，Chinese 部分留空，如 "word#"
-- 子集数量建议 1-10 个，取决于内容结构
-
-文件内容：
-${truncated}`
+文件内容（前部分样本）：
+${sample}`
             }
           ];
           const deepseekResponse = await callDeepSeekAPI(messages);

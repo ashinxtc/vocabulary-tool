@@ -6736,6 +6736,8 @@
 
         // AI 智能分析结构
         let qiLastRawText = '';
+        let qiAiStructure = null; // 存储 AI 分析的结构
+
         const handleQuickImportAIAnalysis = async () => {
             if (!qiLastRawText) {
                 showMessage('请先上传文件。');
@@ -6748,60 +6750,87 @@
 
             showLoader('🤖 AI 正在分析文件结构...');
             try {
-                const analysis = await callCloudFunction('analyzeStructure', { text: qiLastRawText });
+                // 第1步：本地解析提取所有单词（确定性，不会丢词）
+                const allWords = parseWordInput(qiLastRawText);
+                if (!allWords || allWords.length === 0) {
+                    showMessage('未能从文件中检测到单词。');
+                    return;
+                }
 
+                // 第2步：调用 AI 只分析结构（不返回单词）
+                const analysis = await callCloudFunction('analyzeStructure', { text: qiLastRawText });
                 if (!analysis || !analysis.libraryName || !analysis.subsets) {
                     showMessage('AI 分析未能识别文件结构。');
                     return;
                 }
 
-                // 显示 AI 分析结果
-                const subsets = analysis.subsets;
-                const totalWords = subsets.reduce((sum, s) => {
-                    const words = s.words ? s.words.split('\n').filter(w => w.trim()) : [];
-                    return sum + words.length;
-                }, 0);
+                // 存储结构供确认后使用
+                qiAiStructure = {
+                    libraryName: analysis.libraryName,
+                    description: analysis.description || '',
+                    subsets: analysis.subsets,
+                    totalWords: allWords.length
+                };
 
-                let resultHtml = `<strong>📚 建议单词库：</strong>${escapeHtml(analysis.libraryName)}<br>`;
-                resultHtml += `<strong>📂 建议子集：</strong><br>`;
-                subsets.forEach(s => {
-                    const wordCount = s.words ? s.words.split('\n').filter(w => w.trim()).length : 0;
-                    resultHtml += `&nbsp;&nbsp;• ${escapeHtml(s.name)} (${wordCount} 词)<br>`;
+                // 将单词均匀分配到子集
+                const subsetCount = analysis.subsets.length;
+                const wordsPerSubset = Math.ceil(allWords.length / subsetCount);
+                analysis.subsets.forEach((s, i) => {
+                    s._words = allWords.slice(i * wordsPerSubset, (i + 1) * wordsPerSubset);
                 });
-                resultHtml += `<br><em>共 ${totalWords} 个单词</em>`;
+
+                // 显示预览
+                let resultHtml = `<strong>📚 单词库：</strong>${escapeHtml(analysis.libraryName)}`;
+                if (analysis.description) resultHtml += `<br><em>${escapeHtml(analysis.description)}</em>`;
+                resultHtml += `<br><br><strong>📂 子集划分：</strong><br>`;
+                analysis.subsets.forEach(s => {
+                    const count = s._words ? s._words.length : 0;
+                    resultHtml += `&nbsp;&nbsp;• ${escapeHtml(s.name)} — ${count} 词<br>`;
+                });
+                resultHtml += `<br><strong>📊 共 ${allWords.length} 个单词</strong>`;
 
                 qiAiText.innerHTML = resultHtml;
                 qiAiResult.style.display = 'block';
 
-                // 存储 AI 分析结果供保存时使用
-                qiDetectedWords = [];
-                subsets.forEach(s => {
-                    if (s.words) {
-                        const parsed = parseWordInput(s.words);
-                        parsed.forEach(w => {
-                            qiDetectedWords.push({ ...w, _subsetName: s.name });
-                        });
-                    }
-                });
-
-                // 更新预览
-                qiPreviewCount.textContent = qiDetectedWords.length;
+                // 更新预览列表
+                qiDetectedWords = allWords;
+                qiPreviewCount.textContent = allWords.length;
                 qiPreviewList.innerHTML = '';
-                qiDetectedWords.slice(0, 10).forEach(w => {
+                allWords.slice(0, 10).forEach(w => {
                     const li = document.createElement('li');
                     li.textContent = w.chinese ? `${w.english} — ${w.chinese}` : w.english;
                     qiPreviewList.appendChild(li);
                 });
-                if (qiDetectedWords.length > 10) {
+                if (allWords.length > 10) {
                     const li = document.createElement('li');
-                    li.textContent = `...还有 ${qiDetectedWords.length - 10} 个单词`;
+                    li.textContent = `...还有 ${allWords.length - 10} 个单词`;
                     li.style.fontStyle = 'italic';
                     qiPreviewList.appendChild(li);
                 }
 
-                // 自动创建库和子集
-                showLoader('正在创建单词库和子集...');
-                const libraryName = analysis.libraryName;
+                // 显示确认按钮（替换原来的自动创建）
+                qiSaveBar.classList.add('show');
+                qiSaveBar.innerHTML = '<button id="qi-ai-confirm" type="button">✅ 确认创建</button>';
+                document.getElementById('qi-ai-confirm').addEventListener('click', handleQuickImportAIConfirm);
+
+            } catch (err) {
+                console.error('AI 分析失败:', err);
+                showMessage('AI 分析失败，请重试或手动导入。');
+            } finally {
+                hideLoader();
+            }
+        };
+
+        // AI 分析确认后执行创建
+        const handleQuickImportAIConfirm = async () => {
+            if (!qiAiStructure || !qiAiStructure.subsets) {
+                showMessage('请先进行 AI 分析。');
+                return;
+            }
+
+            showLoader('正在创建单词库和子集...');
+            try {
+                const { libraryName, subsets } = qiAiStructure;
 
                 // 创建单词库
                 const libRef = await addDoc(collection(db, PUBLIC_LIBRARIES_COLLECTION), {
@@ -6809,41 +6838,47 @@
                 });
 
                 // 创建子集并保存单词
+                let totalSaved = 0;
                 for (const subset of subsets) {
-                    const wordsInSubset = subset.words ? parseWordInput(subset.words) : [];
+                    const wordsInSubset = subset._words || [];
                     if (wordsInSubset.length === 0) continue;
 
                     const subRef = await addDoc(collection(db, PUBLIC_SUBSETS_COLLECTION), {
                         name: subset.name, libraryId: libRef.id, userId: userId, createdAt: serverTimestamp()
                     });
 
-                    // 批量写入单词
-                    const batch = writeBatch(db);
-                    wordsInSubset.forEach(w => {
-                        const newDocRef = doc(collection(db, PUBLIC_WORDS_COLLECTION));
-                        batch.set(newDocRef, {
-                            english: w.english, chinese: w.chinese || '',
-                            subsetId: subRef.id, libraryId: libRef.id,
-                            userId: userId, createdAt: serverTimestamp()
+                    // 批量写入（每批最多 450 个）
+                    for (let i = 0; i < wordsInSubset.length; i += 450) {
+                        const batch = writeBatch(db);
+                        wordsInSubset.slice(i, i + 450).forEach(w => {
+                            const newDocRef = doc(collection(db, PUBLIC_WORDS_COLLECTION));
+                            batch.set(newDocRef, {
+                                english: w.english, chinese: w.chinese || '',
+                                subsetId: subRef.id, libraryId: libRef.id,
+                                userId: userId, createdAt: serverTimestamp()
+                            });
                         });
-                    });
-                    await batch.commit();
+                        await batch.commit();
+                    }
+                    totalSaved += wordsInSubset.length;
                 }
 
-                showMessage(`✅ 已创建单词库「${escapeHtml(libraryName)}」，包含 ${subsets.length} 个子集，共 ${totalWords} 个单词！`);
+                showMessage(`✅ 已创建单词库「${escapeHtml(libraryName)}」，包含 ${subsets.length} 个子集，共 ${totalSaved} 个单词！`);
 
                 // 重置状态
                 qiDetectedWords = [];
+                qiAiStructure = null;
                 qiPreview.classList.remove('show');
                 qiSaveBar.classList.remove('show');
+                qiSaveBar.innerHTML = '<button id="qi-save-button">导入并保存</button>';
                 qiAiResult.style.display = 'none';
                 qiFileName.textContent = '';
                 qiFileInput.value = '';
                 qiLastRawText = '';
 
             } catch (err) {
-                console.error('AI 分析失败:', err);
-                showMessage('AI 分析失败，请重试或手动导入。');
+                console.error('创建失败:', err);
+                showMessage('创建失败，请重试。');
             } finally {
                 hideLoader();
             }
