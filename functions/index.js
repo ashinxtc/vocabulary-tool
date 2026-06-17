@@ -7,7 +7,8 @@ const mammoth = require("mammoth");
 // 设置全局选项
 setGlobalOptions({
   maxInstances: 10,
-  region: "us-central1"
+  region: "us-central1",
+  timeoutSeconds: 540
 });
 
 // 定义参数
@@ -115,8 +116,8 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
                 break;
               }
 
-              // 分块处理：每块约 5000 字符，在行边界分割
-              const CHUNK_SIZE = 5000;
+              // 分块处理：每块约 8000 字符，在行边界分割
+              const CHUNK_SIZE = 8000;
               const textLines = rawText.split('\n');
               const chunks = [];
               let currentChunk = '';
@@ -134,7 +135,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
 
               // 并行处理所有分块（最多 5 个并发）
               const allPairs = new Map(); // english.toLowerCase() -> { english, chinese }
-              const BATCH_SIZE = 5;
+              const BATCH_SIZE = 8;
               for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
                 const batch = chunks.slice(i, i + BATCH_SIZE);
                 const results = await Promise.all(batch.map(async (chunk) => {
