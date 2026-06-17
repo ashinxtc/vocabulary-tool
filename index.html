@@ -6789,6 +6789,7 @@
                         english: w.english,
                         chinese: w.chinese || '',
                         subsetId: subsetId,
+                        libraryId: libraryId,
                         userId: userId,
                         createdAt: serverTimestamp()
                     });
@@ -6950,6 +6951,8 @@
                 qiPreview.classList.remove('show');
                 qiSaveBar.classList.remove('show');
                 qiSaveBar.innerHTML = '<button id="qi-save-button">导入并保存</button>';
+                // 重新绑定保存按钮事件（innerHTML 替换后旧监听丢失）
+                document.getElementById('qi-save-button').addEventListener('click', handleQuickImportSave);
                 qiAiResult.style.display = 'none';
                 qiFileName.textContent = '';
                 qiFileInput.value = '';
