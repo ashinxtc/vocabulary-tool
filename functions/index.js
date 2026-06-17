@@ -48,7 +48,8 @@ async function callDeepSeekAPI(messages) {
     body: JSON.stringify({
       model: "deepseek-chat",
       messages: messages,
-      temperature: 0.7
+      temperature: 0.7,
+      max_tokens: 16384
     })
   });
 
@@ -93,7 +94,7 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
             break;
           }
 
-          // DOCX/DOC 文件：mammoth 提取 + DeepSeek 智能解析
+          // DOCX/DOC 文件：mammoth 提取 + DeepSeek 智能解析（分块处理）
           if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
               || mimeType === 'application/msword'
               || (fileName && /\.docx?$/i.test(fileName))) {
@@ -110,42 +111,66 @@ exports.geminiProxy = onRequest({ invoker: "public" }, (req, res) => {
               const lines = rawText.split('\n').filter(l => l.trim());
               const hashCount = lines.filter(l => l.includes('#')).length;
               if (hashCount > lines.length * 0.5) {
-                // 超过一半的行有 #，认为已经是标准格式
                 res.json({ success: true, data: rawText });
                 break;
               }
 
-              // 用 DeepSeek 智能解析为 english#chinese 格式
-              const truncated = rawText.length > 6000 ? rawText.substring(0, 6000) + "\n...(truncated)" : rawText;
-              const messages = [{
-                role: "user",
-                content: `The following text was extracted from a Word document (.docx). It contains English vocabulary words with their Chinese translations, but the formatting may be messy (e.g., table cells flattened, words and translations on separate lines, mixed with headers/instructions).
+              // 分块处理：每块约 5000 字符，在行边界分割
+              const CHUNK_SIZE = 5000;
+              const textLines = rawText.split('\n');
+              const chunks = [];
+              let currentChunk = '';
+              for (const line of textLines) {
+                if (currentChunk.length + line.length + 1 > CHUNK_SIZE && currentChunk.length > 0) {
+                  chunks.push(currentChunk);
+                  currentChunk = line;
+                } else {
+                  currentChunk += (currentChunk ? '\n' : '') + line;
+                }
+              }
+              if (currentChunk.trim()) chunks.push(currentChunk);
 
-Your task: Extract ALL English-Chinese word pairs and output them in a clean format, one pair per line, as "English#Chinese".
+              console.log(`Processing ${chunks.length} chunks for docx file`);
 
-Rules:
-1. Each line must be: EnglishWord#ChineseTranslation
-2. If a word has multiple Chinese meanings, keep them together: "abandon#放弃；抛弃"
-3. Skip headers, instructions, page numbers, and non-vocabulary content
-4. Skip lines that are purely Chinese without English
-5. Skip lines that are purely English without Chinese meaning
-6. If you see alternating English/Chinese lines, pair them up
-7. Output ONLY the word pairs, nothing else
+              // 并行处理所有分块（最多 5 个并发）
+              const allPairs = new Map(); // english.toLowerCase() -> { english, chinese }
+              const BATCH_SIZE = 5;
+              for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+                const batch = chunks.slice(i, i + BATCH_SIZE);
+                const results = await Promise.all(batch.map(async (chunk) => {
+                  const messages = [{
+                    role: "user",
+                    content: `Extract English-Chinese word pairs from this text. Output one pair per line as "English#Chinese". Skip headers, instructions, and non-vocabulary content. Skip purely Chinese or purely English lines. If you see alternating English/Chinese lines, pair them up. Output ONLY the word pairs.
 
 Text:
-${truncated}`
-              }];
+${chunk}`
+                  }];
+                  try {
+                    const response = await callDeepSeekAPI(messages);
+                    return response.split('\n').filter(l => l.trim() && l.includes('#'));
+                  } catch (err) {
+                    console.error(`Chunk processing failed:`, err.message);
+                    return [];
+                  }
+                }));
+                // 合并结果并去重
+                for (const chunkLines of results) {
+                  for (const line of chunkLines) {
+                    const parts = line.split('#').map(s => s.trim());
+                    if (parts.length >= 2 && parts[0] && parts[1]) {
+                      allPairs.set(parts[0].toLowerCase(), { english: parts[0], chinese: parts[1] });
+                    }
+                  }
+                }
+              }
 
-              const deepseekResponse = await callDeepSeekAPI(messages);
-
-              // 验证 DeepSeek 输出格式
-              const outputLines = deepseekResponse.split('\n').filter(l => l.trim() && l.includes('#'));
-              if (outputLines.length === 0) {
-                // DeepSeek 未能解析，回退到原始文字
+              if (allPairs.size === 0) {
                 console.warn("DeepSeek parsing returned no pairs, falling back to raw text");
                 res.json({ success: true, data: rawText });
               } else {
-                res.json({ success: true, data: outputLines.join('\n') });
+                const output = Array.from(allPairs.values()).map(p => `${p.english}#${p.chinese}`).join('\n');
+                console.log(`Extracted ${allPairs.size} word pairs from docx`);
+                res.json({ success: true, data: output });
               }
             } catch (docxErr) {
               res.status(400).json({ success: false, error: `Word 文档处理失败: ${docxErr.message}` });
