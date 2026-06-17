@@ -937,8 +937,43 @@
             padding: 14px 16px;
             background: var(--color-surface-soft);
             border-radius: var(--radius-sm);
-            margin-bottom: 10px;
+            margin-bottom: 0;
             color: var(--color-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background var(--transition);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        #word-library-modal .library-node > .library-header:hover {
+            background: var(--color-border);
+        }
+        #word-library-modal .library-node > .library-header .lib-toggle {
+            transition: transform var(--transition);
+            font-size: 12px;
+            color: var(--color-text-muted);
+            flex-shrink: 0;
+        }
+        #word-library-modal .library-node > .library-header .lib-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        #word-library-modal .library-node > .library-header .lib-name {
+            flex: 1;
+        }
+        #word-library-modal .library-node > .library-header .lib-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-text-muted);
+        }
+        #word-library-modal .library-node > .library-subsets-container {
+            display: none;
+            margin: 8px 0 10px 0;
+            padding-left: 4px;
+        }
+        #word-library-modal .library-node > .library-subsets-container.show {
+            display: block;
         }
         #word-library-modal .subset-node { margin-left: 20px; }
         #word-library-modal .subset-header {
@@ -5700,11 +5735,21 @@
                 allLibs.forEach(lib => {
                     const libNode = document.createElement('div');
                     libNode.className = 'library-node';
-                    libNode.innerHTML = `<div class="library-header">${escapeHtml(lib.name)}</div>`;
 
                     const subsetsInLib = allSubsets.filter(s => s.libraryId === lib.id);
+                    const totalWordsInLib = allWords.filter(w => subsetsInLib.some(s => s.id === w.subsetId)).length;
+
+                    // 单词库头部（可点击展开/折叠）
+                    const libHeader = document.createElement('div');
+                    libHeader.className = 'library-header';
+                    libHeader.innerHTML = `<span class="lib-toggle">▶</span><span class="lib-name">${escapeHtml(lib.name)}</span><span class="lib-count">${totalWordsInLib} 词 · ${subsetsInLib.length} 个子集</span>`;
+                    libNode.appendChild(libHeader);
+
+                    // 子集容器（默认隐藏）
+                    const subsetsContainer = document.createElement('div');
+                    subsetsContainer.className = 'library-subsets-container';
+
                     if (subsetsInLib.length > 0) {
-                        // 排序：子集按名称排序（自然排序，支持数字序号）
                         subsetsInLib.sort((a, b) => {
                             const nameA = a.name || '';
                             const nameB = b.name || '';
@@ -5716,7 +5761,6 @@
                             subsetNode.className = 'subset-node';
 
                             const wordsInSubset = allWords.filter(w => w.subsetId === subset.id);
-                            // 排序：单词按英文排序
                             wordsInSubset.sort((a, b) => (a.english || '').localeCompare(b.english || '', 'en'));
 
                             const subsetHeader = document.createElement('div');
@@ -5749,9 +5793,25 @@
                                 });
                                 subsetNode.appendChild(wordsList);
                             }
-                            libNode.appendChild(subsetNode);
+                            subsetsContainer.appendChild(subsetNode);
                         });
                     }
+
+                    libNode.appendChild(subsetsContainer);
+
+                    // 点击单词库名称展开/折叠
+                    libHeader.addEventListener('click', () => {
+                        const toggle = libHeader.querySelector('.lib-toggle');
+                        const isOpen = subsetsContainer.classList.contains('show');
+                        if (isOpen) {
+                            subsetsContainer.classList.remove('show');
+                            toggle.classList.remove('expanded');
+                        } else {
+                            subsetsContainer.classList.add('show');
+                            toggle.classList.add('expanded');
+                        }
+                    });
+
                     librarySelectionTree.appendChild(libNode);
                 });
 
