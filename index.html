@@ -3165,8 +3165,14 @@
                     if (user) {
                         userId = user.uid;
                     } else {
-                        await signInAnonymously(auth);
-                        userId = auth.currentUser.uid;
+                        try {
+                            await signInAnonymously(auth);
+                            userId = auth.currentUser?.uid || 'anonymous';
+                        } catch (authErr) {
+                            console.error("Anonymous auth failed:", authErr);
+                            userId = 'anonymous';
+                            showMessage("匿名登录失败，部分功能可能不可用。");
+                        }
                     }
                     isAuthReady = true;
                     console.log("Firebase Ready. User ID:", userId);
@@ -4607,10 +4613,12 @@
             }
         };
 
+        let leaderboardUnsubscribe = null;
         const loadTypingScoresFromFirestore = () => {
             if (!isAuthReady) return;
+            if (leaderboardUnsubscribe) { leaderboardUnsubscribe(); }
             const docRef = doc(db, TYPING_SCORES_DOC);
-            onSnapshot(docRef, (docSnap) => {
+            leaderboardUnsubscribe = onSnapshot(docRef, (docSnap) => {
                 bestTypingScores = docSnap.exists() ? (docSnap.data().scores || []) : [];
                 displayLeaderboard();
             }, (error) => console.error("Error loading typing scores:", error));
@@ -5042,7 +5050,20 @@
 
         const getMimeType = (filename) => {
             const extension = filename.split('.').pop().toLowerCase();
-            const mimeTypes = { 'jpg': 'image/jpeg', 'png': 'image/png', 'txt': 'text/plain', 'pdf': 'application/pdf' };
+            const mimeTypes = {
+                'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+                'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic',
+                'bmp': 'image/bmp', 'svg': 'image/svg+xml',
+                'txt': 'text/plain', 'csv': 'text/csv', 'tsv': 'text/tab-separated-values',
+                'pdf': 'application/pdf',
+                'doc': 'application/msword',
+                'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'xls': 'application/vnd.ms-excel',
+                'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'ppt': 'application/vnd.ms-powerpoint',
+                'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'json': 'application/json', 'xml': 'text/xml', 'html': 'text/html'
+            };
             return mimeTypes[extension] || 'application/octet-stream';
         };
 
