@@ -100,26 +100,43 @@ function localParseWords(text) {
     }).filter(Boolean);
   }
 
-  // 策略 3: POS 标签格式 (word POS. chinese)
+  // 策略 3: POS 标签格式 (word POS. chinese) + 补充混合行策略
   const posResults = [];
+  const posMatchedIndices = new Set();
   const singleLetterHeaders = /^[A-Z]$/;
   const posTagPattern = /\b(modal|abbr|adj|adv|conj|int|num|prep|pron|art|vt|vi|n|v)\.\s/i;
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     if (singleLetterHeaders.test(line)) continue;
     const match = line.match(posTagPattern);
     if (match && match.index > 0) {
       const english = line.substring(0, match.index).trim();
-      // 从 POS 标签之后提取中文（跳过所有 POS 标签）
       let rest = line.substring(match.index);
-      // 循环移除所有 POS 标签
       rest = rest.replace(/(?:modal|abbr|adj|adv|conj|int|num|prep|pron|art|vt|vi|n|v)\.\s*/gi, '').trim();
       if (english && rest && /[一-鿿㐀-䶿]/.test(rest)) {
         posResults.push({ english, chinese: rest });
+        posMatchedIndices.add(i);
       }
     }
   }
   if (posResults.length > lines.length * 0.3) {
-    return posResults;
+    // POS 解析成功，但对未匹配的行再跑一次混合行策略补充
+    const hasCJK = (s) => /[一-鿿㐀-䶿]/.test(s);
+    const hasLatin = (s) => /[a-zA-Z]/.test(s);
+    const extraResults = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (posMatchedIndices.has(i) || singleLetterHeaders.test(lines[i])) continue;
+      const line = lines[i];
+      if (hasLatin(line) && hasCJK(line)) {
+        const cjkIndex = line.search(/[一-鿿㐀-䶿]/);
+        if (cjkIndex > 0) {
+          const english = line.substring(0, cjkIndex).trim();
+          const chinese = line.substring(cjkIndex).trim();
+          if (english && chinese) extraResults.push({ english, chinese });
+        }
+      }
+    }
+    return [...posResults, ...extraResults];
   }
 
   // 策略 4: 交替英文/中文行
