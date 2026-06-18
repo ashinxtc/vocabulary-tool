@@ -2367,6 +2367,81 @@
             line-height: 1.6;
         }
 
+        /* ========== 间隔重复复习卡片 ========== */
+        .review-card {
+            background: linear-gradient(135deg, var(--color-accent-soft) 0%, var(--color-primary-soft) 100%);
+            border: 2px solid var(--kraft-border);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+        .review-card::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 24px;
+            width: 50px;
+            height: 16px;
+            background: var(--color-accent);
+            border-radius: 2px;
+            transform: rotate(2deg);
+            opacity: 0.9;
+        }
+        .review-card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .review-card-header svg { flex-shrink: 0; }
+        .review-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            color: var(--color-text);
+        }
+        .review-card-count {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            font-family: var(--font-display);
+            margin-bottom: 8px;
+        }
+        .review-card-preview {
+            font-size: 13px;
+            color: var(--color-text-muted);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .review-card-progress {
+            height: 8px;
+            background: var(--color-border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .review-card-progress-fill {
+            height: 100%;
+            background: var(--color-success);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .review-card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .review-card-actions button {
+            flex: 1;
+        }
+        .review-empty {
+            text-align: center;
+            padding: 12px;
+            color: var(--color-text-muted);
+            font-size: 14px;
+        }
+
         /* ========== 响应式：移动端 ========== */
         @media (max-width: 640px) {
             body { padding: 12px 8px; }
@@ -2476,6 +2551,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 间隔重复复习卡片 -->
+            <div id="review-card" class="review-card" style="display: none;"></div>
 
             <div class="radio-group">
                 <label>
@@ -3188,6 +3266,7 @@
         const analysisContent = document.getElementById('analysis-content');
         const analysisEmpty = document.getElementById('analysis-empty');
         const openAnalysisButton = document.getElementById('analysis-quick-btn');
+        const reviewCard = document.getElementById('review-card');
         // 设置弹窗 DOM 引用
         const settingsGearButton = document.getElementById('settings-gear-button');
         const settingsModal = document.getElementById('settings-modal');
@@ -3405,6 +3484,7 @@
                         localStorage.setItem('currentUserProfile', name);
                         const filtered = filterSessionsByProfile(allPracticeSessions);
                         rebuildWrongWordsFromSessions(filtered);
+                        updateReviewCard();
                         debouncedSaveSettings();
                         updateAllProfileDisplays();
                     }
@@ -3734,6 +3814,7 @@
                     allPracticeSessions = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                     const filteredSessions = filterSessionsByProfile(allPracticeSessions);
                     rebuildWrongWordsFromSessions(filteredSessions);
+                    updateReviewCard();
                 },
                 (error) => console.error('Sync sessions error:', error)
             );
@@ -3863,6 +3944,95 @@
             }
         };
 
+        // --- 间隔重复：计算待复习单词 ---
+        const getReviewWords = (sessions, count = 20) => {
+            if (!sessions || sessions.length === 0) return [];
+            const now = new Date();
+            const wordStats = new Map();
+
+            sessions.forEach(session => {
+                if (!session.sessionWords || !Array.isArray(session.sessionWords)) return;
+                session.sessionWords.forEach(w => {
+                    const key = (w.english || '').toLowerCase();
+                    if (!key) return;
+                    if (!wordStats.has(key)) {
+                        wordStats.set(key, {
+                            english: w.english, chinese: w.chinese,
+                            errorCount: 0, totalCount: 0, lastPracticeDate: null
+                        });
+                    }
+                    const stat = wordStats.get(key);
+                    stat.totalCount++;
+                    if (!w.wasCorrect) stat.errorCount++;
+                    const date = session.endTime?.toDate?.() ?? (session.endTime ? new Date(session.endTime) : null);
+                    if (date && (!stat.lastPracticeDate || date > stat.lastPracticeDate)) {
+                        stat.lastPracticeDate = date;
+                    }
+                    if (w.chinese && !stat.chinese) stat.chinese = w.chinese;
+                });
+            });
+
+            const candidates = [];
+            wordStats.forEach((stat) => {
+                const accuracy = stat.totalCount > 0 ? (stat.totalCount - stat.errorCount) / stat.totalCount : 0;
+                const daysSince = stat.lastPracticeDate ?
+                    (now - stat.lastPracticeDate) / 86400000 : 999;
+                const decay = Math.exp(-0.03 * daysSince);
+                const decayedScore = accuracy * decay;
+                const priority = (1 - decayedScore) * (1 + stat.errorCount / Math.max(stat.totalCount, 1));
+
+                if (decayedScore < 0.85 && stat.totalCount >= 1) {
+                    candidates.push({
+                        ...stat, decayedScore, priority,
+                        reason: decayedScore < 0.4 ? '薄弱' : decayedScore < 0.7 ? '需巩固' : '待复习'
+                    });
+                }
+            });
+
+            candidates.sort((a, b) => b.priority - a.priority);
+            return candidates.slice(0, count);
+        };
+
+        // 更新复习卡片
+        let reviewWordsCache = [];
+        const updateReviewCard = () => {
+            if (!reviewCard) return;
+            const filteredSessions = filterSessionsByProfile(allPracticeSessions);
+            reviewWordsCache = getReviewWords(filteredSessions);
+
+            if (reviewWordsCache.length === 0) {
+                reviewCard.innerHTML = '<div class="review-empty">所有单词掌握良好，继续加油！</div>';
+                reviewCard.style.display = 'block';
+                return;
+            }
+
+            const weakCount = reviewWordsCache.filter(w => w.decayedScore < 0.4).length;
+            const preview = reviewWordsCache.slice(0, 5).map(w => w.english).join('、');
+            const moreText = reviewWordsCache.length > 5 ? ` 等 ${reviewWordsCache.length} 个` : '';
+
+            reviewCard.innerHTML = `
+                <div class="review-card-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <span class="review-card-title">今日待复习</span>
+                </div>
+                <div class="review-card-count">${reviewWordsCache.length} 个单词</div>
+                <div class="review-card-preview">${preview}${moreText}</div>
+                <div class="review-card-actions">
+                    <button id="start-review-btn" type="button">开始复习</button>
+                </div>
+            `;
+            reviewCard.style.display = 'block';
+
+            document.getElementById('start-review-btn').addEventListener('click', () => {
+                // 用待复习单词开始拼写练习
+                words = reviewWordsCache.map(w => ({ english: w.english, chinese: w.chinese }));
+                originalWords = [...words];
+                isTypingWithWordsMode = false;
+                currentQuizDetails = { practiceMode: '间隔复习' };
+                startQuiz();
+            });
+        };
+
         // --- Firestore-based Session Management Functions ---
         const loadPracticeSessionsFromFirestore = async () => {
             if (!isAuthReady || !userId) return;
@@ -3875,6 +4045,7 @@
                 allPracticeSessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 const filteredSessions = filterSessionsByProfile(allPracticeSessions);
                 rebuildWrongWordsFromSessions(filteredSessions);
+                updateReviewCard();
 
             } catch (error) {
                 console.error("Error loading practice sessions from Firestore:", error);
@@ -6466,6 +6637,7 @@
                         updateAllProfileDisplays();
                         const filtered = filterSessionsByProfile(allPracticeSessions);
                         rebuildWrongWordsFromSessions(filtered);
+                        updateReviewCard();
                         debouncedSaveSettings();
                         renderSettingsUserList();
                         showMessage(`已切换到: <strong>${escapeHtml(name)}</strong>`);
