@@ -2442,6 +2442,32 @@
             font-size: 14px;
         }
 
+        /* 发音反馈 */
+        .pronunciation-feedback {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            margin-top: 8px;
+            font-family: var(--font-display);
+            transition: all 0.3s ease;
+        }
+        .pronunciation-feedback.listening {
+            background: var(--color-primary-soft);
+            color: var(--color-primary);
+            animation: pulse 1.5s infinite;
+        }
+        .pronunciation-feedback.correct {
+            background: var(--color-success-soft);
+            color: var(--color-success);
+        }
+        .pronunciation-feedback.incorrect {
+            background: var(--color-error-soft);
+            color: var(--color-error);
+        }
+
         /* ========== 响应式：移动端 ========== */
         @media (max-width: 640px) {
             body { padding: 12px 8px; }
@@ -2739,6 +2765,7 @@
             <div id="chinese-prompt" class="chinese-prompt"></div>
             <input type="text" id="english-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <div id="feedback"></div>
+            <div id="pronunciation-feedback" class="pronunciation-feedback"></div>
 
             <div id="example-sentence-container" style="display: none;">
                 <p style="font-style: italic; color: #555;">例句:</p>
@@ -3035,6 +3062,84 @@
             gear: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
         };
 
+        // 发音自检：Web Speech API
+        let speechRecognition = null;
+        let isListeningForPronunciation = false;
+        let pronunciationTarget = '';
+
+        const initSpeechRecognition = () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return false;
+            speechRecognition = new SpeechRecognition();
+            speechRecognition.lang = 'en-US';
+            speechRecognition.continuous = false;
+            speechRecognition.interimResults = false;
+            speechRecognition.maxAlternatives = 3;
+            speechRecognition.onresult = (event) => {
+                const results = Array.from(event.results[0]);
+                const transcripts = results.map(r => r.transcript.toLowerCase().trim());
+                const bestMatch = transcripts[0];
+                const confidence = results[0].confidence || 0;
+                handlePronunciationResult(bestMatch, confidence, transcripts);
+            };
+            speechRecognition.onerror = () => { isListeningForPronunciation = false; };
+            speechRecognition.onend = () => { isListeningForPronunciation = false; };
+            return true;
+        };
+
+        const startListeningForWord = (word) => {
+            if (!speechRecognition || isListeningForPronunciation) return;
+            pronunciationTarget = (word || '').toLowerCase().trim();
+            if (!pronunciationTarget) return;
+            try {
+                speechRecognition.start();
+                isListeningForPronunciation = true;
+                updatePronunciationUI('listening');
+                setTimeout(() => { if (isListeningForPronunciation) { speechRecognition.stop(); isListeningForPronunciation = false; } }, 4000);
+            } catch(e) { isListeningForPronunciation = false; }
+        };
+
+        const handlePronunciationResult = (spoken, confidence, allTranscripts) => {
+            const target = pronunciationTarget;
+            if (!target) return;
+            const matched = allTranscripts.some(t => t === target) || spoken === target;
+            const similarity = calculateStringSimilarity(spoken, target);
+            const result = { spoken, matched, confidence, similarity, target };
+            updatePronunciationUI('result', result);
+            return result;
+        };
+
+        const calculateStringSimilarity = (a, b) => {
+            if (a === b) return 1;
+            const longer = a.length > b.length ? a : b;
+            const shorter = a.length > b.length ? b : a;
+            if (longer.length === 0) return 1;
+            let matchCount = 0;
+            for (let i = 0; i < shorter.length; i++) { if (longer.includes(shorter[i])) matchCount++; }
+            return matchCount / longer.length;
+        };
+
+        const updatePronunciationUI = (state, result) => {
+            const el = document.getElementById('pronunciation-feedback');
+            if (!el) return;
+            if (state === 'listening') {
+                el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/></svg> 正在听...';
+                el.className = 'pronunciation-feedback listening';
+                el.style.display = 'inline-flex';
+            } else if (state === 'result' && result) {
+                if (result.matched) {
+                    el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6BCB77" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> ${result.spoken}`;
+                    el.className = 'pronunciation-feedback correct';
+                } else {
+                    el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg> ${result.spoken}`;
+                    el.className = 'pronunciation-feedback incorrect';
+                }
+                el.style.display = 'inline-flex';
+            } else {
+                el.style.display = 'none';
+            }
+        };
+
         let app;
         let db;
         let auth;
@@ -3310,6 +3415,7 @@
                         }
                     }
                     isAuthReady = true;
+                    initSpeechRecognition();
                     console.log("Firebase Ready. User ID:", userId);
 
                     // 加载同步码
@@ -4410,6 +4516,15 @@
                 feedback.className = 'incorrect incorrect-shake';
             }
 
+            if (pronunciationTarget && speechRecognition) {
+                const pronEl = document.getElementById('pronunciation-feedback');
+                const lastResult = pronEl ? pronEl.textContent : '';
+                words[currentWordIndex].pronunciation = {
+                    matched: pronEl ? pronEl.classList.contains('correct') : false,
+                    spoken: pronunciationTarget
+                };
+            }
+
             englishInput.disabled = true;
             checkButton.style.display = 'none';
             nextButton.style.display = 'block';
@@ -4483,6 +4598,8 @@
                 englishInput.value = '';
                 englishInput.disabled = false;
                 feedback.textContent = '';
+                const pronFeedback = document.getElementById('pronunciation-feedback');
+                if (pronFeedback) pronFeedback.style.display = 'none';
                 checkButton.style.display = 'block';
                 nextButton.style.display = 'none';
                 englishInput.focus();
@@ -4496,6 +4613,9 @@
                     }
                 }
                 if (googleTranslateTtsEnabled || merriamWebsterTtsEnabled) preloadGoogleTtsWord(words[currentWordIndex + 1]?.english);
+                if (speechRecognition && autoSpeakEnabled) {
+                    setTimeout(() => startListeningForWord(word.english), 1500);
+                }
             } else {
                 showCompletionScreen();
             }
@@ -4518,6 +4638,24 @@
                 wrongWordsList.innerHTML = html + '</ul>';
             } else if (words.length > 0) {
                 wrongWordsList.innerHTML = '<p style="color: #28a745; font-weight: bold;">太棒了，全部正确！</p>';
+            }
+
+            const spokenWords = words.filter(w => w.pronunciation);
+            if (spokenWords.length > 0) {
+                const matched = spokenWords.filter(w => w.pronunciation.matched).length;
+                const failed = spokenWords.filter(w => !w.pronunciation.matched);
+                let pronHtml = `<div style="margin-top:20px; padding:16px; background:var(--color-surface-soft); border-radius:var(--radius-md); border:1px solid var(--color-border);">`;
+                pronHtml += `<h3 style="margin:0 0 12px; text-align:left;">发音成绩</h3>`;
+                pronHtml += `<p>${spokenWords.length}个有朗读 · 匹配${matched}个 · 不匹配${failed.length}个 · 匹配率${Math.round(matched/spokenWords.length*100)}%</p>`;
+                if (failed.length > 0) {
+                    pronHtml += `<div style="margin-top:12px;"><strong>发音薄弱：</strong>`;
+                    failed.slice(0, 5).forEach(w => {
+                        pronHtml += `<div style="margin-top:6px;">${escapeHtml(w.english)} - 你说: ${escapeHtml(w.pronunciation.spoken)}</div>`;
+                    });
+                    pronHtml += '</div>';
+                }
+                pronHtml += '</div>';
+                wrongWordsList.innerHTML += pronHtml;
             }
         };
 
@@ -4562,6 +4700,9 @@
                     else speak(currentWord.english);
                 }
                 if (googleTranslateTtsEnabled || merriamWebsterTtsEnabled) preloadGoogleTtsWord(words[index + 1]?.english);
+                if (speechRecognition && autoSpeakEnabled) {
+                    setTimeout(() => startListeningForWord(currentWord.english), 1500);
+                }
                 return;
             }
             flashcardSpinner.style.display = 'flex';
@@ -4576,6 +4717,9 @@
                     else speak(currentWord.english);
                 }
                 if (googleTranslateTtsEnabled || merriamWebsterTtsEnabled) preloadGoogleTtsWord(words[index + 1]?.english);
+                if (speechRecognition && autoSpeakEnabled) {
+                    setTimeout(() => startListeningForWord(currentWord.english), 1500);
+                }
             } catch (error) {
                 console.error("Error fetching flashcard data:", error);
                 showMessage(`无法加载单词 "${currentWord.english}" 的详细信息。`);
