@@ -2608,6 +2608,10 @@
                     <input type="radio" name="practice-mode" value="word-library" id="word-library-radio">
                     单词库拼写
                 </label>
+                <label>
+                    <input type="radio" name="practice-mode" value="sentence-blank" id="sentence-blank-radio">
+                    句子填空练习
+                </label>
             </div>
 
             <div id="new-words-input-area" class="mode-setup-section" style="display: flex;">
@@ -2650,12 +2654,21 @@
             </div>
 
             <div id="word-library-selection-area" class="mode-setup-section">
-                <h3>单词库拼写</h3> 
+                <h3>单词库拼写</h3>
                 <div id="selected-library-display" class="word-library-selection-display">未选择单词</div>
                 <div style="display: flex; gap: 10px; flex-direction: column;">
                     <button id="select-library-for-practice-button">选择单词进行练习</button>
                     <button id="open-manage-modal-button" class="secondary">管理单词库 (创建/删除/编辑)</button>
                     <button id="open-quick-import-button" class="secondary">📥 快速导入</button>
+                </div>
+            </div>
+
+            <div id="sentence-blank-setup-area" class="mode-setup-section">
+                <h3>句子填空练习</h3>
+                <p>从单词库选择单词，AI 会生成包含这些单词的句子，挖空让你填写。</p>
+                <div id="sentence-blank-source" class="radio-group" style="background-color: transparent; border: none; padding: 0;">
+                    <label><input type="radio" name="sb-source" value="wrong" checked> 从错题中选择</label>
+                    <label><input type="radio" name="sb-source" value="library"> 从单词库中选择</label>
                 </div>
             </div>
             
@@ -2755,6 +2768,23 @@
             <div class="button-group" style="margin-top: 20px;">
                 <button id="mc-next-button" style="display: none;">下一题</button>
             </div>
+        </div>
+
+        <div id="sb-quiz-section" class="quiz-section">
+            <div id="sb-quiz-content">
+                <div class="quiz-header">
+                    <div id="sb-progress" class="progress"></div>
+                    <button id="sb-back-to-menu-button" class="secondary" style="width: auto; padding: 8px 12px; font-size: 14px;">返回主页</button>
+                </div>
+                <div id="sb-sentence" style="font-size: 1.2rem; line-height: 1.8; text-align: center; margin: 24px 0; padding: 20px;"></div>
+                <div id="sb-hint" style="text-align: center; font-size: 14px; color: var(--color-text-muted); margin-bottom: 16px;"></div>
+                <div id="sb-options-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0;"></div>
+                <div id="sb-feedback" style="text-align: center; font-size: 17px; font-weight: 600; min-height: 30px; margin-bottom: 16px;"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button id="sb-next-button" style="display: none;">下一题</button>
+                </div>
+            </div>
+            <div id="sb-completion" style="display: none; text-align: center;"></div>
         </div>
 
         <div id="quiz-section" class="quiz-section">
@@ -4447,7 +4477,7 @@
 
         // --- Main Application Flow & Page Switching ---
         const showPage = (pageId) => {
-            [setupSection, quizSection, completionSection, modeSelectionSection, flashcardSection, mcQuizSection, typingPracticeSection, advancedTypingSection].forEach(sec => sec.style.display = 'none');
+            [setupSection, quizSection, completionSection, modeSelectionSection, flashcardSection, mcQuizSection, typingPracticeSection, advancedTypingSection, sbQuizSection].forEach(sec => sec.style.display = 'none');
             
             const targetSection = document.getElementById(pageId);
             if (targetSection) {
@@ -5208,6 +5238,127 @@
         advancedTypingBackButton.addEventListener('click', showAdvancedTypingSummaryAndExit);
 
 
+        // Sentence blank variables
+        let sbQuizData = [];
+        let sbCurrentIndex = 0;
+        let sbScore = 0;
+
+        // DOM references
+        const sbQuizSection = document.getElementById('sb-quiz-section');
+        const sbQuizContent = document.getElementById('sb-quiz-content');
+        const sbCompletion = document.getElementById('sb-completion');
+        const sbProgress = document.getElementById('sb-progress');
+        const sbSentence = document.getElementById('sb-sentence');
+        const sbHint = document.getElementById('sb-hint');
+        const sbOptionsContainer = document.getElementById('sb-options-container');
+        const sbFeedback = document.getElementById('sb-feedback');
+        const sbNextButton = document.getElementById('sb-next-button');
+        const sbBackToMenuButton = document.getElementById('sb-back-to-menu-button');
+
+        const startSentenceBlank = async () => {
+            // Show quiz content, hide completion
+            sbQuizContent.style.display = 'block';
+            sbCompletion.style.display = 'none';
+
+            // Get words for the quiz
+            let sourceWords = [];
+            const sbSource = document.querySelector('input[name="sb-source"]:checked').value;
+
+            if (sbSource === 'wrong') {
+                const filtered = filterSessionsByProfile(allPracticeSessions);
+                const wrongMap = new Map();
+                filtered.forEach(s => s.sessionWords?.forEach(w => {
+                    if (!w.wasCorrect) wrongMap.set(w.english.toLowerCase(), w);
+                }));
+                sourceWords = Array.from(wrongMap.values()).slice(0, 10);
+            } else {
+                sourceWords = words.length > 0 ? words.slice(0, 10) : [];
+            }
+
+            if (sourceWords.length === 0) {
+                showMessage('没有可用的单词。请先练习或选择单词库。');
+                return;
+            }
+
+            showLoader('正在生成句子...');
+            try {
+                const sentences = await callCloudFunction('generateSentences', { words: sourceWords });
+                if (!sentences || sentences.length === 0) {
+                    showMessage('无法生成句子。');
+                    return;
+                }
+                sbQuizData = sentences;
+                sbCurrentIndex = 0;
+                sbScore = 0;
+                showPage('sb-quiz-section');
+                showNextSentence();
+            } catch(e) {
+                showMessage('生成句子失败: ' + escapeHtml(e.message));
+            } finally { hideLoader(); }
+        };
+
+        const showNextSentence = () => {
+            if (sbCurrentIndex >= sbQuizData.length) {
+                showSbCompletion();
+                return;
+            }
+            const item = sbQuizData[sbCurrentIndex];
+            sbProgress.textContent = `第 ${sbCurrentIndex + 1} / ${sbQuizData.length} 题`;
+            sbSentence.innerHTML = item.sentence.replace(/_______/g, '<span style="border-bottom: 3px solid var(--color-primary); padding: 0 4px; color: var(--color-primary);">_______</span>');
+            sbHint.textContent = `提示：${item.chinese}`;
+            sbFeedback.textContent = '';
+            sbFeedback.className = '';
+            sbNextButton.style.display = 'none';
+            sbOptionsContainer.innerHTML = '';
+
+            const options = [item.word, ...item.distractors];
+            shuffleArray(options);
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'mc-option-button';
+                btn.textContent = opt;
+                btn.addEventListener('click', () => checkSentenceAnswer(btn, opt, item.word));
+                sbOptionsContainer.appendChild(btn);
+            });
+        };
+
+        const checkSentenceAnswer = (btn, selected, correct) => {
+            Array.from(sbOptionsContainer.children).forEach(b => {
+                b.disabled = true;
+                if (b.textContent === correct) b.classList.add('correct-answer');
+                else if (b === selected && selected !== correct) b.classList.add('wrong-answer');
+            });
+
+            if (selected === correct) {
+                sbScore++;
+                sbFeedback.innerHTML = `${ICON.check} 正确!`;
+                sbFeedback.className = 'correct correct-bounce';
+                sbSentence.innerHTML = sbQuizData[sbCurrentIndex].sentence.replace('_______', `<span style="color: var(--color-success); font-weight: 700;">${correct}</span>`);
+            } else {
+                sbFeedback.innerHTML = `${ICON.xmark} 正确答案是: <strong>${escapeHtml(correct)}</strong>`;
+                sbFeedback.className = 'incorrect incorrect-shake';
+                sbSentence.innerHTML = sbQuizData[sbCurrentIndex].sentence.replace('_______', `<span style="color: var(--color-error); font-weight: 700;">${correct}</span>`);
+            }
+            sbNextButton.style.display = 'block';
+            sbNextButton.focus();
+        };
+
+        const showSbCompletion = () => {
+            const pct = sbQuizData.length > 0 ? Math.round(sbScore / sbQuizData.length * 100) : 0;
+            let html = '<h2>句子填空完成！</h2>';
+            html += `<div style="margin: 20px 0; font-size: 1.2rem;">答对 <strong>${sbScore}</strong> / ${sbQuizData.length} 题，正确率 <strong>${pct}%</strong></div>`;
+            html += '<button id="sb-restart-btn">返回主页</button>';
+            sbCompletion.innerHTML = html;
+            sbQuizContent.style.display = 'none';
+            sbCompletion.style.display = 'block';
+            document.getElementById('sb-restart-btn').addEventListener('click', goBackToMainMenu);
+        };
+
+        // Event listeners
+        sbNextButton.addEventListener('click', () => { sbCurrentIndex++; showNextSentence(); });
+        sbBackToMenuButton.addEventListener('click', goBackToMainMenu);
+
+
         const goBackToMainMenu = () => {
             showPage('setup-section');
             words = [];
@@ -5264,6 +5415,9 @@
                 case 'advanced-typing': // Add condition for new mode
                     canStart = true;
                     break;
+                case 'sentence-blank':
+                    canStart = true;  // Always can start (uses wrong words or library words)
+                    break;
             }
             startButton.disabled = !canStart;
         };
@@ -5279,6 +5433,7 @@
                 case 'mc-quiz': multipleChoiceSetupArea.style.display = 'flex'; updateMcSourceDisplay(); break;
                 case 'typing-practice': simpleModeArea.style.display = 'flex'; commonSettings.style.display = 'none'; break;
                 case 'advanced-typing': advancedTypingSetupArea.style.display = 'flex'; commonSettings.style.display = 'none'; break;
+                case 'sentence-blank': document.getElementById('sentence-blank-setup-area').style.display = 'flex'; break;
             }
             updateStartButtonState();
         };
@@ -5458,6 +5613,7 @@
             
             if (selectedMode === 'typing-practice') { startTypingPractice(); return; }
             if (selectedMode === 'advanced-typing') { startAdvancedTypingPractice(); return; }
+            if (selectedMode === 'sentence-blank') { startSentenceBlank(); return; }
 
 
             if (selectedMode === 'wrong-words') {

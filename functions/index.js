@@ -580,6 +580,33 @@ ${sample}`
           break;
         }
 
+        // 8. 生成句子填空题目 (DeepSeek)
+        case "generateSentences": {
+          const { words: wordList } = data;
+          if (!Array.isArray(wordList) || wordList.length === 0) {
+            res.json({ success: true, data: [] });
+            break;
+          }
+          const messages = [{
+            role: "user",
+            content: `For each English word below, generate a fill-in-the-blank sentence where the target word is replaced by a blank (_______). Also provide 3 distractor words that are plausible but incorrect.
+
+Words: ${JSON.stringify(wordList.map(w => ({ english: w.english, chinese: w.chinese })))}
+
+Reply ONLY with a JSON array, no other text:
+[{
+  "word": "beautiful",
+  "chinese": "美丽的",
+  "sentence": "She has a _______ smile.",
+  "distractors": ["handsome", "lovely", "pretty"]
+}]`
+          }];
+          const response = await callDeepSeekAPI(messages);
+          const parsed = parseGeminiJson(response);
+          res.json({ success: true, data: Array.isArray(parsed) ? parsed : [] });
+          break;
+        }
+
         default:
           res.status(400).json({ error: `Unknown action: ${action}` });
       }
