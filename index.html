@@ -4202,22 +4202,24 @@
         const savePracticeSessionToFirestore = async () => {
             if (!isAuthReady || !userId || words.length === 0) return;
 
+            // 只统计实际练习过的单词
+            const practicedWords = isTypingWithWordsMode ? [] : words.filter(w => w.wasCorrect !== null);
             const quizEndTime = new Date();
             const totalDurationSeconds = (quizEndTime - quizStartTime) / 1000;
-            const accuracy = score / words.length;
+            const practicedCount = practicedWords.length;
+            const accuracy = practicedCount > 0 ? score / practicedCount : 0;
 
             const sessionData = {
                 ...currentQuizDetails,
                 userId: userId,
-                profileName: currentUserProfile || 'Anonymous', 
+                profileName: currentUserProfile || 'Anonymous',
                 startTime: quizStartTime,
                 endTime: quizEndTime,
                 totalDurationSeconds: totalDurationSeconds,
                 score: score,
-                totalWords: words.length,
+                totalWords: practicedCount,
                 accuracy: accuracy,
-                // For "Typing with Words" mode, save an empty array so wrong words are not recorded.
-                sessionWords: isTypingWithWordsMode ? [] : words.map(w => ({
+                sessionWords: practicedWords.map(w => ({
                     english: w.english,
                     chinese: w.chinese,
                     wasCorrect: w.wasCorrect || false,
@@ -4514,7 +4516,7 @@
                 else if (wordLibraryRadio.checked) currentQuizDetails.practiceMode = '单词库拼写';
             }
 
-            words.forEach(word => { word.wasCorrect = false; word.timeTakenSeconds = 0; });
+            words.forEach(word => { word.wasCorrect = null; word.timeTakenSeconds = 0; });
             // For typing mode, we don't shuffle because the words are already ordered by repetition
             if (!isTypingWithWordsMode) {
                 shuffleArray(words);
@@ -4658,23 +4660,35 @@
             }
         };
 
+        let isSavingSession = false;
         const showCompletionScreen = async () => {
-            if (currentQuizDetails.practiceMode) await savePracticeSessionToFirestore();
+            if (isSavingSession) return;
+            isSavingSession = true;
+            try {
+                if (currentQuizDetails.practiceMode) await savePracticeSessionToFirestore();
+            } catch (e) {
+                console.error('Save failed:', e);
+            }
             showPage('completion-section');
-            const totalDurationSeconds = words.length > 0 ? (new Date() - quizStartTime) / 1000 : 0;
-            const averageTimePerWord = words.length > 0 ? words.reduce((acc, word) => acc + (word.timeTakenSeconds || 0), 0) / words.length : 0;
-            const percentage = words.length > 0 ? Math.round((score / words.length) * 100) : 0;
-            scoreDisplay.innerHTML = `你答对了 <strong>${score}</strong> 道题，共 <strong>${words.length}</strong> 道。<br>正确率: <strong>${percentage}%</strong><br>总用时: <strong>${totalDurationSeconds.toFixed(2)}</strong> 秒<br>平均用时: <strong>${averageTimePerWord.toFixed(2)}</strong> 秒/词`;
+
+            // 只统计实际练习过的单词
+            const practicedWords = words.filter(w => w.wasCorrect !== null);
+            const totalPracticed = practicedWords.length;
+            const totalDurationSeconds = totalPracticed > 0 ? (new Date() - quizStartTime) / 1000 : 0;
+            const averageTimePerWord = totalPracticed > 0 ? practicedWords.reduce((acc, word) => acc + (word.timeTakenSeconds || 0), 0) / totalPracticed : 0;
+            const percentage = totalPracticed > 0 ? Math.round((score / totalPracticed) * 100) : 0;
+
+            scoreDisplay.innerHTML = `你答对了 <strong>${score}</strong> 道题，共 <strong>${totalPracticed}</strong> 道。<br>正确率: <strong>${percentage}%</strong><br>总用时: <strong>${totalDurationSeconds.toFixed(2)}</strong> 秒<br>平均用时: <strong>${averageTimePerWord.toFixed(2)}</strong> 秒/词`;
             wrongWordsList.innerHTML = '';
-            const sessionWrongWords = words.filter(word => !word.wasCorrect);
+            const sessionWrongWords = practicedWords.filter(word => !word.wasCorrect);
             if (sessionWrongWords.length > 0) {
                 let html = '<h3>本次错题：</h3><ul>';
                 sessionWrongWords.forEach(word => {
-                    html += `<li><strong>${word.english}</strong>: ${word.chinese} (${(word.timeTakenSeconds || 0).toFixed(2)}s)</li>`;
+                    html += `<li><strong>${escapeHtml(word.english)}</strong>: ${escapeHtml(word.chinese)} (${(word.timeTakenSeconds || 0).toFixed(2)}s)</li>`;
                 });
                 wrongWordsList.innerHTML = html + '</ul>';
-            } else if (words.length > 0) {
-                wrongWordsList.innerHTML = '<p style="color: #28a745; font-weight: bold;">太棒了，全部正确！</p>';
+            } else if (totalPracticed > 0) {
+                wrongWordsList.innerHTML = '<p style="color: var(--color-success); font-weight: bold;">太棒了，全部正确！</p>';
             }
 
             const spokenWords = words.filter(w => w.pronunciation);
@@ -4904,7 +4918,7 @@
             currentMcQuizIndex = 0;
             score = 0;
             currentQuizDetails = { practiceMode: '单词选择题' };
-            words.forEach(word => { word.wasCorrect = false; word.timeTakenSeconds = 0; });
+            words.forEach(word => { word.wasCorrect = null; word.timeTakenSeconds = 0; });
             shuffleArray(words);
             if ((googleTranslateTtsEnabled || merriamWebsterTtsEnabled) && autoSpeakEnabled && words.length > 0) {
                 preloadGoogleTtsWords(words);
@@ -5391,6 +5405,7 @@
 
         const goBackToMainMenu = () => {
             showPage('setup-section');
+            isSavingSession = false;
             words = [];
             originalWords = [];
             wordInput.value = '';
