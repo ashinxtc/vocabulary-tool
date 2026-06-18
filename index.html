@@ -4841,7 +4841,29 @@
                         });
                         usedGemini = true;
                     } catch (apiErr) {
-                        console.warn("生成选项 API 不可用(如 403)，改用本地随机选项:", apiErr?.message || apiErr);
+                        console.warn("Gemini API 不可用，尝试 DeepSeek:", apiErr?.message || apiErr);
+                        // 第2级降级：DeepSeek 生成干扰项
+                        try {
+                            const deepseekResult = await callCloudFunction("mcqOptionsDeepSeek", {
+                                wordList: wordsToProcess.map(w => ({ english: safeEnglish(w), chinese: safeChinese(w) })),
+                                allQuizWords: words.map(w => safeEnglish(w)).filter(Boolean)
+                            });
+                            if (Array.isArray(deepseekResult) && deepseekResult.length > 0) {
+                                wordsToProcess.forEach(word => {
+                                    const key = safeEnglish(word).toLowerCase();
+                                    const match = deepseekResult.find(d => (d.word || '').toLowerCase() === key);
+                                    if (match && Array.isArray(match.distractors) && match.distractors.length >= 3) {
+                                        word.mcOptions = [
+                                            { english: safeEnglish(word), chinese: safeChinese(word) },
+                                            ...match.distractors.slice(0, 3).map(d => ({ english: String(d).trim(), chinese: '...' }))
+                                        ];
+                                    }
+                                });
+                                usedGemini = true;
+                            }
+                        } catch (deepseekErr) {
+                            console.warn("DeepSeek 也失败，使用本地随机:", deepseekErr?.message || deepseekErr);
+                        }
                     }
                     if (!usedGemini) {
                         const otherWords = words.map(w => ({ english: safeEnglish(w), chinese: safeChinese(w) })).filter(o => o.english.length > 0);
@@ -4923,6 +4945,7 @@
         const checkMcAnswer = (selectedButton, correctAnswer) => {
             const timeTakenSeconds = (performance.now() - wordStartTime) / 1000;
             const currentWord = words[currentMcQuizIndex];
+            if (!currentWord) return; // 防止越界崩溃
             currentWord.timeTakenSeconds = timeTakenSeconds;
             const isCorrect = selectedButton.dataset.word.toLowerCase() === correctAnswer.toLowerCase();
             Array.from(mcOptionsContainer.children).forEach(button => {

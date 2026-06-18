@@ -607,6 +607,35 @@ Reply ONLY with a JSON array, no other text:
           break;
         }
 
+        // 8. DeepSeek 生成 MCQ 干扰项（Gemini 降级方案）
+        case "mcqOptionsDeepSeek": {
+          const { wordList, allQuizWords } = data;
+          if (!Array.isArray(wordList) || wordList.length === 0) {
+            res.json({ success: true, data: [] });
+            break;
+          }
+          const messages = [{
+            role: "user",
+            content: `For each English word below, generate 3 incorrect Chinese translation options (distractors) for a multiple choice quiz.
+
+Rules:
+1. One distractor should be a plausible wrong answer (similar meaning, commonly confused word)
+2. Two distractors should be clearly wrong but tempting for a student
+3. All distractors must be real Chinese words/phrases
+4. None should be the correct translation
+5. Do NOT use any of these words as distractors: ${JSON.stringify(allQuizWords)}
+
+Words: ${JSON.stringify(wordList.map(w => ({ english: w.english, chinese: w.chinese })))}
+
+Reply ONLY with a JSON array, no other text:
+[{"word": "abandon", "distractors": ["抛弃", "实现", "接受"]}]`
+          }];
+          const deepseekResult = await callDeepSeekAPI(messages);
+          const parsed = parseGeminiJson(deepseekResult);
+          res.json({ success: true, data: Array.isArray(parsed) ? parsed : [] });
+          break;
+        }
+
         default:
           res.status(400).json({ error: `Unknown action: ${action}` });
       }
