@@ -3072,6 +3072,15 @@
         </div>
     </div>
 
+    <!-- 清理残留的 Service Worker（防止旧代理 SW 干扰） -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(reg => reg.unregister());
+            });
+        }
+    </script>
+
     <script type="module">
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
