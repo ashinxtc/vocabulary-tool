@@ -5822,7 +5822,9 @@
                 modalTitle.textContent = '选择单词进行练习';
                 manageView.style.display = 'none';
                 selectView.style.display = 'block';
+                showLoader('正在加载单词库...');
                 await buildPracticeSelectionTree();
+                hideLoader();
             }
             wordLibraryModal.style.display = 'flex';
         };
