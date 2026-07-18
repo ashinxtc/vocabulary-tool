@@ -3089,7 +3089,7 @@
         // Firebase imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, getDoc, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, where, getDocs, getDoc, addDoc, setDoc, doc, onSnapshot, deleteDoc, writeBatch, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase variables
         // XSS 防护：转义 HTML 特殊字符
@@ -3503,10 +3503,32 @@
 
 
         // --- Firebase Initialization & Data Loading ---
+        // 首屏立即用 localStorage 渲染，不等网络（避免"暂无用户"闪现）
+        const renderCachedProfileUI = () => {
+            const cachedProfile = localStorage.getItem('currentUserProfile') || '';
+            const cachedSync = localStorage.getItem('vocabSyncCode') || '';
+            if (cachedProfile) {
+                currentUserProfile = cachedProfile;
+                if (currentUserDisplay) currentUserDisplay.textContent = cachedProfile;
+                persistentProfileDisplay.innerHTML = `练习用户: <strong>${escapeHtml(cachedProfile)}</strong>${cachedSync ? ' ☁' : ''}`;
+                if (profileMainRow && welcomePanel) {
+                    profileMainRow.style.display = 'block';
+                    welcomePanel.style.display = 'none';
+                }
+            }
+            if (cachedSync && syncStatusText) {
+                syncStatusText.textContent = `已同步: ${cachedSync}`;
+                syncStatusLine?.classList.add('has-sync');
+            }
+        };
+        renderCachedProfileUI();
+
         const initFirebase = async () => {
             try {
                 app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
+                db = initializeFirestore(app, {
+                    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+                });
                 auth = getAuth(app);
 
                 onAuthStateChanged(auth, async (user) => {
@@ -3538,8 +3560,8 @@
                     } else {
                         loadPracticeSessionsFromFirestore();
                     }
-                    loadAllWordsFromLibrary();
-                    loadTypingScoresFromFirestore(); 
+                    // 全量单词延迟到需要时（选择题模式）再拉，减轻手机首屏负担
+                    loadTypingScoresFromFirestore();
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
@@ -3548,17 +3570,25 @@
             }
         };
         
-        const loadAllWordsFromLibrary = async () => {
-             if (!isAuthReady) return;
-             try {
-                const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION)));
-                allWordsFromLibrary = wordsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-                totalWordCountSpan.textContent = allWordsFromLibrary.length;
-                console.log(`Loaded ${allWordsFromLibrary.length} total words from library.`);
-             } catch (e) {
-                console.error("Error loading all words from library:", e);
-                totalWordCountSpan.textContent = 'N/A';
-             }
+        let allWordsLoadPromise = null; // 懒加载：只拉一次，重复调用共享同一 Promise
+        const loadAllWordsFromLibrary = () => {
+             if (!isAuthReady) return Promise.resolve();
+             if (allWordsLoadPromise) return allWordsLoadPromise;
+             totalWordCountSpan.textContent = '...';
+             allWordsLoadPromise = (async () => {
+                try {
+                    const wordsSnapshot = await getDocs(query(collection(db, PUBLIC_WORDS_COLLECTION)));
+                    allWordsFromLibrary = wordsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    totalWordCountSpan.textContent = allWordsFromLibrary.length;
+                    console.log(`Loaded ${allWordsFromLibrary.length} total words from library.`);
+                    updateStartButtonState();
+                } catch (e) {
+                    console.error("Error loading all words from library:", e);
+                    totalWordCountSpan.textContent = 'N/A';
+                    allWordsLoadPromise = null; // 失败允许重试
+                }
+             })();
+             return allWordsLoadPromise;
         };
 
         initFirebase();
@@ -5560,7 +5590,8 @@
                     break;
                 case 'mc-quiz':
                     const mcSource = document.querySelector('input[name="mc-source"]:checked').value;
-                    canStart = (mcSource === 'random') ? (parseInt(randomWordCountInput.value) > 0 && allWordsFromLibrary.length > 0) : (words.length > 0);
+                    // 随机模式不再依赖 allWordsFromLibrary 已加载（懒加载会在开始时兜底拉取）
+                    canStart = (mcSource === 'random') ? (parseInt(randomWordCountInput.value) > 0) : (words.length > 0);
                     break;
                 case 'typing-practice':
                 case 'advanced-typing': // Add condition for new mode
@@ -5581,7 +5612,7 @@
                 case 'new-words': newWordsInputArea.style.display = 'flex'; break;
                 case 'wrong-words': if (persistentWrongWords.length > 0) { inlineWrongWordsSelection.style.display = 'flex'; showInlineWrongWordsSelection(); } break;
                 case 'word-library': wordLibrarySelectionArea.style.display = 'flex'; updateSelectedLibraryDisplay(); break;
-                case 'mc-quiz': multipleChoiceSetupArea.style.display = 'flex'; updateMcSourceDisplay(); break;
+                case 'mc-quiz': multipleChoiceSetupArea.style.display = 'flex'; updateMcSourceDisplay(); loadAllWordsFromLibrary(); break;
                 case 'typing-practice': simpleModeArea.style.display = 'flex'; commonSettings.style.display = 'none'; break;
                 case 'advanced-typing': advancedTypingSetupArea.style.display = 'flex'; commonSettings.style.display = 'none'; break;
                 case 'sentence-blank': document.getElementById('sentence-blank-setup-area').style.display = 'flex'; break;
@@ -5790,6 +5821,12 @@
             } else if (selectedMode === 'mc-quiz' && document.querySelector('input[name="mc-source"]:checked').value === 'random') {
                 const count = parseInt(randomWordCountInput.value);
                 if (isNaN(count) || count <= 0) { showMessage('请输入有效的随机单词数量。'); return; }
+                if (allWordsFromLibrary.length === 0) {
+                    // 懒加载兜底：可能还没拉取完成，等待一次
+                    showLoader('正在加载单词库...');
+                    await loadAllWordsFromLibrary();
+                    hideLoader();
+                }
                 if (allWordsFromLibrary.length === 0) { showMessage('单词库为空，请先在「管理单词库」中添加单词。'); return; }
                 if (count > allWordsFromLibrary.length) { showMessage(`单词库中只有 ${allWordsFromLibrary.length} 个单词。`); return; }
                 shuffleArray(allWordsFromLibrary);
