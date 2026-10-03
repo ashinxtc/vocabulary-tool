@@ -1186,6 +1186,19 @@
             line-height: 1.25;
             word-break: break-word;
         }
+        /* 音节微小分隔符：小圆点 + 紧凑微间距，保持单词整体感 */
+        .syllable-sep {
+            display: inline-block;
+            font-size: 0.35em;
+            vertical-align: 0.28em;
+            margin: 0 0.06em;
+            color: currentColor;
+            opacity: 0.52;
+            line-height: 1;
+            font-weight: 700;
+            user-select: none;
+            pointer-events: none;
+        }
         .typing-phonetic-line {
             display: flex;
             align-items: center;
@@ -8429,31 +8442,41 @@ shine 发光..."></textarea>
                 .trim();
         };
 
-        // 规范化音节显示：确保短语/句子的词间空格永不被中圆点破坏，并对齐音节拆分
+        // 规范化音节显示：微小圆点分隔符 + 紧凑微间距，杜绝“看起来像好几个单词”的割裂感
         const formatSyllablesDisplay = (syllablesText, originalText) => {
             const orig = String(originalText || '').trim();
             const syl = String(syllablesText || '').trim();
-            if (!syl) return orig;
-            if (!orig) return syl.replace(/[-*]/g, ' · ').replace(/\s*·\s*/g, ' · ').trim();
+            if (!syl) return escapeHtml(orig);
+
+            const sepTag = '<span class="syllable-sep" aria-hidden="true">·</span>';
+
+            const formatWordPieces = (wordSyl) => {
+                const pieces = wordSyl.split(/[\s]*[-*·•][\s]*/).map(p => p.trim()).filter(Boolean);
+                if (pieces.length <= 1) return escapeHtml(wordSyl.replace(/[-*·•]/g, '').trim() || orig);
+                return pieces.map(p => escapeHtml(p)).join(sepTag);
+            };
 
             // 如果原词不包含空格（单字或连字复合词）
             if (!orig.includes(' ')) {
-                return syl.replace(/[-*]/g, ' · ').replace(/\s*·\s*/g, ' · ').trim();
+                return formatWordPieces(syl);
             }
 
             // 原词是包含空格的短语/句子
             const origWords = orig.split(/\s+/);
 
-            // 情况 A：已经包含词间空格（如 'click the but-ton' 或 'click the button'）
-            if (syl.includes(' ')) {
-                const sylWords = syl.split(/\s+/);
+            // 标准化：将音节符号两侧的多余空格消除，变成纯粹的 '·' 连接
+            const normalizedSyl = syl.replace(/[\s]*[-*·•][\s]*/g, '·');
+
+            // 情况 A：已经包含词间空格（如 'look af·ter' 或 'look af · ter'）
+            if (normalizedSyl.includes(' ')) {
+                const sylWords = normalizedSyl.split(/\s+/);
                 if (sylWords.length === origWords.length) {
-                    return sylWords.map(w => w.replace(/[-*]/g, ' · ').replace(/\s*·\s*/g, ' · ').trim()).join(' ');
+                    return sylWords.map(w => formatWordPieces(w)).join(' ');
                 }
             }
 
-            // 情况 B：AI 机械地把所有词与音节全部用连字符连接（如 'click-the-but-ton'），抹去了词间空格
-            const pieces = syl.split(/[-*·]/).map(p => p.trim()).filter(Boolean);
+            // 情况 B：AI 机械地把所有词与音节全部用连字符/中点连接（如 'look-af-ter'），抹去了词间空格
+            const pieces = normalizedSyl.split('·').map(p => p.trim()).filter(Boolean);
             const resultWords = [];
             let pieceIdx = 0;
             let matchedAll = true;
@@ -8471,7 +8494,7 @@ shine 发光..."></textarea>
                 }
 
                 if (accumulated === cleanWord) {
-                    resultWords.push(wordPieces.join(' · '));
+                    resultWords.push(wordPieces.map(p => escapeHtml(p)).join(sepTag));
                 } else {
                     matchedAll = false;
                     break;
@@ -8482,8 +8505,8 @@ shine 发光..."></textarea>
                 return resultWords.join(' ');
             }
 
-            // 兜底保护：短语无法对齐时直接保留原短语，绝不允许被渲染成 click · the · but · ton
-            return orig;
+            // 兜底保护：短语无法对齐时直接保留原短语，绝不允许被渲染成错误拆分
+            return escapeHtml(orig);
         };
 
         // 统一获取单词元数据（IPA 音标、音节拆分、音频链接）
@@ -8526,7 +8549,7 @@ shine 发光..."></textarea>
                         if (exactEntry && exactEntry.hwi) {
                             const hwi = exactEntry.hwi;
                             if (hwi.hw) {
-                                result.syllables = hwi.hw.replace(/\*/g, ' · ');
+                                result.syllables = hwi.hw.replace(/\*/g, '·');
                             }
                             const ipa = hwi.prs?.find(p => p.ipa)?.ipa || hwi.prs?.[0]?.ipa;
                             if (ipa) {
@@ -8579,7 +8602,7 @@ shine 发光..."></textarea>
 
             // 3. 音节兜底：若单词含有连字符且词典未拆分，用中点格式化
             if (!result.syllables && w.includes('-')) {
-                result.syllables = w.replace(/-/g, ' · ');
+                result.syllables = w.replace(/-/g, '·');
             }
 
             result.audioUrl = result.mwAudioUrl || result.freeDictAudioUrl || null;
@@ -9257,7 +9280,7 @@ shine 发光..."></textarea>
 
                     chinesePrompt.innerHTML = `
                         <div class="typing-prompt-box">
-                            <div class="typing-english-target">${escapeHtml(displaySyllables)}</div>
+                            <div class="typing-english-target">${displaySyllables}</div>
                             ${phoneticLine}
                             <div class="typing-chinese-sub">${escapeHtml(word.chinese || '')}</div>
                         </div>
@@ -9575,7 +9598,7 @@ shine 发光..."></textarea>
         const populateFlashcard = (data) => {
             const originalWord = data.word || (words[currentFlashcardIndex]?.english) || '';
             const displayWord = formatSyllablesDisplay(data.syllables, originalWord);
-            flashcardWord.textContent = displayWord || originalWord || '';
+            flashcardWord.innerHTML = displayWord || escapeHtml(originalWord) || '';
             if (flashcardPhonetic) {
                 if (data.phonetic) {
                     flashcardPhonetic.textContent = data.phonetic;
