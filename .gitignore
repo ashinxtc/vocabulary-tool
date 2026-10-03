@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+functions/node_modules/
+
+# Environment and sensitive API keys
+.env
+.env.*
+functions/.env
+
+# Temporary and backup files
+*.bak
+*.bak_*
+*.tmp
+*.log
+
+# IDE & build tools
+.codegraph/
+firebase-proxy/
+.wrangler/
+.firebase/
+
+# OS files
+.DS_Store
+Thumbs.db
