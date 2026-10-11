@@ -4500,6 +4500,96 @@
             line-height: 1.3;
         }
 
+        /* 看词打字专有：重复次数设置条 */
+        .hub-repetition-box {
+            margin-top: 14px;
+            margin-bottom: 6px;
+            padding: 12px 16px;
+            background: var(--color-surface-soft);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .hub-repetition-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: var(--color-text);
+        }
+        .hub-repetition-icon {
+            color: var(--color-primary);
+            flex-shrink: 0;
+        }
+        .hub-repetition-title {
+            font-weight: 700;
+        }
+        .hub-repetition-sub {
+            font-size: 12px;
+            color: var(--color-text-muted);
+        }
+        .hub-repetition-pills {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .hub-rep-pill {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 14px !important;
+            font-size: 13px !important;
+            font-weight: 600;
+            color: var(--color-text) !important;
+            background: var(--color-surface) !important;
+            border: 1px solid var(--color-border) !important;
+            border-radius: var(--radius-full) !important;
+            cursor: pointer;
+            transition: all var(--transition);
+            width: auto !important;
+            box-shadow: none !important;
+            transform: none !important;
+            user-select: none;
+        }
+        .hub-rep-pill:hover {
+            border-color: var(--color-primary-muted) !important;
+            background: var(--color-surface-hover) !important;
+        }
+        .hub-rep-pill.active {
+            color: #ffffff !important;
+            background: var(--color-primary) !important;
+            border-color: var(--color-primary) !important;
+            box-shadow: 0 2px 8px rgba(255, 107, 74, 0.28) !important;
+        }
+        .hub-rep-custom-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hub-rep-input {
+            width: 62px !important;
+            padding: 5px 8px !important;
+            font-size: 13px !important;
+            border: 1.5px solid var(--color-primary) !important;
+            border-radius: var(--radius-sm) !important;
+            background: var(--color-surface) !important;
+            color: var(--color-text) !important;
+            text-align: center;
+            font-weight: 700;
+            box-shadow: none !important;
+            outline: none;
+        }
+        .hub-rep-input-unit {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            font-weight: 600;
+        }
+
         .hub-cta-wrap {
             display: flex;
             justify-content: center;
@@ -4965,6 +5055,30 @@
                         </div>
                     </div>
 
+                    <!-- 看词打字专有：每个单词重复练习次数设置 -->
+                    <div class="hub-repetition-box" id="hub-library-repetition-box" style="display: none;">
+                        <div class="hub-repetition-header">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hub-repetition-icon">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            <span class="hub-repetition-title">每个单词练习次数</span>
+                            <span class="hub-repetition-sub">（当前词连续敲击达标后，自动推进至下一个词）</span>
+                        </div>
+                        <div class="hub-repetition-pills">
+                            <button type="button" class="hub-rep-pill" data-count="1">1 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="2">2 次</button>
+                            <button type="button" class="hub-rep-pill active" data-count="3">3 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="5">5 次</button>
+                            <div class="hub-rep-custom-group">
+                                <button type="button" class="hub-rep-pill" data-count="custom">自定义</button>
+                                <input type="number" class="hub-rep-input" min="1" max="50" value="4" style="display: none;" title="自定义练习遍数">
+                                <span class="hub-rep-input-unit" style="display: none;">次</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="hub-cta-wrap">
                         <button type="button" class="hub-primary-launch-btn" id="hub-library-launch-btn" disabled>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
@@ -5040,6 +5154,30 @@ shine 发光..."></textarea>
                         </div>
                     </div>
 
+                    <!-- 看词打字专有：每个单词重复练习次数设置 -->
+                    <div class="hub-repetition-box" id="hub-custom-repetition-box" style="display: none;">
+                        <div class="hub-repetition-header">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hub-repetition-icon">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            <span class="hub-repetition-title">每个单词练习次数</span>
+                            <span class="hub-repetition-sub">（当前词连续敲击达标后，自动推进至下一个词）</span>
+                        </div>
+                        <div class="hub-repetition-pills">
+                            <button type="button" class="hub-rep-pill" data-count="1">1 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="2">2 次</button>
+                            <button type="button" class="hub-rep-pill active" data-count="3">3 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="5">5 次</button>
+                            <div class="hub-rep-custom-group">
+                                <button type="button" class="hub-rep-pill" data-count="custom">自定义</button>
+                                <input type="number" class="hub-rep-input" min="1" max="50" value="4" style="display: none;" title="自定义练习遍数">
+                                <span class="hub-rep-input-unit" style="display: none;">次</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="hub-cta-wrap">
                         <button type="button" class="hub-primary-launch-btn" id="hub-custom-launch-btn" disabled>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
@@ -5090,6 +5228,13 @@ shine 发光..."></textarea>
                                 <div class="hub-mode-name">看中文拼写</div>
                                 <div class="hub-mode-desc">标准默写 · 查漏补缺</div>
                             </button>
+                            <button type="button" class="hub-mode-card" data-mode="typing-words">
+                                <div class="hub-mode-header">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                                </div>
+                                <div class="hub-mode-name">看词打字</div>
+                                <div class="hub-mode-desc">错词强化 · 肌肉记忆重复</div>
+                            </button>
                             <button type="button" class="hub-mode-card" data-mode="sentence-blank">
                                 <div class="hub-mode-header">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -5097,6 +5242,30 @@ shine 发光..."></textarea>
                                 <div class="hub-mode-name">AI句子填空</div>
                                 <div class="hub-mode-desc">从错词生成例句挖空</div>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- 看词打字专有：每个单词重复练习次数设置 -->
+                    <div class="hub-repetition-box" id="hub-wrong-repetition-box" style="display: none;">
+                        <div class="hub-repetition-header">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hub-repetition-icon">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            <span class="hub-repetition-title">每个单词练习次数</span>
+                            <span class="hub-repetition-sub">（当前词连续敲击达标后，自动推进至下一个词）</span>
+                        </div>
+                        <div class="hub-repetition-pills">
+                            <button type="button" class="hub-rep-pill" data-count="1">1 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="2">2 次</button>
+                            <button type="button" class="hub-rep-pill active" data-count="3">3 次</button>
+                            <button type="button" class="hub-rep-pill" data-count="5">5 次</button>
+                            <div class="hub-rep-custom-group">
+                                <button type="button" class="hub-rep-pill" data-count="custom">自定义</button>
+                                <input type="number" class="hub-rep-input" min="1" max="50" value="4" style="display: none;" title="自定义练习遍数">
+                                <span class="hub-rep-input-unit" style="display: none;">次</span>
+                            </div>
                         </div>
                     </div>
 
@@ -9265,7 +9434,15 @@ shine 发光..."></textarea>
 
             if (currentWordIndex < words.length) {
                 const word = words[currentWordIndex];
-                progressText.textContent = `第 ${currentWordIndex + 1} / ${words.length} 题`;
+                const repCount = isTypingWithWordsMode ? getTypingWordsRepetitionCount() : 1;
+                if (isTypingWithWordsMode && repCount > 1) {
+                    const totalUniqueWords = Math.ceil(words.length / repCount);
+                    const wordNum = Math.min(totalUniqueWords, Math.floor(currentWordIndex / repCount) + 1);
+                    const currentRep = (currentWordIndex % repCount) + 1;
+                    progressText.textContent = `第 ${wordNum} / ${totalUniqueWords} 词 · 第 ${currentRep}/${repCount} 遍 (总计 ${currentWordIndex + 1}/${words.length} 题)`;
+                } else {
+                    progressText.textContent = `第 ${currentWordIndex + 1} / ${words.length} 题`;
+                }
                 
                 if (isTypingWithWordsMode) {
                     const key = (word.english || '').toLowerCase().trim();
@@ -9359,9 +9536,17 @@ shine 发光..."></textarea>
             }
             wrongWordsList.innerHTML = '';
             const sessionWrongWords = practicedWords.filter(word => !word.wasCorrect);
-            if (sessionWrongWords.length > 0) {
+            const uniqueWrongMap = new Map();
+            sessionWrongWords.forEach(w => {
+                const k = (w.english || '').toLowerCase().trim();
+                if (!uniqueWrongMap.has(k)) {
+                    uniqueWrongMap.set(k, w);
+                }
+            });
+            const uniqueSessionWrongWords = Array.from(uniqueWrongMap.values());
+            if (uniqueSessionWrongWords.length > 0) {
                 let html = '<h3>本次错题：</h3><ul>';
-                sessionWrongWords.forEach(word => {
+                uniqueSessionWrongWords.forEach(word => {
                     html += `<li><strong>${escapeHtml(word.english)}</strong>: ${escapeHtml(word.chinese)} (${(word.timeTakenSeconds || 0).toFixed(2)}s)</li>`;
                 });
                 wrongWordsList.innerHTML = html + '</ul>';
@@ -9390,18 +9575,18 @@ shine 发光..."></textarea>
             // 结算页行动按钮：趁热打铁攻坚错题 或 返回主页
             const actionsContainer = document.getElementById('completion-actions');
             if (actionsContainer) {
-                if (sessionWrongWords.length > 0) {
+                if (uniqueSessionWrongWords.length > 0) {
                     actionsContainer.innerHTML = `
                         <button id="retest-session-wrong-btn" class="completion-retest-btn">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                            <span>趁热打铁：立即攻坚本次错题 (${sessionWrongWords.length} 词)</span>
+                            <span>趁热打铁：立即攻坚本次错题 (${uniqueSessionWrongWords.length} 词)</span>
                         </button>
                         <button id="restart-button" class="completion-home-btn">稍后练习，返回主页</button>
                     `;
                     const retestBtn = document.getElementById('retest-session-wrong-btn');
                     if (retestBtn) {
                         retestBtn.addEventListener('click', () => {
-                            startImmediateRetest(sessionWrongWords);
+                            startImmediateRetest(uniqueSessionWrongWords);
                         });
                     }
                     const homeBtn = document.getElementById('restart-button');
@@ -10350,6 +10535,21 @@ shine 发光..."></textarea>
             if (activeHubSegment !== 'library') {
                 words = [];
                 originalWords = [];
+            } else {
+                // 如果是从看词打字或其他模式返回，确保 words 恢复为原始未倍增的词库列表
+                try {
+                    const cachedWords = JSON.parse(localStorage.getItem('selectedLibraryWordsCache') || '[]');
+                    if (Array.isArray(cachedWords) && cachedWords.length > 0) {
+                        words = [...cachedWords];
+                        originalWords = [...cachedWords];
+                    } else if (originalWords.length > 0) {
+                        words = [...originalWords];
+                    }
+                } catch (e) {
+                    if (originalWords.length > 0) {
+                        words = [...originalWords];
+                    }
+                }
             }
             wordInput.value = '';
             uploadStatus.textContent = '未选择任何文件';
@@ -10456,6 +10656,115 @@ shine 发光..."></textarea>
             updateStartButtonState();
         };
 
+        // --- 看词打字每个单词重复次数控制器 ---
+        let typingWordsRepetitionCount = parseInt(localStorage.getItem('typingWordsRepetitionCount') || '3', 10);
+        if (isNaN(typingWordsRepetitionCount) || typingWordsRepetitionCount < 1) {
+            typingWordsRepetitionCount = 3;
+        }
+
+        const getTypingWordsRepetitionCount = () => {
+            return Math.max(1, typingWordsRepetitionCount || 1);
+        };
+
+        const updateAllRepetitionBoxesUI = () => {
+            const currentCount = getTypingWordsRepetitionCount();
+            const isStandardCount = [1, 2, 3, 5].includes(currentCount);
+
+            ['library', 'custom', 'wrong'].forEach(seg => {
+                const box = document.getElementById(`hub-${seg}-repetition-box`);
+                if (!box) return;
+
+                const pills = box.querySelectorAll('.hub-rep-pill');
+                const customInput = box.querySelector('.hub-rep-input');
+                const customUnit = box.querySelector('.hub-rep-input-unit');
+
+                pills.forEach(pill => {
+                    const countAttr = pill.dataset.count;
+                    if (countAttr === 'custom') {
+                        pill.classList.toggle('active', !isStandardCount);
+                    } else {
+                        pill.classList.toggle('active', parseInt(countAttr, 10) === currentCount);
+                    }
+                });
+
+                if (customInput && customUnit) {
+                    if (!isStandardCount) {
+                        customInput.style.display = 'inline-block';
+                        customUnit.style.display = 'inline-block';
+                        customInput.value = currentCount;
+                    } else {
+                        customInput.style.display = 'none';
+                        customUnit.style.display = 'none';
+                    }
+                }
+            });
+        };
+
+        const setTypingWordsRepetitionCount = (count) => {
+            let num = parseInt(count, 10);
+            if (isNaN(num) || num < 1) num = 1;
+            if (num > 50) num = 50;
+            typingWordsRepetitionCount = num;
+            localStorage.setItem('typingWordsRepetitionCount', num.toString());
+            updateAllRepetitionBoxesUI();
+            updateStartButtonState();
+        };
+
+        const updateTypingRepetitionBoxVisibility = (segmentId, modeId) => {
+            const box = document.getElementById(`hub-${segmentId}-repetition-box`);
+            if (box) {
+                box.style.display = (modeId === 'typing-words') ? 'flex' : 'none';
+            }
+        };
+
+        const initRepetitionBoxes = () => {
+            ['library', 'custom', 'wrong'].forEach(seg => {
+                const box = document.getElementById(`hub-${seg}-repetition-box`);
+                if (!box) return;
+
+                const pills = box.querySelectorAll('.hub-rep-pill');
+                const customInput = box.querySelector('.hub-rep-input');
+                const customUnit = box.querySelector('.hub-rep-input-unit');
+
+                pills.forEach(pill => {
+                    pill.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const countAttr = pill.dataset.count;
+                        if (countAttr === 'custom') {
+                            if (customInput && customUnit) {
+                                customInput.style.display = 'inline-block';
+                                customUnit.style.display = 'inline-block';
+                                customInput.focus();
+                                customInput.select();
+                                setTypingWordsRepetitionCount(customInput.value || 4);
+                            }
+                        } else {
+                            if (customInput && customUnit) {
+                                customInput.style.display = 'none';
+                                customUnit.style.display = 'none';
+                            }
+                            setTypingWordsRepetitionCount(countAttr);
+                        }
+                    });
+                });
+
+                if (customInput) {
+                    customInput.addEventListener('input', (e) => {
+                        e.stopPropagation();
+                        const val = parseInt(customInput.value, 10);
+                        if (!isNaN(val) && val >= 1) {
+                            setTypingWordsRepetitionCount(val);
+                        }
+                    });
+                    customInput.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                    });
+                }
+            });
+
+            updateAllRepetitionBoxesUI();
+        };
+
         const selectHubMode = (segmentId, modeId) => {
             hubModePreferences[segmentId] = modeId;
             localStorage.setItem(`hubMode_${segmentId}`, modeId);
@@ -10467,6 +10776,9 @@ shine 发光..."></textarea>
                     card.classList.toggle('active', card.dataset.mode === modeId);
                 });
             }
+
+            // 更新“看词打字”专属重复次数设置条可见性
+            updateTypingRepetitionBoxVisibility(segmentId, modeId);
 
             // 若选中的是四选一辨析等模式，做必要的预备
             if (modeId === 'mcq') {
@@ -10485,12 +10797,22 @@ shine 发光..."></textarea>
                 const libMode = hubModePreferences.library || 'dictation';
                 const libModeLabel = HUB_MODE_LABELS[libMode] || '练习';
                 const hasWords = words.length > 0;
+                const repCount = getTypingWordsRepetitionCount();
                 if (libMode === 'mcq' || libMode === 'sentence-blank') {
                     hubLibLaunchBtn.disabled = false;
                     if (hubLibLaunchText) {
                         hubLibLaunchText.textContent = hasWords 
                             ? `开始「${libModeLabel}」练习 (${words.length} 词)`
                             : `快速开始「${libModeLabel}」 (随机 10 词)`;
+                    }
+                } else if (libMode === 'typing-words') {
+                    hubLibLaunchBtn.disabled = !hasWords;
+                    if (hubLibLaunchText) {
+                        hubLibLaunchText.textContent = hasWords 
+                            ? (repCount > 1 
+                                ? `开始「${libModeLabel}」练习 (${words.length} 词 · 每词 ${repCount} 遍 · 共 ${words.length * repCount} 题)`
+                                : `开始「${libModeLabel}」练习 (${words.length} 词)`)
+                            : '请先选择词库或单元';
                     }
                 } else {
                     hubLibLaunchBtn.disabled = !hasWords;
@@ -10505,6 +10827,8 @@ shine 发光..."></textarea>
             if (hubCustomLaunchBtn) {
                 const customMode = hubModePreferences.custom || 'dictation';
                 const customModeLabel = HUB_MODE_LABELS[customMode] || '练习';
+                const repCount = getTypingWordsRepetitionCount();
+                const repSuffix = (customMode === 'typing-words' && repCount > 1) ? ` (每词 ${repCount} 遍)` : '';
                 const hasText = wordInput.value.trim().length > 0;
                 const hasFile = Boolean(selectedFile && !uploadConfirmButton.disabled);
                 const canStartCustom = hasText || hasFile;
@@ -10512,9 +10836,9 @@ shine 发光..."></textarea>
                 const span = hubCustomLaunchBtn.querySelector('span');
                 if (span) {
                     if (hasText) {
-                        span.textContent = `开始「${customModeLabel}」练习`;
+                        span.textContent = `开始「${customModeLabel}」练习${repSuffix}`;
                     } else if (hasFile) {
-                        span.textContent = `识别文件并开始「${customModeLabel}」`;
+                        span.textContent = `识别文件并开始「${customModeLabel}」${repSuffix}`;
                     } else {
                         span.textContent = '请在上方输入单词或上传文件';
                     }
@@ -10526,13 +10850,15 @@ shine 发光..."></textarea>
             if (hubWrongLaunchBtn) {
                 const wrongMode = hubModePreferences.wrong || 'dictation';
                 const wrongModeLabel = HUB_MODE_LABELS[wrongMode] || '攻坚';
+                const repCount = getTypingWordsRepetitionCount();
+                const repSuffix = (wrongMode === 'typing-words' && repCount > 1) ? ` · 每词 ${repCount} 遍` : '';
                 const checkedSessions = inlineWrongWordsSelection ? inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked') : [];
                 const canStartWrong = checkedSessions.length > 0;
                 hubWrongLaunchBtn.disabled = !canStartWrong;
                 const span = hubWrongLaunchBtn.querySelector('span');
                 if (span) {
                     if (canStartWrong) {
-                        span.textContent = `攻坚选中的 ${checkedSessions.length} 组错题（${wrongModeLabel}）`;
+                        span.textContent = `攻坚选中的 ${checkedSessions.length} 组错题（${wrongModeLabel}${repSuffix}）`;
                     } else {
                         span.textContent = persistentWrongWords.length === 0 ? '暂无错题记录' : '请勾选至少一个历史错题会话';
                     }
@@ -10741,8 +11067,22 @@ shine 发光..."></textarea>
                 case 'typing-words':
                     isListeningDictationMode = false;
                     isTypingWithWordsMode = true;
+                    const repCount = getTypingWordsRepetitionCount();
+                    if (repCount > 1) {
+                        const repeatedWords = [];
+                        originalWords.forEach(word => {
+                            for (let i = 0; i < repCount; i++) {
+                                repeatedWords.push({ ...word });
+                            }
+                        });
+                        words = repeatedWords;
+                    }
                     currentQuizDetails = {
-                        practiceMode: source === 'library' ? '系统词库 (看词打字)' : '新词录入 (看词打字)'
+                        practiceMode: source === 'wrong'
+                            ? (repCount > 1 ? `错题攻坚 (看词打字·每词${repCount}遍)` : '错题攻坚 (看词打字)')
+                            : (source === 'library'
+                                ? (repCount > 1 ? `系统词库 (看词打字·每词${repCount}遍)` : '系统词库 (看词打字)')
+                                : (repCount > 1 ? `新词录入 (看词打字·每词${repCount}遍)` : '新词录入 (看词打字)'))
                     };
                     preloadWordMetadata(words);
                     startQuiz();
@@ -13245,7 +13585,8 @@ shine 发光..."></textarea>
                 });
             }
 
-            // 6. 恢复本地记忆的题型选项高亮
+            // 6. 初始化看词打字重复次数选择器并恢复本地记忆的题型选项高亮
+            initRepetitionBoxes();
             ['library', 'custom', 'wrong'].forEach(seg => {
                 const savedMode = hubModePreferences[seg];
                 if (savedMode) {
