@@ -4718,6 +4718,101 @@
         .hub-wrong-sessions-box {
             margin-bottom: 20px;
         }
+        .hub-wrong-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 9px 14px;
+            background: var(--color-surface-soft);
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-sm);
+        }
+        .hub-wrong-toolbar-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hub-wrong-master-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-text);
+            cursor: pointer;
+            user-select: none;
+        }
+        .hub-wrong-master-cb {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--color-primary);
+            cursor: pointer;
+            margin: 0;
+        }
+        .hub-wrong-stat-tag {
+            font-size: 12px;
+            color: var(--color-text-muted);
+            font-weight: 500;
+            margin-left: 4px;
+        }
+        .hub-wrong-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .hub-wrong-opt-btn {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 11px !important;
+            font-size: 12px !important;
+            font-weight: 600;
+            color: var(--color-text) !important;
+            background: var(--color-surface) !important;
+            border: 1px solid var(--color-border) !important;
+            border-radius: var(--radius-full) !important;
+            cursor: pointer;
+            transition: all var(--transition);
+            width: auto !important;
+            box-shadow: none !important;
+            transform: none !important;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .hub-wrong-opt-btn:hover:not(:disabled) {
+            border-color: var(--color-primary-muted) !important;
+            color: var(--color-primary) !important;
+            background: var(--color-surface-hover) !important;
+        }
+        .hub-wrong-opt-btn.highlight {
+            color: var(--color-primary) !important;
+            background: var(--color-primary-soft) !important;
+            border-color: var(--color-primary-muted) !important;
+        }
+        .hub-wrong-opt-btn.highlight:hover:not(:disabled) {
+            color: #ffffff !important;
+            background: var(--color-primary) !important;
+            border-color: var(--color-primary) !important;
+        }
+        .hub-wrong-opt-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        @media (max-width: 640px) {
+            .hub-wrong-toolbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .hub-wrong-toolbar-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
         .hub-wrong-stat-line {
             font-size: 15px;
             color: var(--color-text);
@@ -5204,8 +5299,22 @@ shine 发光..."></textarea>
                     </div>
 
                     <div class="hub-wrong-sessions-box" id="inline-wrong-words-selection">
-                        <div class="hub-field-label">
-                            <span>历史练习会话（默认已全选，可按需勾选）</span>
+                        <div class="hub-wrong-toolbar" id="hub-wrong-toolbar">
+                            <div class="hub-wrong-toolbar-left">
+                                <label class="hub-wrong-master-label" for="hub-wrong-select-all-cb">
+                                    <input type="checkbox" id="hub-wrong-select-all-cb" class="hub-wrong-master-cb">
+                                    <span>全选</span>
+                                    <span class="hub-wrong-stat-tag" id="hub-wrong-stat-tag">已选 0/0 组</span>
+                                </label>
+                            </div>
+                            <div class="hub-wrong-toolbar-actions">
+                                <button type="button" class="hub-wrong-opt-btn" id="hub-wrong-btn-select-all" title="全选所有历史错题会话">全选</button>
+                                <button type="button" class="hub-wrong-opt-btn" id="hub-wrong-btn-deselect-all" title="取消全选所有历史错题会话">取消全选</button>
+                                <button type="button" class="hub-wrong-opt-btn" id="hub-wrong-btn-invert" title="反向勾选错题会话">反选</button>
+                                <button type="button" class="hub-wrong-opt-btn highlight" id="hub-wrong-btn-latest-1" title="仅勾选最近 1 组错题会话">仅选最新 1 组</button>
+                                <button type="button" class="hub-wrong-opt-btn" id="hub-wrong-btn-latest-3" title="仅勾选最近 3 组错题会话">最近 3 组</button>
+                                <button type="button" class="hub-wrong-opt-btn" id="hub-wrong-btn-toggle-expand" title="全部展开或收起错题明细">全部展开</button>
+                            </div>
                         </div>
                         <div id="inline-wrong-words-sessions-list" class="modal-sessions-list"></div>
                     </div>
@@ -10852,13 +10961,22 @@ shine 发光..."></textarea>
                 const wrongModeLabel = HUB_MODE_LABELS[wrongMode] || '攻坚';
                 const repCount = getTypingWordsRepetitionCount();
                 const repSuffix = (wrongMode === 'typing-words' && repCount > 1) ? ` · 每词 ${repCount} 遍` : '';
-                const checkedSessions = inlineWrongWordsSelection ? inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked') : [];
+                const checkedSessions = inlineWrongWordsSessionsList ? inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox:checked') : [];
                 const canStartWrong = checkedSessions.length > 0;
                 hubWrongLaunchBtn.disabled = !canStartWrong;
                 const span = hubWrongLaunchBtn.querySelector('span');
                 if (span) {
                     if (canStartWrong) {
-                        span.textContent = `攻坚选中的 ${checkedSessions.length} 组错题（${wrongModeLabel}${repSuffix}）`;
+                        const selectedSessionIds = new Set(Array.from(checkedSessions).map(cb => cb.value));
+                        const uniqueWrongWords = new Set();
+                        allPracticeSessions.forEach(session => {
+                            if (selectedSessionIds.has(session.id)) {
+                                (session.sessionWords || []).filter(w => !w.wasCorrect).forEach(w => {
+                                    if (w.english) uniqueWrongWords.add(w.english.toLowerCase().trim());
+                                });
+                            }
+                        });
+                        span.textContent = `攻坚选中的 ${checkedSessions.length} 组错题 (${uniqueWrongWords.size} 词 · ${wrongModeLabel}${repSuffix})`;
                     } else {
                         span.textContent = persistentWrongWords.length === 0 ? '暂无错题记录' : '请勾选至少一个历史错题会话';
                     }
@@ -10897,7 +11015,7 @@ shine 发光..."></textarea>
                         canStartLegacy = wordInput.value.trim() !== '' || (selectedFile && !uploadConfirmButton.disabled);
                         break;
                     case 'wrong-words':
-                        canStartLegacy = inlineWrongWordsSelection ? inlineWrongWordsSelection.querySelectorAll('input[type="checkbox"]:checked').length > 0 : false;
+                        canStartLegacy = inlineWrongWordsSessionsList ? inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox:checked').length > 0 : false;
                         break;
                     case 'word-library':
                         canStartLegacy = words.length > 0;
@@ -11021,7 +11139,7 @@ shine 发光..."></textarea>
                     hideLoader();
                 }
             } else if (source === 'wrong') {
-                const selectedSessionIds = Array.from(inlineWrongWordsSelection.querySelectorAll('input:checked')).map(cb => cb.value);
+                const selectedSessionIds = Array.from(inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox:checked')).map(cb => cb.value);
                 if (selectedSessionIds.length === 0) {
                     showMessage('请至少勾选一个包含错题的历史会话。');
                     return;
@@ -11102,18 +11220,173 @@ shine 发光..."></textarea>
             }
         };
 
-        // --- Inline Wrong Words Selection Logic ---
+        // --- Inline Wrong Words Selection Logic & Toolbar ---
+        let wrongWordsSelectionCache = null;
+
+        const updateWrongWordsMasterCheckbox = () => {
+            const masterCb = document.getElementById('hub-wrong-select-all-cb');
+            const statTag = document.getElementById('hub-wrong-stat-tag');
+            if (!inlineWrongWordsSessionsList) return;
+            const allCbs = Array.from(inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox'));
+            const checkedCbs = allCbs.filter(cb => cb.checked);
+
+            const selectedSessionIds = new Set(checkedCbs.map(cb => cb.value));
+            const uniqueWrongWords = new Set();
+            allPracticeSessions.forEach(session => {
+                if (selectedSessionIds.has(session.id)) {
+                    (session.sessionWords || []).filter(w => !w.wasCorrect).forEach(w => {
+                        if (w.english) uniqueWrongWords.add(w.english.toLowerCase().trim());
+                    });
+                }
+            });
+
+            if (statTag) {
+                statTag.textContent = allCbs.length > 0 
+                    ? `已选 ${checkedCbs.length}/${allCbs.length} 组 (共 ${uniqueWrongWords.size} 词)`
+                    : '暂无历史会话';
+            }
+
+            if (masterCb) {
+                if (allCbs.length === 0) {
+                    masterCb.checked = false;
+                    masterCb.indeterminate = false;
+                    masterCb.disabled = true;
+                } else if (checkedCbs.length === allCbs.length) {
+                    masterCb.checked = true;
+                    masterCb.indeterminate = false;
+                    masterCb.disabled = false;
+                } else if (checkedCbs.length === 0) {
+                    masterCb.checked = false;
+                    masterCb.indeterminate = false;
+                    masterCb.disabled = false;
+                } else {
+                    masterCb.checked = false;
+                    masterCb.indeterminate = true;
+                    masterCb.disabled = false;
+                }
+            }
+
+            const toolbar = document.getElementById('hub-wrong-toolbar');
+            if (toolbar) {
+                toolbar.querySelectorAll('.hub-wrong-opt-btn').forEach(btn => {
+                    btn.disabled = (allCbs.length === 0);
+                });
+            }
+
+            const btnToggleExpand = document.getElementById('hub-wrong-btn-toggle-expand');
+            if (btnToggleExpand) {
+                const lists = inlineWrongWordsSessionsList.querySelectorAll('.session-words-list');
+                const anyOpen = Array.from(lists).some(l => l.classList.contains('show'));
+                btnToggleExpand.textContent = anyOpen ? '全部收起' : '全部展开';
+            }
+
+            wrongWordsSelectionCache = new Set(checkedCbs.map(cb => cb.value));
+        };
+
+        const initWrongWordsToolbar = () => {
+            const masterCb = document.getElementById('hub-wrong-select-all-cb');
+            if (masterCb) {
+                masterCb.addEventListener('click', () => {
+                    const targetState = masterCb.checked;
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach(cb => { cb.checked = targetState; });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnSelectAll = document.getElementById('hub-wrong-btn-select-all');
+            if (btnSelectAll) {
+                btnSelectAll.addEventListener('click', () => {
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach(cb => { cb.checked = true; });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnDeselectAll = document.getElementById('hub-wrong-btn-deselect-all');
+            if (btnDeselectAll) {
+                btnDeselectAll.addEventListener('click', () => {
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach(cb => { cb.checked = false; });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnInvert = document.getElementById('hub-wrong-btn-invert');
+            if (btnInvert) {
+                btnInvert.addEventListener('click', () => {
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach(cb => { cb.checked = !cb.checked; });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnLatest1 = document.getElementById('hub-wrong-btn-latest-1');
+            if (btnLatest1) {
+                btnLatest1.addEventListener('click', () => {
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach((cb, idx) => { cb.checked = (idx === 0); });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnLatest3 = document.getElementById('hub-wrong-btn-latest-3');
+            if (btnLatest3) {
+                btnLatest3.addEventListener('click', () => {
+                    const allCbs = inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox');
+                    allCbs.forEach((cb, idx) => { cb.checked = (idx < 3); });
+                    updateWrongWordsMasterCheckbox();
+                    updateStartButtonState();
+                });
+            }
+
+            const btnToggleExpand = document.getElementById('hub-wrong-btn-toggle-expand');
+            if (btnToggleExpand) {
+                btnToggleExpand.addEventListener('click', () => {
+                    const lists = inlineWrongWordsSessionsList.querySelectorAll('.session-words-list');
+                    const icons = inlineWrongWordsSessionsList.querySelectorAll('.toggle-icon');
+                    const anyCollapsed = Array.from(lists).some(l => !l.classList.contains('show'));
+                    lists.forEach(l => l.classList.toggle('show', anyCollapsed));
+                    icons.forEach(ic => ic.classList.toggle('expanded', anyCollapsed));
+                    btnToggleExpand.textContent = anyCollapsed ? '全部收起' : '全部展开';
+                });
+            }
+        };
+
         const showInlineWrongWordsSelection = () => {
             const filteredSessions = filterSessionsByProfile(allPracticeSessions);
             if (!filteredSessions || filteredSessions.length === 0) {
-                inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: #777;">暂无错题记录。</p>';
+                inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px 0;">暂无错题记录。</p>';
+                updateWrongWordsMasterCheckbox();
+                updateStartButtonState();
                 return;
             }
 
+            const sessionsWithWrongWords = filteredSessions.filter(session => {
+                return (session.sessionWords?.filter(w => !w.wasCorrect) || []).length > 0;
+            });
+
+            if (sessionsWithWrongWords.length === 0) {
+                inlineWrongWordsSessionsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px 0;">暂无错题记录。</p>';
+                updateWrongWordsMasterCheckbox();
+                updateStartButtonState();
+                return;
+            }
+
+            // 若尚未初始化选择缓存，默认全选
+            if (wrongWordsSelectionCache === null) {
+                wrongWordsSelectionCache = new Set(sessionsWithWrongWords.map(s => s.id));
+            }
+
             inlineWrongWordsSessionsList.innerHTML = '';
-            filteredSessions.forEach(session => {
+            sessionsWithWrongWords.forEach(session => {
                 const wrongWordsInSession = session.sessionWords?.filter(w => !w.wasCorrect) || [];
-                if (wrongWordsInSession.length === 0) return;
+                const isChecked = wrongWordsSelectionCache.has(session.id);
 
                 const sessionItem = document.createElement('div');
                 sessionItem.className = 'session-item';
@@ -11125,7 +11398,7 @@ shine 发光..."></textarea>
                 const profileNameText = session.profileName ? ` [${session.profileName}]` : '';
 
                 sessionHeader.innerHTML = `
-                    <input type="checkbox" value="${session.id}" checked>
+                    <input type="checkbox" class="wrong-session-checkbox" value="${session.id}" ${isChecked ? 'checked' : ''}>
                     <div class="session-info">
                         <strong>${sessionDate}</strong>${escapeHtml(profileNameText)} (${wrongWordsInSession.length} 个错词, 正确率 ${accuracyText})
                         <span class="session-mode">${escapeHtml(session.practiceMode || '未知模式')}</span>
@@ -11147,12 +11420,25 @@ shine 发光..."></textarea>
                     if (e.target.type === 'checkbox') return;
                     wordsList.classList.toggle('show');
                     sessionHeader.querySelector('.toggle-icon').classList.toggle('expanded');
+                    const btnToggleExpand = document.getElementById('hub-wrong-btn-toggle-expand');
+                    if (btnToggleExpand) {
+                        const lists = inlineWrongWordsSessionsList.querySelectorAll('.session-words-list');
+                        const anyOpen = Array.from(lists).some(l => l.classList.contains('show'));
+                        btnToggleExpand.textContent = anyOpen ? '全部收起' : '全部展开';
+                    }
                 });
             });
+
+            updateWrongWordsMasterCheckbox();
             updateStartButtonState();
         };
 
-        inlineWrongWordsSelection.addEventListener('change', (e) => { if (e.target.type === 'checkbox') updateStartButtonState(); });
+        inlineWrongWordsSelection.addEventListener('change', (e) => {
+            if (e.target.classList.contains('wrong-session-checkbox')) {
+                updateWrongWordsMasterCheckbox();
+                updateStartButtonState();
+            }
+        });
 
         document.getElementById('clear-wrong-words-button').addEventListener('click', () => {
             showMessage(`请输入确认码以清除所有错题记录。<br>此操作不可撤销！<br><br><input type="text" id="confirm-code-input" placeholder="输入确认码"><br><button id="confirm-clear-wrong-words" class="secondary" style="width: auto; margin-right: 10px;">确认清除</button><button id="cancel-clear-wrong-words" style="width: auto;">取消</button>`);
@@ -11166,6 +11452,7 @@ shine 发光..."></textarea>
                         const batch = writeBatch(db);
                         querySnapshot.forEach(doc => batch.delete(doc.ref));
                         await batch.commit();
+                        wrongWordsSelectionCache = null;
                         await loadPracticeSessionsFromFirestore();
                         showMessage('所有错题记录已清除。');
                         newWordsRadio.checked = true;
@@ -11368,7 +11655,7 @@ shine 发光..."></textarea>
 
 
             if (selectedMode === 'wrong-words') {
-                const selectedSessionIds = Array.from(inlineWrongWordsSelection.querySelectorAll('input:checked')).map(cb => cb.value);
+                const selectedSessionIds = Array.from(inlineWrongWordsSessionsList.querySelectorAll('.wrong-session-checkbox:checked')).map(cb => cb.value);
                 if (selectedSessionIds.length === 0) { showMessage('请选择至少一个错题练习会话。'); return; }
                 let wordsToPracticeMap = new Map();
                 allPracticeSessions.forEach(session => {
@@ -13585,8 +13872,9 @@ shine 发光..."></textarea>
                 });
             }
 
-            // 6. 初始化看词打字重复次数选择器并恢复本地记忆的题型选项高亮
+            // 6. 初始化看词打字重复次数选择器与错题批量选择工具栏，并恢复本地记忆的题型选项高亮
             initRepetitionBoxes();
+            initWrongWordsToolbar();
             ['library', 'custom', 'wrong'].forEach(seg => {
                 const savedMode = hubModePreferences[seg];
                 if (savedMode) {
